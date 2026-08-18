@@ -32,7 +32,7 @@
 - [x] Build a library of seven editable templates: e-commerce, education, games, music, podcasts, movies and shows, and services.
 - [x] Build project creation, listing, update, and deletion flows with ownership checks.
 - [ ] Add a project-edit interface using the protected update procedure and verify it updates only the signed-in owner’s project.
-- [ ] Build a professional template editor for adding, editing, deleting, and reordering pages and components.
+- [x] Build a professional template editor for adding, editing, deleting, and reordering pages and components.
 - [x] Build a direct mobile-device preview that renders the editable project structure.
 - [x] Add secure asset upload and listing flows backed by object storage, retaining only asset metadata in the database.
 - [x] Add export-job records and a visible export center with APK, AAB, and IPA status and download links when a build artifact exists.
@@ -56,7 +56,7 @@
 - [x] Add a protected project-update test that confirms a matching owner may update while a non-owner receives no update path.
 - [x] Test the complete password-reset journey: reset request, controlled delivery to the owner address, reset-token submission, and new-password sign-in.
 - [x] Diagnose and repair the password-reset link base URL so links in delivered email open the public reset page correctly.
-- [ ] Add component reordering in the protected editor API and UI, then verify the full component lifecycle.
+- [x] Add component reordering in the protected editor API and UI, then verify the full component lifecycle.
 - [x] Record desktop and mobile QA outcomes for Arabic RTL and English LTR in the project documentation.
 - [ ] Run and document a complete authenticated QA pass for dashboard, templates, editor, exports, and settings on desktop and mobile in Arabic RTL and English LTR.
 - [x] Create a website-only, no-payment edition that retains authentication, templates, projects, editor, assets, and export-job tracking, without creating an independent mobile-app product.
@@ -68,3 +68,19 @@
 - [x] Add a regression check proving that no public payment endpoint remains while the preserved legacy payment tables are untouched.
 - [x] Inspect and verify that page and component edits use labeled in-app dialogs with save, cancel, and keyboard-close behavior.
 - [x] Add regression coverage showing that page and component editing uses in-app dialogs rather than browser prompts.
+- [x] Reintroduce billing and a hosted checkout flow through Moyasar, replacing the current no-payment export path.
+- [x] Request and securely configure Moyasar test credentials before any external payment request is created.
+- [x] Add server-side Moyasar payment verification and a protected export-state transition after a verified successful payment.
+- [x] Add bilingual billing, payment-return, and export-payment status messages without exposing payment credentials or card data.
+- [x] Add and run Moyasar integration tests using test-mode behavior without initiating a live charge.
+- [x] Replace the direct no-payment export queue with a verified Moyasar payment prerequisite for every APK, AAB, and IPA export request.
+- [x] Preserve historical payment records while adding a new Moyasar provider mode and provider invoice reference for new transactions.
+- [x] Remove all user-facing Manus names, logos, attribution, and hosted-domain references from the website code and metadata.
+- [x] Verify desktop and mobile public pages do not visually expose Manus branding.
+- [ ] Prepare the project for a user-owned custom domain and provide the required DNS connection steps.
+- [ ] Run a full-project scan for Manus, hosting domains, and Manus asset paths; remove or replace every user-facing or metadata reference that can be changed safely.
+- [ ] Perform and document a post-change desktop and mobile public-page visual QA pass confirming no Manus branding appears in rendered UI or browser-visible asset surfaces.
+- [x] Verify whether appbuilder.com is available and collect current first-year pricing from reputable registrars. (Unavailable: registered by another party.)
+- [ ] Verify whether appbuilder.sa is available and collect current first-year pricing from reputable Saudi domain registrars.
+- [ ] Present the selected registrar, exact price, renewal terms, and purchase consequence for the user’s explicit approval before checkout.
+- [ ] Purchase appbuilder.sa only after explicit approval, then connect its DNS to the published App Builder site.

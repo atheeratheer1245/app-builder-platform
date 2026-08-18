@@ -185,17 +185,14 @@ export const exportJobs = mysqlTable(
   ],
 );
 
-/**
- * Historical payment ledger retained to prevent data loss. The no-payment web edition
- * has no runtime procedure that reads from or writes to this table.
- */
+/** Payment ledger for current Moyasar invoices and historical provider records. */
 export const payments = mysqlTable(
   "payments",
   {
     id: int("id").autoincrement().primaryKey(),
     ownerId: int("ownerId").notNull().references(() => users.id, { onDelete: "cascade" }),
     exportJobId: int("exportJobId").references(() => exportJobs.id, { onDelete: "set null" }),
-    provider: mysqlEnum("provider", ["tap", "paylink"]).notNull().default("paylink"),
+    provider: mysqlEnum("provider", ["tap", "paylink", "moyasar"]).notNull().default("moyasar"),
     status: mysqlEnum("status", ["created", "pending", "paid", "failed", "cancelled", "refunded"]).notNull().default("created"),
     amountHalalas: int("amountHalalas").notNull(),
     currency: varchar("currency", { length: 3 }).notNull().default("SAR"),
@@ -226,6 +223,21 @@ export const tapWebhookEvents = mysqlTable(
     processedAt: timestamp("processedAt"),
   },
   table => [uniqueIndex("tap_webhook_event_unique").on(table.providerEventId), index("tap_webhook_payment_idx").on(table.paymentId)],
+);
+
+/** Immutable evidence for Moyasar callback notifications; every provider event is processed at most once. */
+export const moyasarWebhookEvents = mysqlTable(
+  "moyasarWebhookEvents",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    providerEventId: varchar("providerEventId", { length: 160 }).notNull(),
+    paymentId: int("paymentId").references(() => payments.id, { onDelete: "set null" }),
+    payload: json("payload").$type<Record<string, unknown>>().notNull(),
+    processingStatus: mysqlEnum("processingStatus", ["received", "processed", "failed"]).notNull().default("received"),
+    receivedAt: timestamp("receivedAt").defaultNow().notNull(),
+    processedAt: timestamp("processedAt"),
+  },
+  table => [uniqueIndex("moyasar_webhook_event_unique").on(table.providerEventId), index("moyasar_webhook_payment_idx").on(table.paymentId)],
 );
 
 export type User = typeof users.$inferSelect;

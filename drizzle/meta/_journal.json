@@ -29,6 +29,13 @@
       "when": 1787067579466,
       "tag": "0003_misty_blindfold",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1787082580372,
+      "tag": "0004_fuzzy_bug",
+      "breakpoints": true
     }
   ]
 }
