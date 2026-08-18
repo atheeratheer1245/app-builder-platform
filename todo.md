@@ -1,0 +1,68 @@
+# Project TODO
+
+- [x] Define database schema for projects, templates, template pages, components, asset metadata, export jobs, and role-aware ownership.
+- [x] Apply a single database migration and verify tables and foreign-key relationships.
+- [x] Add a complete Arabic and English translation layer with persistent language selection and RTL direction switching.
+- [x] Extract and publish the user-provided icon as the platform visual identity, with no unrequested brand marks in the interface.
+- [x] Build bilingual welcome, sign-up, sign-in, forgot-password, and Google sign-in entry screens with accessible validation states.
+- [x] Complete localization coverage for all workspace routes, shared UI states, loading states, and error states.
+- [x] Create a properly extracted app-icon asset from the user-provided image and use it for application identity and the favicon.
+- [x] Replace placeholder authentication handlers with real email/password sign-up and sign-in, password reset, Google sign-in, and explicit accessible error states.
+- [x] Supply a working SMTP server configuration to enable real delivery of password-reset messages; the latest submitted configuration was invalid and was declined for correction.
+- [x] Configure Gmail SMTP with a valid app password and verify password-reset delivery without exposing credentials.
+- [ ] Confirm the Google OAuth client secret and register the exact production redirect URI in Google Cloud before testing sign-in.
+- [ ] Register the current preview callback URI in Google Cloud and verify a complete Google sign-in redirect into the workspace.
+- [x] [Superseded] Confirm whether Tap remains in test mode or provide a valid live secret/public key pair before switching environments.
+- [x] [Superseded] Confirm Tap test mode with the current keys and prepare a guarded production-mode switch that requires verified live keys.
+- [x] Compare official onboarding requirements for Saudi payment gateways that may accept a freelance work document, then obtain the user’s provider selection before replacing Tap.
+- [x] Identify whether any eligible gateway offers zero setup and zero monthly subscription fees while documenting unavoidable per-transaction charges.
+- [x] Compare candidate payment gateways on freelance-document eligibility, recurring and transaction fees, local payment methods, API quality, settlement terms, and merchant onboarding before replacing Paylink.
+- [x] Produce a structured, sourced comparison of Paylink, PayTabs, and Moyasar covering freelance-document eligibility, recurring and transaction fees, local methods, hosted checkout/webhook capability, settlement/refund terms, and onboarding requirements.
+- [x] Replace Tap payment creation, callback verification, billing copy, and environment configuration with Paylink equivalents after reviewing official API documentation.
+- [ ] Request Paylink test credentials after the merchant account is approved, then validate the integration without creating a charge.
+- [x] [Cancelled by user] Replace Paylink payment creation, callback verification, billing copy, and environment configuration with Moyasar hosted checkout and webhook verification.
+- [x] [Cancelled by user] Request Moyasar test credentials after merchant onboarding, then validate the integration without creating a charge.
+- [x] Record the user's decision not to adopt Moyasar and retain Paylink as the selected payment provider.
+- [ ] Generate or provide Android keystore material and its SHA-1/SHA-256 fingerprints for Android/Google integration when cloud builds are activated.
+- [x] Finish localization for editor component types, device labels, field placeholders, and all loading and error messages.
+- [ ] Complete localization of all loading, error, and raw export/payment status messages surfaced to users.
+- [x] Add the reset-token and new-password screen, then verify the complete password-reset submission flow after SMTP is configured.
+- [x] Add route-level authentication protection and explicit unauthorized states for all workspace routes.
+- [x] Build an authenticated dashboard with recent projects, template recommendations, project status, and a new-project entry point.
+- [x] Build a library of seven editable templates: e-commerce, education, games, music, podcasts, movies and shows, and services.
+- [x] Build project creation, listing, update, and deletion flows with ownership checks.
+- [ ] Add a project-edit interface using the protected update procedure and verify it updates only the signed-in owner’s project.
+- [ ] Build a professional template editor for adding, editing, deleting, and reordering pages and components.
+- [x] Build a direct mobile-device preview that renders the editable project structure.
+- [x] Add secure asset upload and listing flows backed by object storage, retaining only asset metadata in the database.
+- [x] Add export-job records and a visible export center with APK, AAB, and IPA status and download links when a build artifact exists.
+- [x] Store the approved base export prices per 10 MB: e-commerce SAR 50, education SAR 70, games SAR 120, music SAR 100, podcasts SAR 100, movies and shows SAR 150, and services SAR 40.
+- [x] Add a size-based export price calculator that displays the applicable 10 MB pricing increment and total payable amount before checkout.
+- [x] Document Android signing and Apple Developer signing prerequisites for actual APK, AAB, and IPA artifact production.
+- [x] Define and document a provider-neutral cloud-build integration contract, required signing inputs, artifact callback flow, and deferred activation checklist for APK, AAB, and IPA builds.
+- [x] Add role-aware account management and protected server procedures for all project, asset, and export actions.
+- [x] Add account/profile management and an explicit role-gated management capability, or narrow exposed controls to the implemented protected-procedure scope.
+- [x] Define one-time export-payment and webhook-record data structures for the Tap payment flow.
+- [x] Implement a server-side Tap checkout workflow with protected payment creation and verified callback handling.
+- [x] Build bilingual one-time export payment, payment-return, and export-status views without handling card data in the application.
+- [x] Request and validate the required Tap credentials before enabling live payment processing.
+- [x] Add a signed Tap callback/webhook endpoint that verifies the provider charge before queuing an export job.
+- [x] Clarify billing as one-time export payments in the product copy, or add actual subscription plan and subscription-status data structures if recurring billing is required.
+- [ ] Add Vitest coverage for permissions, project operations, template edits, export state transitions, and language helpers.
+- [ ] Verify the desktop and mobile responsive UI, Arabic RTL rendering, English LTR rendering, build, TypeScript checks, and core server tests.
+- [ ] Create one final project checkpoint only after all listed tasks are marked complete.
+- [ ] Replace browser-prompt editing with accessible in-app edit dialogs for pages and components.
+- [x] Perform an explicit English LTR visual verification pass and record the outcome.
+- [ ] Add a protected project-update test that confirms a matching owner may update while a non-owner receives no update path.
+- [x] Test the complete password-reset journey: reset request, controlled delivery to the owner address, reset-token submission, and new-password sign-in.
+- [x] Diagnose and repair the password-reset link base URL so links in delivered email open the public reset page correctly.
+- [ ] Add component reordering in the protected editor API and UI, then verify the full component lifecycle.
+- [x] Record desktop and mobile QA outcomes for Arabic RTL and English LTR in the project documentation.
+- [ ] Run and document a complete authenticated QA pass for dashboard, templates, editor, exports, and settings on desktop and mobile in Arabic RTL and English LTR.
+- [x] Create a website-only, no-payment edition that retains authentication, templates, projects, editor, assets, and export-job tracking, without creating an independent mobile-app product.
+- [x] Remove all checkout, invoice, price-calculation, billing, payment-return, and payment-status user flows from the no-payment edition.
+- [x] Queue export jobs directly from the protected export flow without creating a payment record or invoking any payment provider.
+- [x] Remove payment-provider configuration and public payment endpoints from the no-payment edition, while preserving data needed for existing records safely.
+- [x] Add and run tests confirming that a signed-in project owner can queue a no-payment export and no checkout route is exposed.
+- [x] Document and preserve legacy payments and webhook records as read-only historical data with no runtime mutation path in the no-payment edition.
+- [x] Add a regression check proving that no public payment endpoint remains while the preserved legacy payment tables are untouched.

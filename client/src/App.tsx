@@ -1,42 +1,33 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { LocaleProvider } from "@/contexts/LocaleContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import Auth from "@/pages/Auth";
+import { CreateProjectPage, EditorPage } from "@/pages/BuilderPages";
+import SettingsPage from "@/pages/SettingsPage";
+import Home from "@/pages/Home";
 import NotFound from "@/pages/NotFound";
+import { DashboardPage, ExportsPage, ProjectsPage, TemplatesPage } from "@/pages/WorkspacePages";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
-  return (
-    <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
-    </Switch>
-  );
+  return <Switch>
+    <Route path="/" component={Home} />
+    <Route path="/auth" component={Auth} />
+    <Route path="/app" component={DashboardPage} />
+    <Route path="/projects" component={ProjectsPage} />
+    <Route path="/create" component={CreateProjectPage} />
+    <Route path="/templates" component={TemplatesPage} />
+    <Route path="/exports" component={ExportsPage} />
+    <Route path="/editor/:id" component={EditorPage} />
+    <Route path="/settings" component={SettingsPage} />
+    <Route component={NotFound} />
+  </Switch>;
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
-  return (
-    <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
-  );
+  return <ErrorBoundary><ThemeProvider defaultTheme="light"><LocaleProvider><TooltipProvider><Router /><Toaster /></TooltipProvider></LocaleProvider></ThemeProvider></ErrorBoundary>;
 }
 
 export default App;
