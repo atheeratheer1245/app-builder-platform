@@ -51,9 +51,9 @@
 - [ ] Add Vitest coverage for permissions, project operations, template edits, export state transitions, and language helpers.
 - [ ] Verify the desktop and mobile responsive UI, Arabic RTL rendering, English LTR rendering, build, TypeScript checks, and core server tests.
 - [ ] Create one final project checkpoint only after all listed tasks are marked complete.
-- [ ] Replace browser-prompt editing with accessible in-app edit dialogs for pages and components.
+- [x] Replace browser-prompt editing with accessible in-app edit dialogs for pages and components.
 - [x] Perform an explicit English LTR visual verification pass and record the outcome.
-- [ ] Add a protected project-update test that confirms a matching owner may update while a non-owner receives no update path.
+- [x] Add a protected project-update test that confirms a matching owner may update while a non-owner receives no update path.
 - [x] Test the complete password-reset journey: reset request, controlled delivery to the owner address, reset-token submission, and new-password sign-in.
 - [x] Diagnose and repair the password-reset link base URL so links in delivered email open the public reset page correctly.
 - [ ] Add component reordering in the protected editor API and UI, then verify the full component lifecycle.
@@ -66,3 +66,5 @@
 - [x] Add and run tests confirming that a signed-in project owner can queue a no-payment export and no checkout route is exposed.
 - [x] Document and preserve legacy payments and webhook records as read-only historical data with no runtime mutation path in the no-payment edition.
 - [x] Add a regression check proving that no public payment endpoint remains while the preserved legacy payment tables are untouched.
+- [x] Inspect and verify that page and component edits use labeled in-app dialogs with save, cancel, and keyboard-close behavior.
+- [x] Add regression coverage showing that page and component editing uses in-app dialogs rather than browser prompts.

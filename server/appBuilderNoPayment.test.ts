@@ -77,3 +77,17 @@ describe("no public payment surface", () => {
     expect(schema).toContain("read-only in this edition");
   });
 });
+
+describe("editor accessibility regression", () => {
+  it("uses labeled in-app dialogs for page and component editing rather than browser prompts", () => {
+    const editor = readFileSync(new URL("../client/src/pages/BuilderPages.tsx", import.meta.url), "utf8");
+
+    expect(editor).not.toMatch(/window\.prompt|\bprompt\s*\(/);
+    expect(editor).toContain('DialogTitle>{copy("تعديل الصفحة", "Edit page")}');
+    expect(editor).toContain('DialogTitle>{copy("تعديل المكون", "Edit component")}');
+    expect(editor).toContain('Label>{copy("العنوان بالعربية", "Arabic title")}');
+    expect(editor).toContain('Label>{copy("الاسم بالعربية", "Arabic label")}');
+    expect(editor).toContain('copy("إلغاء", "Cancel")');
+    expect(editor).toContain('copy("حفظ التغييرات", "Save changes")');
+  });
+});
