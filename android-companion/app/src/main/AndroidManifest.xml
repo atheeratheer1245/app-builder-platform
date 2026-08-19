@@ -3,6 +3,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="false"
+        android:icon="@drawable/app_builder_logo"
+        android:roundIcon="@drawable/app_builder_logo"
         android:label="App Builder"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">

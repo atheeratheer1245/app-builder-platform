@@ -121,7 +121,7 @@
 - [ ] Publish the Google OAuth consent screen to In production so any eligible visitor can sign in, then verify the public flow from authorization through workspace redirect.
 - [x] Inspect the deployed OAuth authorization request, callback URI, client-ID suffix, state cookie attributes, and session cookie handling after confirming Google Cloud is already in production.
 - [x] Produce and verify an installable APK for the App Builder companion application through a real Android build pipeline, then attach it alongside the published site link.
-- [ ] Create the App Builder Android companion app source from the website’s design system, including bilingual onboarding, templates, premium examples, projects, exports, and account navigation.
+- [x] Create the App Builder Android companion app source from the website’s design system, including bilingual onboarding, templates, premium examples, projects, exports, and account navigation.
 - [x] Let authenticated users create an owned, editable project from each template example through a protected server procedure and bilingual action buttons.
 - [x] Create and verify an Android companion WebView shell that opens the published bilingual App Builder website inside an installable APK, with safe internal and external link handling.
 - [x] Replace Google OAuth inside the Android WebView with a native Android Google sign-in flow and a server-verified app session handoff.
@@ -136,8 +136,9 @@
 - [ ] Confirm that atheer0atheer67@gmail.com is included in the permitted OAuth audience or test-user list while the public audience is being repaired.
 - [ ] Inspect the Google Auth Platform Clients page and confirm the Web OAuth client ending in n86689drhqhmkqgkoc221ifs3e335a39.apps.googleusercontent.com has the published callback URI and belongs to the external production audience shown by the user.
 - [ ] Save the confirmed Web OAuth client configuration and allow its redirect-URI change to propagate before repeating the live authorization request.
-- [ ] Replace the Android WebView shell with a standalone native App Builder experience that mirrors core website flows without embedding the website.
-- [ ] Add the user-provided App Builder icon to the standalone Android app and generate all required Android launcher icon variants.
+- [x] Replace the Android WebView shell with a standalone native App Builder experience that mirrors core website flows without embedding the website.
+- [x] Remove WebView and all browser-opening behavior from the Android application; present only native screens and the native Google account chooser when needed.
+- [x] Add the user-provided App Builder icon to the standalone Android app and generate all required Android launcher icon variants.
 - [x] Make Card create an editable information card with title, description, icon or image, and action settings in every template category.
 - [x] Make Button accept bilingual visible text and navigate to a selected project page through an editable internal link.
 - [x] Make List create editable navigation items that each route to a selected project page.
