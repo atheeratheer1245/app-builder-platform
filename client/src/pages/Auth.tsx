@@ -32,7 +32,10 @@ export default function Auth() {
     if (params.get("mode") === "reset") setMode("reset");
     const googleStatus = params.get("google");
     if (googleStatus === "configuration_error") setErrorMessage(copy("لا يمكن بدء تسجيل الدخول عبر Google قبل ضبط رابط إعادة التوجيه في إعدادات Google Cloud.", "Google sign-in needs a valid redirect URI in Google Cloud before it can start."));
-    if (googleStatus === "authorization_error") setErrorMessage(copy("تعذر إكمال Google. تأكد من إضافة رابط العودة المنشور في إعدادات Google Cloud ثم أعد المحاولة.", "Google sign-in could not be completed. Confirm that the published callback URI is added in Google Cloud, then try again."));
+    if (googleStatus === "state_error") setErrorMessage(copy("انتهت جلسة Google أو حظر المتصفح ملف التحقق. أعد المحاولة من نافذة عادية من دون حظر ملفات تعريف الارتباط.", "The Google session expired or the browser blocked the verification cookie. Try again in a regular window with cookies enabled."));
+    if (googleStatus === "exchange_error") setErrorMessage(copy("تعذر استبدال رمز Google. أعد المحاولة، وإذا استمر الخطأ تواصل مع دعم المنصة.", "Google authorization could not be exchanged. Try again; if it continues, contact platform support."));
+    if (googleStatus === "identity_error") setErrorMessage(copy("تعذر التحقق من هوية Google أو البريد الإلكتروني. استخدم حساب Google ببريد إلكتروني مؤكد.", "Google identity or email verification failed. Use a Google account with a verified email address."));
+    if (googleStatus === "authorization_error") setErrorMessage(copy("تعذر إكمال Google. أعد المحاولة، وإذا استمر الخطأ تواصل مع دعم المنصة.", "Google sign-in could not be completed. Try again; if it continues, contact platform support."));
   }, [copy]);
 
   const title = mode === "sign-in" ? copy("مرحبًا بعودتك", "Welcome back") : mode === "sign-up" ? copy("ابدأ رحلتك الإبداعية", "Start your creative journey") : mode === "forgot" ? copy("استعادة الوصول", "Restore access") : copy("كلمة مرور جديدة", "New password");

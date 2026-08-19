@@ -28,6 +28,15 @@ function getCallbackHandler() {
   return layer.route.stack[0].handle;
 }
 
+function getStartHandler() {
+  const app = express();
+  registerGoogleAuthRoutes(app);
+  const layer = (app as unknown as { _router: { stack: Array<{ route?: { path?: string; stack: Array<{ handle: (req: Request, res: Response) => Promise<void> }> } }> } })._router.stack
+    .find(item => item.route?.path === "/api/auth/google");
+  if (!layer?.route) throw new Error("Google start route was not registered");
+  return layer.route.stack[0].handle;
+}
+
 function responseRecorder() {
   return {
     cookie: vi.fn(),
@@ -62,13 +71,20 @@ describe("Google OAuth", () => {
     expect(url.searchParams.get("state")).toBe("csrf-state");
   });
 
+  it("uses a short-lived Lax state cookie so the callback receives state on Google top-level navigation", async () => {
+    const handler = getStartHandler();
+    const res = responseRecorder();
+    await handler({ protocol: "https", headers: {} } as Request, res);
+    expect(res.cookie).toHaveBeenCalledWith("app_builder_google_state", expect.any(String), expect.objectContaining({ sameSite: "lax", maxAge: 10 * 60 * 1000 }));
+  });
+
   it("rejects a callback with a mismatched state cookie before exchanging the code", async () => {
     const handler = getCallbackHandler();
     const res = responseRecorder();
 
     await handler(callbackRequest({ state: "wrong-state", code: "code", cookie: "app_builder_google_state=expected-state" }), res);
 
-    expect(res.redirect).toHaveBeenCalledWith("/auth?google=authorization_error");
+    expect(res.redirect).toHaveBeenCalledWith("/auth?google=state_error");
     expect(res.clearCookie).toHaveBeenCalledWith("app_builder_google_state", expect.any(Object));
   });
 
@@ -80,7 +96,7 @@ describe("Google OAuth", () => {
     await handler(callbackRequest({ state: "expected-state", code: "rejected-code", cookie: "app_builder_google_state=expected-state" }), res);
 
     expect(fetch).toHaveBeenCalledWith("https://oauth2.googleapis.com/token", expect.objectContaining({ method: "POST" }));
-    expect(res.redirect).toHaveBeenCalledWith("/auth?google=authorization_error");
+    expect(res.redirect).toHaveBeenCalledWith("/auth?google=exchange_error");
     expect(mocks.setLocalSession).not.toHaveBeenCalled();
   });
 

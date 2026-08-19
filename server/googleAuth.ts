@@ -64,7 +64,7 @@ async function findOrCreateGoogleUser(identity: { googleId: string; email: strin
 }
 
 function clearGoogleState(req: Request, res: Response) {
-  res.clearCookie(GOOGLE_STATE_COOKIE, { ...getSessionCookieOptions(req), maxAge: -1 });
+  res.clearCookie(GOOGLE_STATE_COOKIE, { ...getSessionCookieOptions(req), sameSite: "lax", maxAge: -1 });
 }
 
 export function registerGoogleAuthRoutes(app: Express) {
@@ -74,7 +74,9 @@ export function registerGoogleAuthRoutes(app: Express) {
       const state = randomBytes(32).toString("base64url");
       const redirectUri = `${getRequestBaseUrl(req)}/api/auth/google/callback`;
       res.set("Cache-Control", "no-store");
-      res.cookie(GOOGLE_STATE_COOKIE, state, { ...getSessionCookieOptions(req), maxAge: 10 * 60 * 1000 });
+      // Google returns to this site through a top-level GET navigation. Lax keeps CSRF
+      // state protection while ensuring browsers return this short-lived cookie reliably.
+      res.cookie(GOOGLE_STATE_COOKIE, state, { ...getSessionCookieOptions(req), sameSite: "lax", maxAge: 10 * 60 * 1000 });
       res.redirect(buildGoogleAuthorizationUrl({ clientId, redirectUri, state }));
     } catch {
       res.redirect("/auth?google=configuration_error");
@@ -87,7 +89,7 @@ export function registerGoogleAuthRoutes(app: Express) {
     const code = typeof req.query.code === "string" ? req.query.code : "";
     if (!code || !callbackState || !expectedState || callbackState !== expectedState) {
       clearGoogleState(req, res);
-      res.redirect("/auth?google=authorization_error");
+      res.redirect("/auth?google=state_error");
       return;
     }
     try {
@@ -98,9 +100,12 @@ export function registerGoogleAuthRoutes(app: Express) {
       await setLocalSession(req, res, userId);
       clearGoogleState(req, res);
       res.redirect("/app");
-    } catch {
+    } catch (error) {
       clearGoogleState(req, res);
-      res.redirect("/auth?google=authorization_error");
+      const message = error instanceof Error ? error.message : "Unknown Google OAuth error";
+      const failure = message.includes("exchange") ? "exchange_error" : message.includes("identity") || message.includes("verify") ? "identity_error" : "authorization_error";
+      console.warn("[Google OAuth] Callback failed", { failure });
+      res.redirect(`/auth?google=${failure}`);
     }
   });
 }
