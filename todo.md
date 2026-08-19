@@ -89,3 +89,5 @@
 - [ ] Verify the Google OAuth callback after the redirect URI is registered, including state-cookie validation, token exchange, identity verification, user upsert, and local session creation.
 - [x] Add Google OAuth callback tests for state mismatch, token-exchange failure, and verified-success session creation.
 - [ ] Register and verify the published App Builder callback URL in Google Cloud, then complete a real Google sign-in redirect into the workspace.
+- [ ] Replace the configured Google OAuth client ID with an active Web OAuth client and securely set its matching client secret. (The supplied ID `271495009963-1sb7t2oke4vp8ai4klqtep4oj7975p12.apps.googleusercontent.com` was rejected by Google as `deleted_client`.)
+- [ ] Obtain or create an active Google OAuth 2.0 Web application client, add the published callback URI, and provide its client ID and matching secret securely.
