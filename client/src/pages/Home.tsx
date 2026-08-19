@@ -2,6 +2,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { ExportPlansPanel } from "@/components/ExportPlansPanel";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { PremiumExamplesPanel } from "@/components/PremiumExamplesPanel";
+import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
 import { useLocale } from "@/contexts/LocaleContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Box, CheckCircle2, Layers3, PlayCircle, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
@@ -19,7 +20,7 @@ export default function Home() {
     [ShieldCheck, copy("تصدير واضح", "Clear export flow"), copy("تابع حالة APK وAAB وIPA قبل التنزيل.", "Track APK, AAB, and IPA status before download.")],
   ];
   return <div className="landing-page">
-    <header className="landing-header container"><Link href="/"><BrandMark /></Link><div className="flex items-center gap-3"><LanguageToggle /><Link href="/auth"><Button variant="outline" className="landing-login">{copy("تسجيل الدخول", "Sign in")}</Button></Link><Link href="/app"><Button className="landing-cta">{copy("ابدأ الآن", "Get started")}</Button></Link></div></header>
+    <header className="landing-header container"><Link href="/"><BrandMark /></Link><div className="flex items-center gap-3"><Link href="/guide" className="landing-login">{copy("الدليل", "Guide")}</Link><PwaInstallPrompt isArabic={isArabic} /><LanguageToggle /><Link href="/auth"><Button variant="outline" className="landing-login">{copy("تسجيل الدخول", "Sign in")}</Button></Link><Link href="/app"><Button className="landing-cta">{copy("ابدأ الآن", "Get started")}</Button></Link></div></header>
     <main>
       <section className="hero container">
         <div className="hero-copy"><div className="eyebrow"><Sparkles className="h-3.5 w-3.5" />{copy("ابنِ. صمّم. أطلق.", "Build. Design. Deploy.")}</div><h1>{headline}</h1><p>{copy("منصة عمل مرنة لتصميم تطبيقات الموبايل عبر قوالب متخصصة، مع محرر واضح ومسار تصدير منظم.", "A focused workspace for creating mobile apps with specialized templates, a clear editor, and an organized export flow.")}</p><div className="hero-actions"><Link href="/app"><Button className="hero-primary">{copy("إنشاء مشروع جديد", "Create a new project")}<Arrow className="h-4 w-4" /></Button></Link><a href="#how-it-works" className="hero-secondary"><PlayCircle className="h-5 w-5" />{copy("استكشف المنصة", "Explore the platform")}</a></div><div className="hero-trust"><CheckCircle2 />{copy("واجهة عربية كاملة مع دعم RTL", "Full Arabic interface with RTL support")}</div></div>

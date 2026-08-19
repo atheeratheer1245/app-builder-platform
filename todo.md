@@ -110,3 +110,8 @@
 - [ ] Preserve fully free direct exports as a separate option with no checkout, invoice, or payment-provider call.
 - [ ] Build the paid per-export calculation that rounds file size up to 10-MB units and requires verified payment before paid export queueing.
 - [ ] Create one polished, editable paid example app for each of the seven template categories, with preview, bilingual description, and access protection distinct from the free base templates.
+- [ ] Restrict checkout, payment records, and verified-payment queueing to paid exports only; keep all free exports free and independent of payment state.
+- [x] Make every paid application example card open a dedicated bilingual preview with its pages and components, rather than acting as display-only content.
+- [x] Add a user-facing bilingual guide page that explains free exports, paid exports, examples, and the current cloud-build limitation, with a visible route from the application.
+- [ ] Build a companion mobile application experience that mirrors the App Builder website’s authentication, templates, premium examples, projects, exports, and free-versus-paid distinction in Arabic RTL and English LTR.
+- [x] Add installable mobile web-app packaging with manifest, service worker, and user guidance while native APK/IPA cloud builds remain deferred.

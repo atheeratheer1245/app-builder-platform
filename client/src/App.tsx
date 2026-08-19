@@ -7,6 +7,7 @@ import { CreateProjectPage, EditorPage } from "@/pages/BuilderPages";
 import SettingsPage from "@/pages/SettingsPage";
 import Home from "@/pages/Home";
 import NotFound from "@/pages/NotFound";
+import { GuidePage, PremiumExamplePreviewPage } from "@/pages/PublicPages";
 import { DashboardPage, ExportsPage, ProjectsPage, TemplatesPage } from "@/pages/WorkspacePages";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -15,6 +16,8 @@ function Router() {
   return <Switch>
     <Route path="/" component={Home} />
     <Route path="/auth" component={Auth} />
+    <Route path="/guide" component={GuidePage} />
+    <Route path="/examples/:slug" component={PremiumExamplePreviewPage} />
     <Route path="/app" component={DashboardPage} />
     <Route path="/projects" component={ProjectsPage} />
     <Route path="/create" component={CreateProjectPage} />

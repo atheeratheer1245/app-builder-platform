@@ -1,0 +1,19 @@
+{
+  "name": "App Builder",
+  "short_name": "App Builder",
+  "description": "Create, customize, and export mobile application projects.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbfcff",
+  "theme_color": "#6246d5",
+  "icons": [
+    {
+      "src": "/manus-storage/appbuilder-app-icon_ff77e513.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
