@@ -185,7 +185,7 @@ export const exportJobs = mysqlTable(
   ],
 );
 
-/** Payment ledger for current Moyasar invoices and historical provider records. */
+/** Historical payment ledger retained read-only after the platform became fully free. */
 export const payments = mysqlTable(
   "payments",
   {

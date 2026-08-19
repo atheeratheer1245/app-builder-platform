@@ -49,7 +49,7 @@
 - [x] Add a signed Tap callback/webhook endpoint that verifies the provider charge before queuing an export job.
 - [x] Clarify billing as one-time export payments in the product copy, or add actual subscription plan and subscription-status data structures if recurring billing is required.
 - [ ] Add Vitest coverage for permissions, project operations, template edits, export state transitions, and language helpers.
-- [ ] Verify the desktop and mobile responsive UI, Arabic RTL rendering, English LTR rendering, build, TypeScript checks, and core server tests.
+- [ ] Verify the desktop and mobile responsive UI, Arabic RTL rendering, English LTR rendering, build, TypeScript checks, and core server tests. (The public-page, build, type, and test portions are complete; authenticated workspace verification remains.)
 - [ ] Create one final project checkpoint only after all listed tasks are marked complete.
 - [x] Replace browser-prompt editing with accessible in-app edit dialogs for pages and components.
 - [x] Perform an explicit English LTR visual verification pass and record the outcome.
@@ -78,8 +78,8 @@
 - [x] Remove all user-facing Manus names, logos, attribution, and hosted-domain references from the website code and metadata.
 - [x] Verify desktop and mobile public pages do not visually expose Manus branding.
 - [ ] Prepare the project for a user-owned custom domain and provide the required DNS connection steps.
-- [ ] Run a full-project scan for Manus, hosting domains, and Manus asset paths; remove or replace every user-facing or metadata reference that can be changed safely.
-- [ ] Perform and document a post-change desktop and mobile public-page visual QA pass confirming no Manus branding appears in rendered UI or browser-visible asset surfaces.
+- [ ] Run a full-project scan for Manus, hosting domains, and Manus asset paths; remove or replace every user-facing or metadata reference that can be changed safely. (The remaining storage prefix is documented as an infrastructure constraint.)
+- [ ] Perform and document a post-change desktop and mobile public-page visual QA pass confirming no Manus branding appears in rendered UI or browser-visible asset surfaces. (Rendered pages are verified; browser metadata inspection remains.)
 - [x] Verify whether appbuilder.com is available and collect current first-year pricing from reputable registrars. (Unavailable: registered by another party.)
 - [ ] Verify whether appbuilder.sa is available and collect current first-year pricing from reputable Saudi domain registrars.
 - [ ] Present the selected registrar, exact price, renewal terms, and purchase consequence for the user’s explicit approval before checkout.
@@ -91,3 +91,12 @@
 - [ ] Register and verify the published App Builder callback URL in Google Cloud, then complete a real Google sign-in redirect into the workspace.
 - [x] Replace the configured Google OAuth client ID with an active Web OAuth client and securely set its matching client secret. (The former ID `271495009963-1sb7t2oke4vp8ai4klqtep4oj7975p12.apps.googleusercontent.com` was rejected by Google as `deleted_client`.)
 - [x] Obtain or create an active Google OAuth 2.0 Web application client, add the published callback URI, and provide its client ID and matching secret securely.
+- [ ] Diagnose Google 403 access denial after authorization start, including OAuth app publishing status, audience type, test-user allowlist, and Google Cloud account/project permissions.
+- [ ] Configure the correct Google OAuth audience or test-user access, then verify a permitted Google account completes sign-in and returns to the workspace.
+- [x] Remove Moyasar checkout, payment-return, billing, and provider callback flows from the fully free edition.
+- [x] Restore direct protected export queuing for APK, AAB, and IPA requests without a payment prerequisite.
+- [x] Remove export-price calculation and all user-facing pricing or payment status copy from the fully free edition.
+- [x] Preserve historical payment records as read-only data with no active provider mutation path.
+- [x] Add and run regression tests proving that the free edition queues exports directly and exposes no payment or billing route.
+- [x] Complete the missing Arabic mobile public-page QA and record explicit pass/fail results.
+- [x] Document the technical storage-prefix limitation for uploaded icon and favicon URLs, and verify that no visible text or imagery exposes unwanted branding.

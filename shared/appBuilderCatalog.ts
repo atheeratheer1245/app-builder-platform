@@ -155,28 +155,3 @@ export const templateCatalog: TemplateCatalogItem[] = [
     ],
   },
 ];
-
-export const pricePerTenMbSar: Record<TemplateCategory, number> = {
-  ecommerce: 50,
-  education: 70,
-  games: 120,
-  music: 100,
-  podcasts: 100,
-  movies: 150,
-  services: 40,
-};
-
-export const TEN_MB_BYTES = 10 * 1024 * 1024;
-
-export function getExportPrice(category: TemplateCategory, estimatedSizeBytes: number) {
-  const sizeUnits = Math.max(1, Math.ceil(Math.max(0, estimatedSizeBytes) / TEN_MB_BYTES));
-  const priceSar = pricePerTenMbSar[category];
-
-  return {
-    sizeUnits,
-    unitPriceSar: priceSar,
-    unitPriceHalalas: priceSar * 100,
-    totalPriceSar: priceSar * sizeUnits,
-    totalPriceHalalas: priceSar * sizeUnits * 100,
-  };
-}

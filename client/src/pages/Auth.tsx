@@ -8,11 +8,12 @@ import { trpc } from "@/lib/trpc";
 import { Eye, EyeOff, Loader2, LockKeyhole, Mail, Sparkles } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
+import "./auth-overrides.css";
 
 type AuthMode = "sign-in" | "sign-up" | "forgot" | "reset";
 
 export default function Auth() {
-  const { copy } = useLocale();
+  const { copy, isArabic } = useLocale();
   const [mode, setMode] = useState<AuthMode>("sign-in");
   const [showPassword, setShowPassword] = useState(false);
   const [, setLocation] = useLocation();
@@ -31,7 +32,7 @@ export default function Auth() {
     if (params.get("mode") === "reset") setMode("reset");
     const googleStatus = params.get("google");
     if (googleStatus === "configuration_error") setErrorMessage(copy("لا يمكن بدء تسجيل الدخول عبر Google قبل ضبط رابط إعادة التوجيه في إعدادات Google Cloud.", "Google sign-in needs a valid redirect URI in Google Cloud before it can start."));
-    if (googleStatus === "authorization_error") setErrorMessage(copy("تعذر إكمال Google. أضف رابط العودة المنشور في Google Cloud ثم أعد المحاولة: appbuilder-ewgsiuw6.manus.space/api/auth/google/callback", "Google sign-in could not be completed. Add the published callback URI in Google Cloud, then try again: appbuilder-ewgsiuw6.manus.space/api/auth/google/callback."));
+    if (googleStatus === "authorization_error") setErrorMessage(copy("تعذر إكمال Google. تأكد من إضافة رابط العودة المنشور في إعدادات Google Cloud ثم أعد المحاولة.", "Google sign-in could not be completed. Confirm that the published callback URI is added in Google Cloud, then try again."));
   }, [copy]);
 
   const title = mode === "sign-in" ? copy("مرحبًا بعودتك", "Welcome back") : mode === "sign-up" ? copy("ابدأ رحلتك الإبداعية", "Start your creative journey") : mode === "forgot" ? copy("استعادة الوصول", "Restore access") : copy("كلمة مرور جديدة", "New password");
@@ -54,17 +55,17 @@ export default function Auth() {
 
   return <div className="auth-page">
     <div className="auth-nav"><Link href="/"><BrandMark /></Link><LanguageToggle /></div>
-    <div className="auth-grid">
-      <section className="auth-showcase">
+    <div className={`auth-grid${isArabic ? " auth-grid-rtl" : ""}`} dir="ltr">
+      <section className="auth-showcase" dir={isArabic ? "rtl" : "ltr"}>
         <div className="auth-orbit auth-orbit-one" /><div className="auth-orbit auth-orbit-two" />
-        <div className="relative z-10 max-w-md">
+        <div className="relative z-10 mx-auto w-full max-w-md text-start">
           <div className="eyebrow-light"><Sparkles className="h-3.5 w-3.5" />{copy("منصة البناء الاحترافية", "Professional app building platform")}</div>
           <h1>{copy("حوّل فكرتك إلى تطبيق موبايل متكامل.", "Turn your idea into a complete mobile app.")}</h1>
           <p>{copy("اختر قالبًا، حرر الشاشات، ثم جهّز ملف التصدير من مساحة واحدة منظمة.", "Choose a template, edit screens, and prepare your export from one focused workspace.")}</p>
           <div className="auth-stat-row"><div><strong>7</strong><span>{copy("فئات جاهزة", "ready categories")}</span></div><div><strong>RTL</strong><span>{copy("دعم عربي كامل", "Arabic ready")}</span></div><div><strong>3</strong><span>{copy("صيغ تصدير", "export formats")}</span></div></div>
         </div>
       </section>
-      <section className="auth-card-wrap">
+      <section className="auth-card-wrap" dir={isArabic ? "rtl" : "ltr"}>
         <div className="auth-card">
           <div className="mb-8"><p className="section-kicker">APP BUILDER</p><h2>{title}</h2><p className="mt-2 text-sm leading-6 text-slate-500">{description}</p></div>
           {notice && <div className="form-notice" role="status">{notice}</div>}
