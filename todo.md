@@ -120,3 +120,4 @@
 - [ ] Produce and verify an installable APK for the App Builder companion application through a real Android build pipeline, then attach it alongside the published site link.
 - [ ] Create the App Builder Android companion app source from the website’s design system, including bilingual onboarding, templates, premium examples, projects, exports, and account navigation.
 - [x] Let authenticated users create an owned, editable project from each template example through a protected server procedure and bilingual action buttons.
+- [x] Create and verify an Android companion WebView shell that opens the published bilingual App Builder website inside an installable APK, with safe internal and external link handling.
