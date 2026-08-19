@@ -33,6 +33,7 @@ function responseRecorder() {
     cookie: vi.fn(),
     clearCookie: vi.fn(),
     redirect: vi.fn(),
+    set: vi.fn(),
   } as unknown as Response;
 }
 
