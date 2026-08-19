@@ -128,6 +128,7 @@
 - [ ] Validate the native Google sign-in flow against the Android OAuth client after the user creates it, including package name, signing SHA-1, account chooser, and WebView session handoff.
 - [ ] Diagnose and repair Google OAuth in the published website browser flow, including authorization response, callback, state verification, and user session creation.
 - [ ] Capture and classify the live published Google OAuth callback failure, then verify the repaired browser flow returns a signed-in user to the workspace.
+- [ ] Capture the exact user-visible error or final callback query from a real failed Google browser sign-in to distinguish Google-side denial, code exchange, identity verification, and session failures.
 - [ ] Replace the Android WebView shell with a standalone native App Builder experience that mirrors core website flows without embedding the website.
 - [ ] Add the user-provided App Builder icon to the standalone Android app and generate all required Android launcher icon variants.
 - [x] Make Card create an editable information card with title, description, icon or image, and action settings in every template category.

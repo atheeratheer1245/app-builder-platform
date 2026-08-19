@@ -121,8 +121,10 @@ export function registerGoogleAuthRoutes(app: Express) {
       const identity = await verifyGoogleIdentity(await exchangeGoogleCode(code, redirectUri));
       const userId = await findOrCreateGoogleUser(identity);
       if (!userId) throw new Error("Unable to create Google account");
-      await setLocalSession(req, res, userId);
       clearGoogleState(req, res);
+      // Write the authenticated session after clearing the short-lived OAuth state.
+      // This preserves the session in deployments that retain only the final Set-Cookie header.
+      await setLocalSession(req, res, userId);
       res.redirect("/app");
     } catch (error) {
       clearGoogleState(req, res);
