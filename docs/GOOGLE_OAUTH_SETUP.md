@@ -25,3 +25,7 @@ https://appbuilder-ewgsiuw6.manus.space/api/auth/google/callback
 ## خطوات Google Cloud
 
 افتح Google Cloud Console ثم انتقل إلى: **APIs & Services → Credentials → OAuth 2.0 Client IDs → [عميل App Builder] → Authorized redirect URIs**. أضف الرابط أعلاه، ثم احفظ التغيير. لا تغيّر Client ID أو Client Secret داخل المشروع ما لم يصدر عميل OAuth جديد عمدًا.
+
+## اسم التطبيق المعروض في Google
+
+أظهر اختبار Google اسمًا قديمًا للتطبيق في شاشة الخطأ. لتظهر هوية **App Builder** بدلًا منه، افتح **Google Auth Platform → Branding** في المشروع نفسه، ثم حدّث **App name** و**User support email** واحفظ. هذا تغيير داخل Google Cloud ولا يتطلب تعديلًا لمعرف العميل داخل الموقع.

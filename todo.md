@@ -85,4 +85,7 @@
 - [ ] Present the selected registrar, exact price, renewal terms, and purchase consequence for the user’s explicit approval before checkout.
 - [ ] Purchase appbuilder.sa only after explicit approval, then connect its DNS to the published App Builder site.
 - [ ] Diagnose the current Google OAuth sign-in failure across authorization start, callback, state validation, token exchange, and local session creation.
+- [x] Document that the current Google sign-in is blocked at authorization start by Google Error 400: redirect_uri_mismatch.
+- [ ] Verify the Google OAuth callback after the redirect URI is registered, including state-cookie validation, token exchange, identity verification, user upsert, and local session creation.
+- [x] Add Google OAuth callback tests for state mismatch, token-exchange failure, and verified-success session creation.
 - [ ] Register and verify the published App Builder callback URL in Google Cloud, then complete a real Google sign-in redirect into the workspace.
