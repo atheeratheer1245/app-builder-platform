@@ -12,7 +12,6 @@ import { getRequestBaseUrl } from "./publicUrl";
 const GOOGLE_AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_STATE_COOKIE = "app_builder_google_state";
-const GOOGLE_REDIRECT_COOKIE = "app_builder_google_redirect";
 const googleJwks = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
 
 function getGoogleConfig() {
@@ -66,11 +65,9 @@ async function findOrCreateGoogleUser(identity: { googleId: string; email: strin
 
 function clearGoogleState(req: Request, res: Response) {
   res.clearCookie(GOOGLE_STATE_COOKIE, { ...getSessionCookieOptions(req), sameSite: "lax", maxAge: -1 });
-  res.clearCookie(GOOGLE_REDIRECT_COOKIE, { ...getSessionCookieOptions(req), sameSite: "lax", maxAge: -1 });
 }
 
-function getGoogleCallbackUrl(req: Request) {
-  const stored = parse(req.headers.cookie ?? "")[GOOGLE_REDIRECT_COOKIE];
+function getGoogleCallbackUrl(req: Request, stored?: string) {
   if (stored) {
     try {
       const url = new URL(stored);
@@ -82,6 +79,18 @@ function getGoogleCallbackUrl(req: Request) {
   return `${getRequestBaseUrl(req)}/api/auth/google/callback`;
 }
 
+function readGoogleState(req: Request) {
+  const stored = parse(req.headers.cookie ?? "")[GOOGLE_STATE_COOKIE];
+  if (!stored) return { state: undefined, redirectUri: undefined };
+  try {
+    const parsed = JSON.parse(stored) as { state?: unknown; redirectUri?: unknown };
+    if (typeof parsed.state === "string") return { state: parsed.state, redirectUri: typeof parsed.redirectUri === "string" ? parsed.redirectUri : undefined };
+  } catch {
+    // Accept the prior state-only cookie during a rolling deployment.
+  }
+  return { state: stored, redirectUri: undefined };
+}
+
 export function registerGoogleAuthRoutes(app: Express) {
   app.get("/api/auth/google", (req, res) => {
     try {
@@ -91,8 +100,7 @@ export function registerGoogleAuthRoutes(app: Express) {
       res.set("Cache-Control", "no-store");
       // Google returns to this site through a top-level GET navigation. Lax keeps CSRF
       // state protection while ensuring browsers return this short-lived cookie reliably.
-      res.cookie(GOOGLE_STATE_COOKIE, state, { ...getSessionCookieOptions(req), sameSite: "lax", maxAge: 10 * 60 * 1000 });
-      res.cookie(GOOGLE_REDIRECT_COOKIE, redirectUri, { ...getSessionCookieOptions(req), sameSite: "lax", maxAge: 10 * 60 * 1000 });
+      res.cookie(GOOGLE_STATE_COOKIE, JSON.stringify({ state, redirectUri }), { ...getSessionCookieOptions(req), sameSite: "lax", maxAge: 10 * 60 * 1000 });
       res.redirect(buildGoogleAuthorizationUrl({ clientId, redirectUri, state }));
     } catch {
       res.redirect("/auth?google=configuration_error");
@@ -101,7 +109,7 @@ export function registerGoogleAuthRoutes(app: Express) {
 
   app.get("/api/auth/google/callback", async (req, res) => {
     const callbackState = typeof req.query.state === "string" ? req.query.state : "";
-    const expectedState = parse(req.headers.cookie ?? "")[GOOGLE_STATE_COOKIE];
+      const { state: expectedState, redirectUri: storedRedirectUri } = readGoogleState(req);
     const code = typeof req.query.code === "string" ? req.query.code : "";
     if (!code || !callbackState || !expectedState || callbackState !== expectedState) {
       clearGoogleState(req, res);
@@ -109,7 +117,7 @@ export function registerGoogleAuthRoutes(app: Express) {
       return;
     }
     try {
-      const redirectUri = getGoogleCallbackUrl(req);
+      const redirectUri = getGoogleCallbackUrl(req, storedRedirectUri);
       const identity = await verifyGoogleIdentity(await exchangeGoogleCode(code, redirectUri));
       const userId = await findOrCreateGoogleUser(identity);
       if (!userId) throw new Error("Unable to create Google account");

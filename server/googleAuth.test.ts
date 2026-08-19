@@ -87,8 +87,9 @@ describe("Google OAuth", () => {
     const handler = getStartHandler();
     const res = responseRecorder();
     await handler({ protocol: "https", headers: {} } as Request, res);
-    expect(res.cookie).toHaveBeenCalledWith("app_builder_google_state", expect.any(String), expect.objectContaining({ sameSite: "lax", maxAge: 10 * 60 * 1000 }));
-    expect(res.cookie).toHaveBeenCalledWith("app_builder_google_redirect", "https://app.example.com/api/auth/google/callback", expect.objectContaining({ sameSite: "lax", maxAge: 10 * 60 * 1000 }));
+    const call = vi.mocked(res.cookie).mock.calls.find(([name]) => name === "app_builder_google_state");
+    expect(call?.[2]).toMatchObject({ sameSite: "lax", maxAge: 10 * 60 * 1000 });
+    expect(JSON.parse(String(call?.[1]))).toMatchObject({ redirectUri: "https://app.example.com/api/auth/google/callback" });
   });
 
   it("rejects a callback with a mismatched state cookie before exchanging the code", async () => {
@@ -119,7 +120,8 @@ describe("Google OAuth", () => {
     const handler = getCallbackHandler();
     const res = responseRecorder();
 
-    await handler(callbackRequest({ state: "expected-state", code: "rejected-code", cookie: "app_builder_google_state=expected-state; app_builder_google_redirect=https%3A%2F%2Fapp.example.com%2Fapi%2Fauth%2Fgoogle%2Fcallback" }), res);
+    const stateCookie = encodeURIComponent(JSON.stringify({ state: "expected-state", redirectUri: "https://app.example.com/api/auth/google/callback" }));
+    await handler(callbackRequest({ state: "expected-state", code: "rejected-code", cookie: `app_builder_google_state=${stateCookie}` }), res);
 
     const request = vi.mocked(fetch).mock.calls[0]?.[1];
     expect((request?.body as URLSearchParams).get("redirect_uri")).toBe("https://app.example.com/api/auth/google/callback");
