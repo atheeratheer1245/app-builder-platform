@@ -10,7 +10,7 @@
 - [x] Replace placeholder authentication handlers with real email/password sign-up and sign-in, password reset, Google sign-in, and explicit accessible error states.
 - [x] Supply a working SMTP server configuration to enable real delivery of password-reset messages; the latest submitted configuration was invalid and was declined for correction.
 - [x] Configure Gmail SMTP with a valid app password and verify password-reset delivery without exposing credentials.
-- [ ] Confirm the Google OAuth client secret and register the exact production redirect URI in Google Cloud before testing sign-in.
+- [x] Confirm the Google OAuth client secret and register the exact production redirect URI in Google Cloud before testing sign-in.
 - [ ] Register the current preview callback URI in Google Cloud and verify a complete Google sign-in redirect into the workspace.
 - [x] [Superseded] Confirm whether Tap remains in test mode or provide a valid live secret/public key pair before switching environments.
 - [x] [Superseded] Confirm Tap test mode with the current keys and prepare a guarded production-mode switch that requires verified live keys.
@@ -89,5 +89,5 @@
 - [ ] Verify the Google OAuth callback after the redirect URI is registered, including state-cookie validation, token exchange, identity verification, user upsert, and local session creation.
 - [x] Add Google OAuth callback tests for state mismatch, token-exchange failure, and verified-success session creation.
 - [ ] Register and verify the published App Builder callback URL in Google Cloud, then complete a real Google sign-in redirect into the workspace.
-- [ ] Replace the configured Google OAuth client ID with an active Web OAuth client and securely set its matching client secret. (The supplied ID `271495009963-1sb7t2oke4vp8ai4klqtep4oj7975p12.apps.googleusercontent.com` was rejected by Google as `deleted_client`.)
-- [ ] Obtain or create an active Google OAuth 2.0 Web application client, add the published callback URI, and provide its client ID and matching secret securely.
+- [x] Replace the configured Google OAuth client ID with an active Web OAuth client and securely set its matching client secret. (The former ID `271495009963-1sb7t2oke4vp8ai4klqtep4oj7975p12.apps.googleusercontent.com` was rejected by Google as `deleted_client`.)
+- [x] Obtain or create an active Google OAuth 2.0 Web application client, add the published callback URI, and provide its client ID and matching secret securely.
