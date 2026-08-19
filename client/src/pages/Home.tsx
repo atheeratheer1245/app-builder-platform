@@ -1,5 +1,6 @@
 import { BrandMark } from "@/components/BrandMark";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { PremiumExamplesPanel } from "@/components/PremiumExamplesPanel";
 import { useLocale } from "@/contexts/LocaleContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Box, CheckCircle2, Layers3, PlayCircle, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
@@ -24,6 +25,7 @@ export default function Home() {
         <div className="hero-visual"><div className="visual-grid" /><div className="hero-glow glow-top" /><div className="hero-glow glow-bottom" /><div className="app-orbit orbit-a" /><div className="app-orbit orbit-b" /><div className="hero-logo-disc"><img src={LOGO_URL} alt="App Builder" /></div><div className="floating-panel project-panel"><span className="panel-label">01</span><strong>{copy("مشروعك القادم", "Your next project")}</strong><p>{copy("اختر قالبًا وابدأ التخصيص", "Choose a template and start tailoring")}</p><div className="mini-progress"><i /></div></div><div className="floating-panel export-panel"><div className="export-indicator"><CheckCircle2 /></div><div><strong>APK / AAB / IPA</strong><p>{copy("مسار تصدير واحد", "One export flow")}</p></div></div></div>
       </section>
       <section id="how-it-works" className="feature-section container"><div className="section-heading"><p className="section-kicker">{copy("كل ما تحتاجه", "Everything you need")}</p><h2>{copy("أدوات واضحة لبداية أسرع.", "Clear tools for a faster start.")}</h2></div><div className="feature-grid">{features.map(([Icon, title, description]) => <article className="feature-card" key={String(title)}><div className="feature-icon"><Icon className="h-5 w-5" /></div><h3>{title}</h3><p>{description}</p></article>)}</div></section>
+      <div className="container"><PremiumExamplesPanel isArabic={isArabic} /></div>
     </main>
   </div>;
 }

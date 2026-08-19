@@ -100,3 +100,13 @@
 - [x] Add and run regression tests proving that the free edition queues exports directly and exposes no payment or billing route.
 - [x] Complete the missing Arabic mobile public-page QA and record explicit pass/fail results.
 - [x] Document the technical storage-prefix limitation for uploaded icon and favicon URLs, and verify that no visible text or imagery exposes unwanted branding.
+- [ ] Define the free and paid App Builder plans, including limits, included exports, premium features, and bilingual product copy.
+- [ ] Confirm the paid-plan price, billing frequency, and the payment provider to use before enabling any checkout or collection flow.
+- [ ] Add plan entitlement data and server-side access controls while preserving the current free direct-export path.
+- [ ] Build a bilingual plans and upgrade experience that clearly distinguishes free capabilities from paid benefits.
+- [ ] Integrate the selected payment provider only after credentials and explicit approval are available, with server-side verification and no card handling in the application.
+- [ ] Add regression tests for free entitlements, paid entitlements, access denial, successful payment verification, and bilingual plan presentation.
+- [ ] Restore the approved per-10-MB paid-export price catalog: e-commerce SAR 50, education SAR 70, games SAR 120, music SAR 100, podcasts SAR 100, movies and shows SAR 150, and services SAR 40.
+- [ ] Preserve fully free direct exports as a separate option with no checkout, invoice, or payment-provider call.
+- [ ] Build the paid per-export calculation that rounds file size up to 10-MB units and requires verified payment before paid export queueing.
+- [ ] Create one polished, editable paid example app for each of the seven template categories, with preview, bilingual description, and access protection distinct from the free base templates.
