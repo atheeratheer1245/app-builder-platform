@@ -136,4 +136,13 @@
 - [x] Make Form insert a ready-to-customize form appropriate to the active template category, with editable fields and submit label.
 - [x] Add game-specific programmable blocks for scenes, player movement, collisions, score, levels, and win or lose conditions in game projects.
 - [x] Add an editable, functional Search Bar component to the e-commerce template only, with live preview behavior in the editor.
+- [x] Add an e-commerce Product component with optional bilingual name and description, price, discounted or updated price, supported common currency, and remaining stock.
+- [x] Make Card an optional-label rich-text content block suitable for lessons, courses, and articles across all template categories.
+- [x] Make every List item require a name and a user-selected destination page, with Arabic, English, or bilingual item labels.
+- [x] Make Image and Video use actual project-gallery assets, with Video including an optional visible name.
+- [x] Make Button use optional visible text and a user-selected destination page across all template categories.
+- [x] Make Form derive its ready fields from the active page and template context rather than only a generic category default.
+- [x] Make component-level Arabic and English labels optional for all component types, while keeping required List-item names.
+- [x] Make the functional Search Bar available with appropriate search behavior in e-commerce, music, podcasts, movies, and shows templates.
+- [x] Upgrade all seven template examples into professional, bilingual, multi-page application demos with category-appropriate content, component composition, and navigation.
 - [ ] Add regression tests and bilingual visual QA covering all configurable component types, asset selection, navigation, forms, and game blocks.

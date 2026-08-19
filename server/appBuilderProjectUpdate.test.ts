@@ -72,4 +72,12 @@ describe("protected project update", () => {
     await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "GameScene", labelAr: "مشهد", labelEn: "Scene" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(mocks.getRequiredDb).not.toHaveBeenCalled();
   });
+
+  it("allows optional component labels but rejects incomplete navigation items", async () => {
+    mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "ecommerce" });
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "List", labelAr: "", labelEn: "", properties: { items: [{ labelAr: "", labelEn: "", targetPageId: null }] } })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(mocks.getRequiredDb).not.toHaveBeenCalled();
+  });
 });

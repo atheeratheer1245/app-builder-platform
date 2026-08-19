@@ -36,10 +36,12 @@ describe("create project from premium example", () => {
   it("creates an owned editable project with the example screens and components", async () => {
     const result = await appBuilderRouter.createCaller(ownerContext()).projects.createFromExample({ slug: "nova-market" });
     expect(result).toEqual({ id: 501, nameAr: "متجر نوفا", nameEn: "Nova Market" });
-    expect(mocks.values).toHaveBeenCalledTimes(9);
+    expect(mocks.values).toHaveBeenCalledTimes(14);
     expect(mocks.values).toHaveBeenNthCalledWith(1, expect.objectContaining({ ownerId: 23, category: "ecommerce", name: "متجر نوفا" }));
     expect(mocks.values).toHaveBeenNthCalledWith(2, expect.objectContaining({ projectId: 501, route: "/home", titleAr: "الرئيسية" }));
-    expect(mocks.values).toHaveBeenNthCalledWith(7, expect.objectContaining({ projectId: 501, pageId: 601, componentType: "Card", labelEn: "Hero offer" }));
+    expect(mocks.values).toHaveBeenNthCalledWith(7, expect.objectContaining({ projectId: 501, pageId: 601, componentType: "SearchBar" }));
+    expect(mocks.values).toHaveBeenNthCalledWith(10, expect.objectContaining({ projectId: 501, pageId: 601, componentType: "Product", properties: expect.objectContaining({ salePrice: 149, stock: 12, currency: "SAR" }) }));
+    expect(mocks.values).toHaveBeenNthCalledWith(9, expect.objectContaining({ projectId: 501, componentType: "List", properties: expect.objectContaining({ items: expect.arrayContaining([expect.objectContaining({ targetPageId: 602 })]) }) }));
   });
 
   it("rejects an unknown example without creating a project", async () => {

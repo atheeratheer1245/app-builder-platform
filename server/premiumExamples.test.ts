@@ -12,9 +12,20 @@ describe("premium app examples", () => {
   it("gives each paid example a considered multi-screen structure and core components", () => {
     for (const example of premiumExampleCatalog) {
       expect(example.pages.length).toBeGreaterThanOrEqual(5);
-      expect(example.components.length).toBeGreaterThanOrEqual(3);
+      expect(example.components.length).toBeGreaterThanOrEqual(6);
       expect(example.nameAr).not.toHaveLength(0);
       expect(example.nameEn).not.toHaveLength(0);
+      expect(example.components.every(component => example.pages.some(page => page.key === component.pageKey))).toBe(true);
+      expect(example.components.every(component => component.componentType.length > 0)).toBe(true);
     }
+  });
+
+  it("includes search in each searchable media or storefront example and products in the store", () => {
+    for (const category of ["ecommerce", "music", "podcasts", "movies"] as const) {
+      const example = premiumExampleCatalog.find(item => item.category === category);
+      expect(example?.components.some(component => component.componentType === "SearchBar")).toBe(true);
+    }
+    const store = premiumExampleCatalog.find(item => item.category === "ecommerce");
+    expect(store?.components.some(component => component.componentType === "Product")).toBe(true);
   });
 });

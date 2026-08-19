@@ -31,6 +31,29 @@ function unauthenticatedProject(): never {
   throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
 }
 
+function validateComponentProperties(componentType: string, properties: Record<string, unknown>) {
+  if (componentType === "List") {
+    const items = Array.isArray(properties.items) ? properties.items : [];
+    for (const item of items) {
+      const values = item && typeof item === "object" ? item as Record<string, unknown> : {};
+      const labelAr = typeof values.labelAr === "string" ? values.labelAr.trim() : "";
+      const labelEn = typeof values.labelEn === "string" ? values.labelEn.trim() : "";
+      if ((!labelAr && !labelEn) || typeof values.targetPageId !== "number" || !Number.isInteger(values.targetPageId) || values.targetPageId < 1) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Every navigation item needs a name and destination page" });
+      }
+    }
+  }
+  if (componentType === "Product") {
+    const supportedCurrencies = new Set(["SAR", "AED", "BHD", "EGP", "EUR", "GBP", "JOD", "KWD", "OMR", "QAR", "USD"]);
+    const price = properties.price;
+    const salePrice = properties.salePrice;
+    const stock = properties.stock;
+    if (typeof price !== "number" || !Number.isFinite(price) || price < 0 || (salePrice !== null && salePrice !== undefined && (typeof salePrice !== "number" || !Number.isFinite(salePrice) || salePrice < 0)) || typeof stock !== "number" || !Number.isInteger(stock) || stock < 0 || !supportedCurrencies.has(typeof properties.currency === "string" ? properties.currency : "SAR")) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Product price, currency, and stock are invalid" });
+    }
+  }
+}
+
 async function getNextPageOrder(projectId: number) {
   const db = await getRequiredDb();
   const current = await db.select({ maxOrder: max(projectPages.sortOrder) }).from(projectPages).where(eq(projectPages.projectId, projectId));
@@ -109,7 +132,7 @@ export const appBuilderRouter = router({
       });
       const projectId = Number(result[0]?.insertId ?? 0);
       if (!projectId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Example project creation failed" });
-      const pageIds: number[] = [];
+      const pageIdsByKey: Record<string, number> = {};
       for (let sortOrder = 0; sortOrder < example.pages.length; sortOrder += 1) {
         const page = example.pages[sortOrder];
         const pageResult = await db.insert(projectPages).values({
@@ -123,18 +146,29 @@ export const appBuilderRouter = router({
         });
         const pageId = Number(pageResult[0]?.insertId ?? 0);
         if (!pageId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Example page creation failed" });
-        pageIds.push(pageId);
+        pageIdsByKey[page.key] = pageId;
       }
       for (let sortOrder = 0; sortOrder < example.components.length; sortOrder += 1) {
-        const labelEn = example.components[sortOrder];
+        const component = example.components[sortOrder];
+        const properties = JSON.parse(JSON.stringify(component.properties)) as Record<string, unknown>;
+        if (typeof properties.targetPageKey === "string") { properties.targetPageId = pageIdsByKey[properties.targetPageKey]; delete properties.targetPageKey; }
+        if (typeof properties.actionPageKey === "string") { properties.actionPageId = pageIdsByKey[properties.actionPageKey]; delete properties.actionPageKey; }
+        if (typeof properties.contextPageKey === "string") { properties.contextPageId = pageIdsByKey[properties.contextPageKey]; delete properties.contextPageKey; }
+        if (typeof properties.successPageKey === "string") { properties.successPageId = pageIdsByKey[properties.successPageKey]; delete properties.successPageKey; }
+        if (typeof properties.failurePageKey === "string") { properties.failurePageId = pageIdsByKey[properties.failurePageKey]; delete properties.failurePageKey; }
+        if (Array.isArray(properties.items)) properties.items = properties.items.map(item => {
+          const navItem = item && typeof item === "object" ? { ...(item as Record<string, unknown>) } : {};
+          if (typeof navItem.targetPageKey === "string") { navItem.targetPageId = pageIdsByKey[navItem.targetPageKey]; delete navItem.targetPageKey; }
+          return navItem;
+        });
         await db.insert(projectComponents).values({
           projectId,
-          pageId: pageIds[sortOrder % pageIds.length],
-          componentType: ["Card", "List", "Button"][sortOrder % 3],
-          labelAr: `مكوّن ${labelEn}`,
-          labelEn,
+          pageId: pageIdsByKey[component.pageKey],
+          componentType: component.componentType,
+          labelAr: component.labelAr,
+          labelEn: component.labelEn,
           sortOrder,
-          properties: { source: "premium-example", exampleSlug: example.slug },
+          properties: { ...properties, source: "premium-example", exampleSlug: example.slug },
         });
       }
       return { id: projectId, nameAr: example.nameAr, nameEn: example.nameEn };
@@ -187,22 +221,24 @@ export const appBuilderRouter = router({
       await Promise.all(input.pageIds.map((pageId, sortOrder) => db.update(projectPages).set({ sortOrder, updatedAt: new Date() }).where(and(eq(projectPages.id, pageId), eq(projectPages.projectId, input.projectId)))));
       return { success: true };
     }),
-    addComponent: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), pageId: z.number().int().positive(), componentType: z.enum(builderComponentTypes), labelAr: z.string().min(1).max(160), labelEn: z.string().min(1).max(160), properties: z.record(z.string(), z.unknown()).default({}) })).mutation(async ({ ctx, input }) => {
+    addComponent: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), pageId: z.number().int().positive(), componentType: z.enum(builderComponentTypes), labelAr: z.string().trim().max(160).default(""), labelEn: z.string().trim().max(160).default(""), properties: z.record(z.string(), z.unknown()).default({}) })).mutation(async ({ ctx, input }) => {
       const project = await getOwnedProject(ctx.user.id, input.projectId);
       if (!project) unauthenticatedProject();
       const categoryForDefaults = project.category === "custom" ? "services" : project.category;
       if (!getAllowedComponentTypes(categoryForDefaults).includes(input.componentType)) throw new TRPCError({ code: "BAD_REQUEST", message: "Component is not available for this template category" });
+      const properties = { ...getDefaultComponentProperties(input.componentType, categoryForDefaults), ...input.properties };
+      validateComponentProperties(input.componentType, properties);
       const db = await getRequiredDb();
       const current = await db.select({ maxOrder: max(projectComponents.sortOrder) }).from(projectComponents).where(eq(projectComponents.pageId, input.pageId));
-      const properties = Object.keys(input.properties).length ? input.properties : getDefaultComponentProperties(input.componentType, categoryForDefaults);
       const result = await db.insert(projectComponents).values({ ...input, properties, sortOrder: (current[0]?.maxOrder ?? -1) + 1 });
       return { id: Number(result[0]?.insertId ?? 0) };
     }),
-    updateComponent: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), componentId: z.number().int().positive(), componentType: z.enum(builderComponentTypes), labelAr: z.string().min(1).max(160), labelEn: z.string().min(1).max(160), properties: z.record(z.string(), z.unknown()).optional() })).mutation(async ({ ctx, input }) => {
+    updateComponent: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), componentId: z.number().int().positive(), componentType: z.enum(builderComponentTypes), labelAr: z.string().trim().max(160).default(""), labelEn: z.string().trim().max(160).default(""), properties: z.record(z.string(), z.unknown()).optional() })).mutation(async ({ ctx, input }) => {
       const project = await getOwnedProject(ctx.user.id, input.projectId);
       if (!project) unauthenticatedProject();
       const categoryForDefaults = project.category === "custom" ? "services" : project.category;
       if (!getAllowedComponentTypes(categoryForDefaults).includes(input.componentType)) throw new TRPCError({ code: "BAD_REQUEST", message: "Component is not available for this template category" });
+      if (input.properties) validateComponentProperties(input.componentType, input.properties);
       const db = await getRequiredDb();
       await db.update(projectComponents).set({ componentType: input.componentType, labelAr: input.labelAr, labelEn: input.labelEn, ...(input.properties ? { properties: input.properties } : {}), updatedAt: new Date() }).where(and(eq(projectComponents.id, input.componentId), eq(projectComponents.projectId, input.projectId)));
       return { success: true };
