@@ -15,6 +15,17 @@ describe("builder component catalog", () => {
     expect(getAllowedComponentTypes("ecommerce")).not.toContain("GameScene");
   });
 
+  it("exposes the editable search bar only to e-commerce projects", () => {
+    expect(getAllowedComponentTypes("ecommerce")).toContain("SearchBar");
+    expect(getAllowedComponentTypes("education")).not.toContain("SearchBar");
+    expect(getAllowedComponentTypes("games")).not.toContain("SearchBar");
+    expect(getDefaultComponentProperties("SearchBar", "ecommerce")).toMatchObject({
+      placeholderAr: "ابحث في المنتجات",
+      placeholderEn: "Search products",
+      emptyAr: "لا توجد منتجات مطابقة للبحث",
+    });
+  });
+
   it("builds a template-aware booking form and editable navigation defaults", () => {
     expect(getDefaultComponentProperties("Form", "services")).toMatchObject({ submitLabelAr: "إرسال", fields: expect.arrayContaining([expect.objectContaining({ key: "appointment" })]) });
     expect(getDefaultComponentProperties("Button", "ecommerce")).toMatchObject({ targetPageId: null, textAr: "متابعة" });

@@ -1,8 +1,9 @@
 import type { TemplateCategory } from "./appBuilderCatalog";
 
 export const baseComponentTypes = ["Card", "Button", "List", "Image", "Video", "Form"] as const;
+export const ecommerceComponentTypes = ["SearchBar"] as const;
 export const gameComponentTypes = ["GameScene", "Player", "Physics", "Score", "Level", "Condition"] as const;
-export const builderComponentTypes = [...baseComponentTypes, ...gameComponentTypes] as const;
+export const builderComponentTypes = [...baseComponentTypes, ...ecommerceComponentTypes, ...gameComponentTypes] as const;
 
 export type BuilderComponentType = (typeof builderComponentTypes)[number];
 export type ComponentProperties = Record<string, unknown>;
@@ -14,6 +15,7 @@ export const componentTypeLabels: Record<BuilderComponentType, { ar: string; en:
   Image: { ar: "صورة من المعرض", en: "Gallery image" },
   Video: { ar: "فيديو من المعرض", en: "Gallery video" },
   Form: { ar: "نموذج جاهز", en: "Ready form" },
+  SearchBar: { ar: "شريط بحث", en: "Search bar" },
   GameScene: { ar: "مشهد لعبة", en: "Game scene" },
   Player: { ar: "لاعب", en: "Player" },
   Physics: { ar: "فيزياء وحركة", en: "Physics & movement" },
@@ -33,7 +35,9 @@ const formFieldsByCategory: Record<TemplateCategory, Array<{ key: string; type: 
 };
 
 export function getAllowedComponentTypes(category: TemplateCategory): BuilderComponentType[] {
-  return category === "games" ? [...builderComponentTypes] : [...baseComponentTypes];
+  if (category === "ecommerce") return [...baseComponentTypes, ...ecommerceComponentTypes];
+  if (category === "games") return [...baseComponentTypes, ...gameComponentTypes];
+  return [...baseComponentTypes];
 }
 
 export function getDefaultComponentProperties(type: BuilderComponentType, category: TemplateCategory): ComponentProperties {
@@ -43,6 +47,7 @@ export function getDefaultComponentProperties(type: BuilderComponentType, catego
   if (type === "Image") return { assetId: null, assetUrl: "", altAr: "وصف الصورة", altEn: "Image description" };
   if (type === "Video") return { assetId: null, assetUrl: "", captionAr: "عنوان الفيديو", captionEn: "Video caption" };
   if (type === "Form") return { fields: formFieldsByCategory[category], submitLabelAr: "إرسال", submitLabelEn: "Submit" };
+  if (type === "SearchBar") return { placeholderAr: "ابحث في المنتجات", placeholderEn: "Search products", emptyAr: "لا توجد منتجات مطابقة للبحث", emptyEn: "No products match your search" };
   if (type === "GameScene") return { sceneNameAr: "المشهد الأول", sceneNameEn: "First scene", backgroundAssetId: null, durationSeconds: 90 };
   if (type === "Player") return { spriteAssetId: null, speed: 6, jumpForce: 12, lives: 3 };
   if (type === "Physics") return { gravity: 1, collisions: true, boundaryMode: "screen" };

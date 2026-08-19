@@ -126,10 +126,14 @@
 - [x] Create and verify an Android companion WebView shell that opens the published bilingual App Builder website inside an installable APK, with safe internal and external link handling.
 - [ ] Replace Google OAuth inside the Android WebView with a native Android Google sign-in flow and a server-verified app session handoff.
 - [ ] Validate the native Google sign-in flow against the Android OAuth client after the user creates it, including package name, signing SHA-1, account chooser, and WebView session handoff.
+- [ ] Diagnose and repair Google OAuth in the published website browser flow, including authorization response, callback, state verification, and user session creation.
+- [ ] Replace the Android WebView shell with a standalone native App Builder experience that mirrors core website flows without embedding the website.
+- [ ] Add the user-provided App Builder icon to the standalone Android app and generate all required Android launcher icon variants.
 - [x] Make Card create an editable information card with title, description, icon or image, and action settings in every template category.
 - [x] Make Button accept bilingual visible text and navigate to a selected project page through an editable internal link.
 - [x] Make List create editable navigation items that each route to a selected project page.
 - [x] Make Image and Video select uploaded project assets from an in-editor gallery, with preview and alternative text or caption.
 - [x] Make Form insert a ready-to-customize form appropriate to the active template category, with editable fields and submit label.
 - [x] Add game-specific programmable blocks for scenes, player movement, collisions, score, levels, and win or lose conditions in game projects.
+- [x] Add an editable, functional Search Bar component to the e-commerce template only, with live preview behavior in the editor.
 - [ ] Add regression tests and bilingual visual QA covering all configurable component types, asset selection, navigation, forms, and game blocks.
