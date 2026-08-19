@@ -73,6 +73,7 @@ export function registerGoogleAuthRoutes(app: Express) {
       const { clientId } = getGoogleConfig();
       const state = randomBytes(32).toString("base64url");
       const redirectUri = `${getRequestBaseUrl(req)}/api/auth/google/callback`;
+      console.info("[Google OAuth] Authorization request", { host: req.get("host"), clientIdSuffix: clientId.slice(-12), redirectUri });
       res.cookie(GOOGLE_STATE_COOKIE, state, { ...getSessionCookieOptions(req), maxAge: 10 * 60 * 1000 });
       res.redirect(buildGoogleAuthorizationUrl({ clientId, redirectUri, state }));
     } catch {
