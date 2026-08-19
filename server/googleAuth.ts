@@ -5,7 +5,7 @@ import type { Express, Request, Response } from "express";
 import { eq, or } from "drizzle-orm";
 import { users } from "../drizzle/schema";
 import { getDb } from "./db";
-import { createLocalOpenId, setLocalSession } from "./localAuth";
+import { createLocalOpenId, createLocalSession, setLocalSession } from "./localAuth";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { getRequestBaseUrl } from "./publicUrl";
 
@@ -106,6 +106,29 @@ export function registerGoogleAuthRoutes(app: Express) {
       const failure = message.includes("exchange") ? "exchange_error" : message.includes("identity") || message.includes("verify") ? "identity_error" : "authorization_error";
       console.warn("[Google OAuth] Callback failed", { failure });
       res.redirect(`/auth?google=${failure}`);
+    }
+  });
+
+  app.post("/api/auth/google/native", async (req, res) => {
+    const idToken = typeof req.body?.idToken === "string" ? req.body.idToken.trim() : "";
+    if (!idToken || idToken.length > 16_384) {
+      res.status(400).json({ error: "invalid_token" });
+      return;
+    }
+    try {
+      const identity = await verifyGoogleIdentity(idToken);
+      const userId = await findOrCreateGoogleUser(identity);
+      if (!userId) throw new Error("Unable to create Google account");
+      // The Android app receives this same signed, short-lived session capability only over HTTPS
+      // and stores it as an HttpOnly-equivalent WebView cookie for the published app origin.
+      const sessionToken = await createLocalSession(userId);
+      res.set("Cache-Control", "no-store");
+      res.status(200).json({ sessionToken });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown native Google OAuth error";
+      const failure = message.includes("identity") || message.includes("verify") ? "identity_error" : "authorization_error";
+      console.warn("[Google OAuth] Native sign-in failed", { failure });
+      res.status(401).json({ error: failure });
     }
   });
 }

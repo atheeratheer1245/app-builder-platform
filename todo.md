@@ -119,8 +119,9 @@
 - [ ] Repair Google OAuth access denial by validating audience/test-user eligibility or production publishing, then complete a real sign-in callback into the workspace.
 - [ ] Verify the published Google OAuth client’s Audience settings and add the owner account as a test user or publish the OAuth app, then complete a live sign-in test.
 - [ ] Publish the Google OAuth consent screen to In production so any eligible visitor can sign in, then verify the public flow from authorization through workspace redirect.
-- [ ] Inspect the deployed OAuth authorization request, callback URI, client-ID suffix, state cookie attributes, and session cookie handling after confirming Google Cloud is already in production.
+- [x] Inspect the deployed OAuth authorization request, callback URI, client-ID suffix, state cookie attributes, and session cookie handling after confirming Google Cloud is already in production.
 - [x] Produce and verify an installable APK for the App Builder companion application through a real Android build pipeline, then attach it alongside the published site link.
 - [ ] Create the App Builder Android companion app source from the website’s design system, including bilingual onboarding, templates, premium examples, projects, exports, and account navigation.
 - [x] Let authenticated users create an owned, editable project from each template example through a protected server procedure and bilingual action buttons.
 - [x] Create and verify an Android companion WebView shell that opens the published bilingual App Builder website inside an installable APK, with safe internal and external link handling.
+- [ ] Replace Google OAuth inside the Android WebView with a native Android Google sign-in flow and a server-verified app session handoff.

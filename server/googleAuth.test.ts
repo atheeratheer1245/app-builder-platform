@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   jwtVerify: vi.fn(),
   getDb: vi.fn(),
   createLocalOpenId: vi.fn(() => "local_google_user"),
+  createLocalSession: vi.fn(async () => "native-session-token"),
   setLocalSession: vi.fn(),
   getSessionCookieOptions: vi.fn(() => ({ httpOnly: true })),
   getRequestBaseUrl: vi.fn(() => "https://app.example.com"),
@@ -13,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("jose", () => ({ createRemoteJWKSet: mocks.createRemoteJWKSet, jwtVerify: mocks.jwtVerify }));
 vi.mock("./db", () => ({ getDb: mocks.getDb }));
-vi.mock("./localAuth", () => ({ createLocalOpenId: mocks.createLocalOpenId, setLocalSession: mocks.setLocalSession }));
+vi.mock("./localAuth", () => ({ createLocalOpenId: mocks.createLocalOpenId, createLocalSession: mocks.createLocalSession, setLocalSession: mocks.setLocalSession }));
 vi.mock("./_core/cookies", () => ({ getSessionCookieOptions: mocks.getSessionCookieOptions }));
 vi.mock("./publicUrl", () => ({ getRequestBaseUrl: mocks.getRequestBaseUrl }));
 
@@ -37,12 +38,23 @@ function getStartHandler() {
   return layer.route.stack[0].handle;
 }
 
+function getNativeHandler() {
+  const app = express();
+  registerGoogleAuthRoutes(app);
+  const layer = (app as unknown as { _router: { stack: Array<{ route?: { path?: string; stack: Array<{ handle: (req: Request, res: Response) => Promise<void> }> } }> } })._router.stack
+    .find(item => item.route?.path === "/api/auth/google/native");
+  if (!layer?.route) throw new Error("Google native route was not registered");
+  return layer.route.stack[0].handle;
+}
+
 function responseRecorder() {
   return {
     cookie: vi.fn(),
     clearCookie: vi.fn(),
     redirect: vi.fn(),
     set: vi.fn(),
+    status: vi.fn(function status() { return this; }),
+    json: vi.fn(),
   } as unknown as Response;
 }
 
@@ -116,5 +128,22 @@ describe("Google OAuth", () => {
     expect(insertValues).toHaveBeenCalledWith(expect.objectContaining({ openId: "google_google-subject", email: "owner@example.com", loginMethod: "google" }));
     expect(mocks.setLocalSession).toHaveBeenCalledWith(expect.any(Object), res, 7);
     expect(res.redirect).toHaveBeenCalledWith("/app");
+  });
+
+  it("verifies a native Google ID token and returns a signed session capability to the APK", async () => {
+    mocks.jwtVerify.mockResolvedValueOnce({ payload: { sub: "native-google-subject", email: "native@example.com", email_verified: true, name: "Native Owner" } });
+    const insertValues = vi.fn().mockResolvedValue([{ insertId: 19 }]);
+    mocks.getDb.mockResolvedValueOnce({
+      select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(() => ({ limit: vi.fn().mockResolvedValue([]) })) })) })),
+      insert: vi.fn(() => ({ values: insertValues })),
+    });
+    const handler = getNativeHandler();
+    const res = responseRecorder();
+
+    await handler({ body: { idToken: "native-id-token" } } as Request, res);
+
+    expect(mocks.createLocalSession).toHaveBeenCalledWith(19);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ sessionToken: "native-session-token" });
   });
 });
