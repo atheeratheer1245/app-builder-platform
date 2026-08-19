@@ -10,6 +10,7 @@ import {
   templates,
 } from "../../drizzle/schema";
 import { templateCategories } from "../../shared/appBuilderCatalog";
+import { builderComponentTypes, getAllowedComponentTypes, getDefaultComponentProperties } from "../../shared/componentCatalog";
 import { premiumExampleCatalog } from "../../shared/premiumExamples";
 import { getOwnedProject, getProjectWorkspace, getRequiredDb, ensureTemplateCatalog } from "../appBuilderDb";
 import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
@@ -186,17 +187,24 @@ export const appBuilderRouter = router({
       await Promise.all(input.pageIds.map((pageId, sortOrder) => db.update(projectPages).set({ sortOrder, updatedAt: new Date() }).where(and(eq(projectPages.id, pageId), eq(projectPages.projectId, input.projectId)))));
       return { success: true };
     }),
-    addComponent: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), pageId: z.number().int().positive(), componentType: z.string().min(1).max(80), labelAr: z.string().min(1).max(160), labelEn: z.string().min(1).max(160), properties: z.record(z.string(), z.unknown()).default({}) })).mutation(async ({ ctx, input }) => {
-      if (!await getOwnedProject(ctx.user.id, input.projectId)) unauthenticatedProject();
+    addComponent: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), pageId: z.number().int().positive(), componentType: z.enum(builderComponentTypes), labelAr: z.string().min(1).max(160), labelEn: z.string().min(1).max(160), properties: z.record(z.string(), z.unknown()).default({}) })).mutation(async ({ ctx, input }) => {
+      const project = await getOwnedProject(ctx.user.id, input.projectId);
+      if (!project) unauthenticatedProject();
+      const categoryForDefaults = project.category === "custom" ? "services" : project.category;
+      if (!getAllowedComponentTypes(categoryForDefaults).includes(input.componentType)) throw new TRPCError({ code: "BAD_REQUEST", message: "Component is not available for this template category" });
       const db = await getRequiredDb();
       const current = await db.select({ maxOrder: max(projectComponents.sortOrder) }).from(projectComponents).where(eq(projectComponents.pageId, input.pageId));
-      const result = await db.insert(projectComponents).values({ ...input, sortOrder: (current[0]?.maxOrder ?? -1) + 1 });
+      const properties = Object.keys(input.properties).length ? input.properties : getDefaultComponentProperties(input.componentType, categoryForDefaults);
+      const result = await db.insert(projectComponents).values({ ...input, properties, sortOrder: (current[0]?.maxOrder ?? -1) + 1 });
       return { id: Number(result[0]?.insertId ?? 0) };
     }),
-    updateComponent: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), componentId: z.number().int().positive(), componentType: z.string().min(1).max(80), labelAr: z.string().min(1).max(160), labelEn: z.string().min(1).max(160) })).mutation(async ({ ctx, input }) => {
-      if (!await getOwnedProject(ctx.user.id, input.projectId)) unauthenticatedProject();
+    updateComponent: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), componentId: z.number().int().positive(), componentType: z.enum(builderComponentTypes), labelAr: z.string().min(1).max(160), labelEn: z.string().min(1).max(160), properties: z.record(z.string(), z.unknown()).optional() })).mutation(async ({ ctx, input }) => {
+      const project = await getOwnedProject(ctx.user.id, input.projectId);
+      if (!project) unauthenticatedProject();
+      const categoryForDefaults = project.category === "custom" ? "services" : project.category;
+      if (!getAllowedComponentTypes(categoryForDefaults).includes(input.componentType)) throw new TRPCError({ code: "BAD_REQUEST", message: "Component is not available for this template category" });
       const db = await getRequiredDb();
-      await db.update(projectComponents).set({ componentType: input.componentType, labelAr: input.labelAr, labelEn: input.labelEn, updatedAt: new Date() }).where(and(eq(projectComponents.id, input.componentId), eq(projectComponents.projectId, input.projectId)));
+      await db.update(projectComponents).set({ componentType: input.componentType, labelAr: input.labelAr, labelEn: input.labelEn, ...(input.properties ? { properties: input.properties } : {}), updatedAt: new Date() }).where(and(eq(projectComponents.id, input.componentId), eq(projectComponents.projectId, input.projectId)));
       return { success: true };
     }),
     reorderComponents: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), pageId: z.number().int().positive(), componentIds: z.array(z.number().int().positive()).min(1) })).mutation(async ({ ctx, input }) => {

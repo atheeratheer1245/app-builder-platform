@@ -28,9 +28,10 @@ describe("editor accessibility regression", () => {
 
     expect(editor).not.toMatch(/window\.prompt|\bprompt\s*\(/);
     expect(editor).toContain('DialogTitle>{copy("تعديل الصفحة", "Edit page")}');
-    expect(editor).toContain('DialogTitle>{copy("تعديل المكون", "Edit component")}');
+    expect(editor).toContain('DialogTitle>{copy("إعداد المكون", "Configure component")}');
     expect(editor).toContain('Label>{copy("العنوان بالعربية", "Arabic title")}');
     expect(editor).toContain('Label>{copy("الاسم بالعربية", "Arabic label")}');
+    expect(editor).toContain('ComponentPropertiesFields');
     expect(editor).toContain('copy("إلغاء", "Cancel")');
     expect(editor).toContain('copy("حفظ التغييرات", "Save changes")');
   });

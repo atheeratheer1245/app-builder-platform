@@ -125,3 +125,10 @@
 - [x] Let authenticated users create an owned, editable project from each template example through a protected server procedure and bilingual action buttons.
 - [x] Create and verify an Android companion WebView shell that opens the published bilingual App Builder website inside an installable APK, with safe internal and external link handling.
 - [ ] Replace Google OAuth inside the Android WebView with a native Android Google sign-in flow and a server-verified app session handoff.
+- [x] Make Card create an editable information card with title, description, icon or image, and action settings in every template category.
+- [x] Make Button accept bilingual visible text and navigate to a selected project page through an editable internal link.
+- [x] Make List create editable navigation items that each route to a selected project page.
+- [x] Make Image and Video select uploaded project assets from an in-editor gallery, with preview and alternative text or caption.
+- [x] Make Form insert a ready-to-customize form appropriate to the active template category, with editable fields and submit label.
+- [x] Add game-specific programmable blocks for scenes, player movement, collisions, score, levels, and win or lose conditions in game projects.
+- [ ] Add regression tests and bilingual visual QA covering all configurable component types, asset selection, navigation, forms, and game blocks.

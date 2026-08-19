@@ -64,4 +64,12 @@ describe("protected project update", () => {
     await expect(caller.projects.update({ projectId: 99, data: { name: "Blocked update" } })).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(mocks.update).not.toHaveBeenCalled();
   });
+
+  it("rejects game-only blocks when a non-game project calls the editor API directly", async () => {
+    mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "ecommerce" });
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "GameScene", labelAr: "مشهد", labelEn: "Scene" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(mocks.getRequiredDb).not.toHaveBeenCalled();
+  });
 });
