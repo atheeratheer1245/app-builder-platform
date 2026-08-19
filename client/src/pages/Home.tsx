@@ -1,4 +1,5 @@
 import { BrandMark } from "@/components/BrandMark";
+import { ExportPlansPanel } from "@/components/ExportPlansPanel";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { PremiumExamplesPanel } from "@/components/PremiumExamplesPanel";
 import { useLocale } from "@/contexts/LocaleContext";
@@ -26,6 +27,7 @@ export default function Home() {
       </section>
       <section id="how-it-works" className="feature-section container"><div className="section-heading"><p className="section-kicker">{copy("كل ما تحتاجه", "Everything you need")}</p><h2>{copy("أدوات واضحة لبداية أسرع.", "Clear tools for a faster start.")}</h2></div><div className="feature-grid">{features.map(([Icon, title, description]) => <article className="feature-card" key={String(title)}><div className="feature-icon"><Icon className="h-5 w-5" /></div><h3>{title}</h3><p>{description}</p></article>)}</div></section>
       <div className="container"><PremiumExamplesPanel isArabic={isArabic} /></div>
+      <div className="container"><ExportPlansPanel isArabic={isArabic} /></div>
     </main>
   </div>;
 }
