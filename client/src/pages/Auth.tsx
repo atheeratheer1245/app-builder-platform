@@ -31,7 +31,7 @@ export default function Auth() {
     if (params.get("mode") === "reset") setMode("reset");
     const googleStatus = params.get("google");
     if (googleStatus === "configuration_error") setErrorMessage(copy("لا يمكن بدء تسجيل الدخول عبر Google قبل ضبط رابط إعادة التوجيه في إعدادات Google Cloud.", "Google sign-in needs a valid redirect URI in Google Cloud before it can start."));
-    if (googleStatus === "authorization_error") setErrorMessage(copy("تعذر إكمال تسجيل الدخول عبر Google. تأكد من الموافقة على الوصول ثم أعد المحاولة.", "Google sign-in could not be completed. Confirm access and try again."));
+    if (googleStatus === "authorization_error") setErrorMessage(copy("تعذر إكمال Google. أضف رابط العودة المنشور في Google Cloud ثم أعد المحاولة: appbuilder-ewgsiuw6.manus.space/api/auth/google/callback", "Google sign-in could not be completed. Add the published callback URI in Google Cloud, then try again: appbuilder-ewgsiuw6.manus.space/api/auth/google/callback."));
   }, [copy]);
 
   const title = mode === "sign-in" ? copy("مرحبًا بعودتك", "Welcome back") : mode === "sign-up" ? copy("ابدأ رحلتك الإبداعية", "Start your creative journey") : mode === "forgot" ? copy("استعادة الوصول", "Restore access") : copy("كلمة مرور جديدة", "New password");

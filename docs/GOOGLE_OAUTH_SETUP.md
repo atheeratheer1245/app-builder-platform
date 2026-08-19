@@ -1,0 +1,27 @@
+# إعداد Google OAuth لموقع App Builder
+
+## التشخيص
+
+اختبار بدء تسجيل الدخول عبر المسار المنشور أعاد من Google الخطأ التالي:
+
+> `Error 400: redirect_uri_mismatch`
+
+السبب هو أن Google Cloud لا يحتوي بعد على رابط العودة الذي يرسله الموقع المنشور.
+
+## رابط إعادة التوجيه المطلوب الآن
+
+أضف الرابط التالي ضمن **Authorized redirect URIs** في عميل OAuth 2.0 من نوع Web application:
+
+```text
+https://appbuilder-ewgsiuw6.manus.space/api/auth/google/callback
+```
+
+بعد ربط نطاق مملوك مستقبلًا، أضف رابط callback المطابق لذلك النطاق أيضًا، ثم اترك الرابط الحالي إلى أن يكتمل الانتقال والاختبار.
+
+## نتيجة إعادة الاختبار
+
+حتى آخر اختبار، ما زال Google يعيد `redirect_uri_mismatch`. يعني ذلك أن الرابط لم يُحفظ في عميل OAuth الصحيح، أو أن المستخدم لم يصل بعد إلى إعدادات العميل. يجب إضافته إلى **العميل المرتبط بالـ Client ID الموجود في إعدادات المشروع**، لا إلى عميل OAuth آخر.
+
+## خطوات Google Cloud
+
+افتح Google Cloud Console ثم انتقل إلى: **APIs & Services → Credentials → OAuth 2.0 Client IDs → [عميل App Builder] → Authorized redirect URIs**. أضف الرابط أعلاه، ثم احفظ التغيير. لا تغيّر Client ID أو Client Secret داخل المشروع ما لم يصدر عميل OAuth جديد عمدًا.

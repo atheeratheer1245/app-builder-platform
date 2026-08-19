@@ -84,3 +84,5 @@
 - [ ] Verify whether appbuilder.sa is available and collect current first-year pricing from reputable Saudi domain registrars.
 - [ ] Present the selected registrar, exact price, renewal terms, and purchase consequence for the user’s explicit approval before checkout.
 - [ ] Purchase appbuilder.sa only after explicit approval, then connect its DNS to the published App Builder site.
+- [ ] Diagnose the current Google OAuth sign-in failure across authorization start, callback, state validation, token exchange, and local session creation.
+- [ ] Register and verify the published App Builder callback URL in Google Cloud, then complete a real Google sign-in redirect into the workspace.
