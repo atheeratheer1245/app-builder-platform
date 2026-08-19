@@ -16,6 +16,6 @@ describe("Android native Google sign-in", () => {
   it("exchanges the native Google ID token with the server and stores its local session", () => {
     expect(activitySource).toContain("/api/auth/google/native");
     expect(activitySource).toContain("putString(\"session\"");
-    expect(activitySource).toContain("showHome()");
+    expect(activitySource).toContain("showDashboard()");
   });
 });

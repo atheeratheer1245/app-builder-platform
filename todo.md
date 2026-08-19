@@ -127,6 +127,7 @@
 - [x] Replace Google OAuth inside the Android WebView with a native Android Google sign-in flow and a server-verified app session handoff.
 - [ ] Validate the native Google sign-in flow against the Android OAuth client after the user creates it, including package name, signing SHA-1, account chooser, and WebView session handoff.
 - [ ] Diagnose and repair Google OAuth in the published website browser flow, including authorization response, callback, state verification, and user session creation.
+- [ ] Re-test Google OAuth specifically in a standard browser session after separating the Android WebView issue, and record the exact browser-only result before changing website code.
 - [ ] Capture and classify the live published Google OAuth callback failure, then verify the repaired browser flow returns a signed-in user to the workspace.
 - [ ] Capture the exact user-visible error or final callback query from a real failed Google browser sign-in to distinguish Google-side denial, code exchange, identity verification, and session failures.
 - [x] Identify that the reported Google 403 occurs inside the APK WebView, where Google blocks embedded OAuth authorization despite correct external production OAuth settings.
@@ -139,6 +140,9 @@
 - [x] Replace the Android WebView shell with a standalone native App Builder experience that mirrors core website flows without embedding the website.
 - [x] Remove WebView and all browser-opening behavior from the Android application; present only native screens and the native Google account chooser when needed.
 - [x] Add the user-provided App Builder icon to the standalone Android app and generate all required Android launcher icon variants.
+- [x] Upgrade the standalone Android app with a professional native navigation system, polished dashboard, template discovery, richer project editing, examples, exports, account settings, and clear mobile states without WebView or browser navigation.
+- [x] Add practical bilingual language switching and Arabic RTL/English LTR layouts across the standalone Android experience.
+- [ ] Validate the standalone Android experience visually on device or emulator and rebuild a polished signed APK.
 - [x] Make Card create an editable information card with title, description, icon or image, and action settings in every template category.
 - [x] Make Button accept bilingual visible text and navigate to a selected project page through an editable internal link.
 - [x] Make List create editable navigation items that each route to a selected project page.

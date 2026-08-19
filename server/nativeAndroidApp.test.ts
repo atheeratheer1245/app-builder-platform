@@ -23,4 +23,13 @@ describe("standalone Android App Builder", () => {
     expect(nativeAuth).toContain("/api/mobile/auth/sign-in");
     expect(nativeAuth).toContain("/api/mobile/auth/sign-up");
   });
+
+  it("provides a professional dashboard, native editor, export center, and bilingual direction switching", () => {
+    expect(activity).toContain("showDashboard");
+    expect(activity).toContain("showExports");
+    expect(activity).toContain("محرر المشروع");
+    expect(activity).toContain("toggleLanguage");
+    expect(activity).toContain("View.LAYOUT_DIRECTION_LTR");
+    expect(activity).toContain("View.LAYOUT_DIRECTION_RTL");
+  });
 });
