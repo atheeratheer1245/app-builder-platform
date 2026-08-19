@@ -125,6 +125,7 @@
 - [x] Let authenticated users create an owned, editable project from each template example through a protected server procedure and bilingual action buttons.
 - [x] Create and verify an Android companion WebView shell that opens the published bilingual App Builder website inside an installable APK, with safe internal and external link handling.
 - [ ] Replace Google OAuth inside the Android WebView with a native Android Google sign-in flow and a server-verified app session handoff.
+- [ ] Validate the native Google sign-in flow against the Android OAuth client after the user creates it, including package name, signing SHA-1, account chooser, and WebView session handoff.
 - [x] Make Card create an editable information card with title, description, icon or image, and action settings in every template category.
 - [x] Make Button accept bilingual visible text and navigate to a selected project page through an editable internal link.
 - [x] Make List create editable navigation items that each route to a selected project page.

@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
                 }
                 val idToken = GoogleIdTokenCredential.createFrom(credential.data).idToken
                 val sessionToken = withContext(Dispatchers.IO) { exchangeNativeGoogleToken(idToken) }
-                CookieManager.getInstance().setCookie(appUrl, "app_builder_local_session=$sessionToken; Path=/; Secure; SameSite=None")
+                CookieManager.getInstance().setCookie(appUrl, "app_builder_local_session=$sessionToken; Path=/; Secure; HttpOnly; SameSite=None")
                 CookieManager.getInstance().flush()
                 webView.loadUrl("$appUrl/app")
             } catch (error: GetCredentialException) {
