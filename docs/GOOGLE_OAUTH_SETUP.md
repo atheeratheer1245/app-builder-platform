@@ -29,3 +29,7 @@ https://appbuilder-ewgsiuw6.manus.space/api/auth/google/callback
 ## اسم التطبيق المعروض في Google
 
 أظهر اختبار Google اسمًا قديمًا للتطبيق في شاشة الخطأ. لتظهر هوية **App Builder** بدلًا منه، افتح **Google Auth Platform → Branding** في المشروع نفسه، ثم حدّث **App name** و**User support email** واحفظ. هذا تغيير داخل Google Cloud ولا يتطلب تعديلًا لمعرف العميل داخل الموقع.
+
+## قيد الوصول إلى Google Cloud
+
+رفض Google Cloud تسجيل الدخول من بيئة الاختبار لأنها جهاز غير معروف للحساب. أكمل تعديل إعداد OAuth من جهاز أو متصفح سجّلت منه الدخول سابقًا إلى حساب Google المالك للمشروع؛ لا تشارك كلمة مرور الحساب أو رموز التحقق داخل المحادثة.
