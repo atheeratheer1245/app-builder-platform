@@ -124,11 +124,18 @@
 - [ ] Create the App Builder Android companion app source from the website’s design system, including bilingual onboarding, templates, premium examples, projects, exports, and account navigation.
 - [x] Let authenticated users create an owned, editable project from each template example through a protected server procedure and bilingual action buttons.
 - [x] Create and verify an Android companion WebView shell that opens the published bilingual App Builder website inside an installable APK, with safe internal and external link handling.
-- [ ] Replace Google OAuth inside the Android WebView with a native Android Google sign-in flow and a server-verified app session handoff.
+- [x] Replace Google OAuth inside the Android WebView with a native Android Google sign-in flow and a server-verified app session handoff.
 - [ ] Validate the native Google sign-in flow against the Android OAuth client after the user creates it, including package name, signing SHA-1, account chooser, and WebView session handoff.
 - [ ] Diagnose and repair Google OAuth in the published website browser flow, including authorization response, callback, state verification, and user session creation.
 - [ ] Capture and classify the live published Google OAuth callback failure, then verify the repaired browser flow returns a signed-in user to the workspace.
 - [ ] Capture the exact user-visible error or final callback query from a real failed Google browser sign-in to distinguish Google-side denial, code exchange, identity verification, and session failures.
+- [x] Identify that the reported Google 403 occurs inside the APK WebView, where Google blocks embedded OAuth authorization despite correct external production OAuth settings.
+- [x] Ensure every Google sign-in action inside the APK triggers Android Credential Manager and never navigates the WebView to accounts.google.com.
+- [x] Capture the real Google-side denial: the selected account receives Google error 403 before callback, proving the block is in the OAuth app audience or account-access configuration rather than the website.
+- [ ] Update the Google OAuth app audience or account access to permit the selected user and all intended public users, then repeat the live sign-in test.
+- [ ] Confirm that atheer0atheer67@gmail.com is included in the permitted OAuth audience or test-user list while the public audience is being repaired.
+- [ ] Inspect the Google Auth Platform Clients page and confirm the Web OAuth client ending in n86689drhqhmkqgkoc221ifs3e335a39.apps.googleusercontent.com has the published callback URI and belongs to the external production audience shown by the user.
+- [ ] Save the confirmed Web OAuth client configuration and allow its redirect-URI change to propagate before repeating the live authorization request.
 - [ ] Replace the Android WebView shell with a standalone native App Builder experience that mirrors core website flows without embedding the website.
 - [ ] Add the user-provided App Builder icon to the standalone Android app and generate all required Android launcher icon variants.
 - [x] Make Card create an editable information card with title, description, icon or image, and action settings in every template category.
