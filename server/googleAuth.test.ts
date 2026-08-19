@@ -127,6 +127,17 @@ describe("Google OAuth", () => {
     expect((request?.body as URLSearchParams).get("redirect_uri")).toBe("https://app.example.com/api/auth/google/callback");
   });
 
+  it("reports identity verification separately after a successful code exchange", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id_token: "unverified-token" }) }));
+    mocks.jwtVerify.mockRejectedValueOnce(new Error("invalid token"));
+    const handler = getCallbackHandler();
+    const res = responseRecorder();
+
+    await handler(callbackRequest({ state: "expected-state", code: "valid-code", cookie: "app_builder_google_state=expected-state" }), res);
+
+    expect(res.redirect).toHaveBeenCalledWith("/auth?google=identity_error");
+  });
+
   it("creates a local session only after a verified Google identity is returned", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id_token: "verified-token" }) }));
     mocks.jwtVerify.mockResolvedValueOnce({ payload: { sub: "google-subject", email: "owner@example.com", email_verified: true, name: "Owner" } });

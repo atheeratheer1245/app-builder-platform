@@ -109,27 +109,37 @@ export function registerGoogleAuthRoutes(app: Express) {
 
   app.get("/api/auth/google/callback", async (req, res) => {
     const callbackState = typeof req.query.state === "string" ? req.query.state : "";
-      const { state: expectedState, redirectUri: storedRedirectUri } = readGoogleState(req);
+    const { state: expectedState, redirectUri: storedRedirectUri } = readGoogleState(req);
     const code = typeof req.query.code === "string" ? req.query.code : "";
+    const providerError = typeof req.query.error === "string" ? req.query.error : "";
+    if (providerError) {
+      clearGoogleState(req, res);
+      res.redirect("/auth?google=provider_error");
+      return;
+    }
     if (!code || !callbackState || !expectedState || callbackState !== expectedState) {
       clearGoogleState(req, res);
       res.redirect("/auth?google=state_error");
       return;
     }
+    let stage: "exchange" | "identity" | "account" | "session" = "exchange";
     try {
       const redirectUri = getGoogleCallbackUrl(req, storedRedirectUri);
-      const identity = await verifyGoogleIdentity(await exchangeGoogleCode(code, redirectUri));
+      const idToken = await exchangeGoogleCode(code, redirectUri);
+      stage = "identity";
+      const identity = await verifyGoogleIdentity(idToken);
+      stage = "account";
       const userId = await findOrCreateGoogleUser(identity);
       if (!userId) throw new Error("Unable to create Google account");
       clearGoogleState(req, res);
       // Write the authenticated session after clearing the short-lived OAuth state.
       // This preserves the session in deployments that retain only the final Set-Cookie header.
+      stage = "session";
       await setLocalSession(req, res, userId);
       res.redirect("/app");
     } catch (error) {
       clearGoogleState(req, res);
-      const message = error instanceof Error ? error.message : "Unknown Google OAuth error";
-      const failure = message.includes("exchange") ? "exchange_error" : message.includes("identity") || message.includes("verify") ? "identity_error" : "authorization_error";
+      const failure = `${stage}_error`;
       console.warn("[Google OAuth] Callback failed", { failure });
       res.redirect(`/auth?google=${failure}`);
     }
