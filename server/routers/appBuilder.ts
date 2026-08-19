@@ -10,6 +10,7 @@ import {
   templates,
 } from "../../drizzle/schema";
 import { templateCategories } from "../../shared/appBuilderCatalog";
+import { premiumExampleCatalog } from "../../shared/premiumExamples";
 import { getOwnedProject, getProjectWorkspace, getRequiredDb, ensureTemplateCatalog } from "../appBuilderDb";
 import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { storagePut } from "../storage";
@@ -92,6 +93,50 @@ export const appBuilderRouter = router({
         );
       }
       return { id: projectId };
+    }),
+    createFromExample: protectedProcedure.input(z.object({ slug: z.string().min(1).max(80) })).mutation(async ({ ctx, input }) => {
+      const example = premiumExampleCatalog.find(item => item.slug === input.slug);
+      if (!example) throw new TRPCError({ code: "NOT_FOUND", message: "Example not found" });
+      const db = await getRequiredDb();
+      const result = await db.insert(projects).values({
+        ownerId: ctx.user.id,
+        name: example.nameAr,
+        description: example.descriptionAr,
+        category: example.category,
+        language: "both",
+        settings: { theme: "system", primaryColor: example.accentColor, source: "premium-example", exampleSlug: example.slug },
+      });
+      const projectId = Number(result[0]?.insertId ?? 0);
+      if (!projectId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Example project creation failed" });
+      const pageIds: number[] = [];
+      for (let sortOrder = 0; sortOrder < example.pages.length; sortOrder += 1) {
+        const page = example.pages[sortOrder];
+        const pageResult = await db.insert(projectPages).values({
+          projectId,
+          sourcePageKey: page.key,
+          titleAr: page.titleAr,
+          titleEn: page.titleEn,
+          route: `/${page.key}`,
+          sortOrder,
+          configuration: { source: "premium-example", exampleSlug: example.slug },
+        });
+        const pageId = Number(pageResult[0]?.insertId ?? 0);
+        if (!pageId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Example page creation failed" });
+        pageIds.push(pageId);
+      }
+      for (let sortOrder = 0; sortOrder < example.components.length; sortOrder += 1) {
+        const labelEn = example.components[sortOrder];
+        await db.insert(projectComponents).values({
+          projectId,
+          pageId: pageIds[sortOrder % pageIds.length],
+          componentType: ["Card", "List", "Button"][sortOrder % 3],
+          labelAr: `مكوّن ${labelEn}`,
+          labelEn,
+          sortOrder,
+          properties: { source: "premium-example", exampleSlug: example.slug },
+        });
+      }
+      return { id: projectId, nameAr: example.nameAr, nameEn: example.nameEn };
     }),
     update: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), data: projectSchema.partial() })).mutation(async ({ ctx, input }) => {
       const project = await getOwnedProject(ctx.user.id, input.projectId);

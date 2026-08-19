@@ -115,3 +115,8 @@
 - [x] Add a user-facing bilingual guide page that explains free exports, paid exports, examples, and the current cloud-build limitation, with a visible route from the application.
 - [ ] Build a companion mobile application experience that mirrors the App Builder website’s authentication, templates, premium examples, projects, exports, and free-versus-paid distinction in Arabic RTL and English LTR.
 - [x] Add installable mobile web-app packaging with manifest, service worker, and user guidance while native APK/IPA cloud builds remain deferred.
+- [ ] Configure Moyasar hosted checkout and server-side payment verification for paid exports only, using the approved per-10-MB prices and preserving fully free direct exports.
+- [ ] Repair Google OAuth access denial by validating audience/test-user eligibility or production publishing, then complete a real sign-in callback into the workspace.
+- [ ] Produce and verify an installable APK for the App Builder companion application through a real Android build pipeline, then attach it alongside the published site link.
+- [ ] Create the App Builder Android companion app source from the website’s design system, including bilingual onboarding, templates, premium examples, projects, exports, and account navigation.
+- [x] Let authenticated users create an owned, editable project from each template example through a protected server procedure and bilingual action buttons.
