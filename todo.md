@@ -30,6 +30,8 @@
 - [x] Add route-level authentication protection and explicit unauthorized states for all workspace routes.
 - [x] Build an authenticated dashboard with recent projects, template recommendations, project status, and a new-project entry point.
 - [x] Build a library of seven editable templates: e-commerce, education, games, music, podcasts, movies and shows, and services.
+- [x] Add an editable Books application template with bilingual library, book detail, reading, category, and account pages.
+- [ ] Obtain the owner-approved paid-export price per 10 MB for the Books template before enabling its paid export path.
 - [x] Build project creation, listing, update, and deletion flows with ownership checks.
 - [x] Add a project-edit interface using the protected update procedure and verify it updates only the signed-in owner’s project.
 - [x] Replace the package-name field in project creation with the client-entered project name and a required export target selector: Android APK, Android AAB, or Apple IPA.
@@ -78,6 +80,7 @@
 - [x] Replace the direct no-payment export queue with a verified Moyasar payment prerequisite for every APK, AAB, and IPA export request.
 - [x] Preserve historical payment records while adding a new Moyasar provider mode and provider invoice reference for new transactions.
 - [x] Remove all user-facing Manus names, logos, attribution, and hosted-domain references from the website code and metadata.
+- [x] Publish bilingual Terms of Use and Privacy Policy pages, including prohibited-content rules, user responsibility for rights and licenses, reporting, review, removal, and repeat-violation handling.
 - [x] Verify desktop and mobile public pages do not visually expose Manus branding.
 - [ ] Prepare the project for a user-owned custom domain and provide the required DNS connection steps.
 - [ ] Run a full-project scan for Manus, hosting domains, and Manus asset paths; remove or replace every user-facing or metadata reference that can be changed safely. (The remaining storage prefix is documented as an infrastructure constraint.)
@@ -170,10 +173,14 @@
 - [x] Make List create editable navigation items that each route to a selected project page.
 - [x] Make Image and Video select uploaded project assets from an in-editor gallery, with preview and alternative text or caption.
 - [x] Add authenticated project-gallery upload and selection for image, video, and audio attachments, with type-aware validation and previews in the editor.
+- [x] Add a PDF attachment component with authenticated project-gallery upload, validation, reader preview, and runtime viewing for book applications.
+- [ ] Add an optional in-app payment-platform component for all template categories, supporting products or subscriptions through a server-verified merchant invoice flow and real invoices only after merchant credentials are configured.
+- [ ] Assess and implement a secure Gemini Flash integration for approved AI features after a server-side API key is supplied, with no client-side key exposure.
 - [x] Make Form insert a ready-to-customize form appropriate to the active template category, with editable fields and submit label.
 - [x] Add game-specific programmable blocks for scenes, player movement, collisions, score, levels, and win or lose conditions in game projects.
 - [ ] Define and implement a professional game-template component blueprint covering genre presets, scenes, entities, controls, rules, progression, UI, audio, persistence, testing, and export readiness.
 - [x] Implement the first runnable 2D platformer preset with player, platforms, collectibles, hazards, finish gate, health, score, touch controls, and editable game rules.
+- [x] Add an editable game image-animation player that uses uploaded sprite frames or an image sheet to animate characters and scenes inside the runnable game preview.
 - [x] Add an editable, functional Search Bar component to the e-commerce template only, with live preview behavior in the editor.
 - [x] Add an e-commerce Product component with optional bilingual name and description, price, discounted or updated price, supported common currency, and remaining stock.
 - [x] Make Card an optional-label rich-text content block suitable for lessons, courses, and articles across all template categories.

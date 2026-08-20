@@ -3,9 +3,10 @@ import { templateCategories } from "../shared/appBuilderCatalog";
 import { premiumExampleCatalog } from "../shared/premiumExamples";
 
 describe("premium app examples", () => {
-  it("provides one unique editable application example for every template category", () => {
+  it("provides unique editable paid examples for the currently priced categories", () => {
     expect(premiumExampleCatalog).toHaveLength(7);
-    expect(premiumExampleCatalog.map(example => example.category).sort()).toEqual([...templateCategories].sort());
+    expect(premiumExampleCatalog.map(example => example.category).every(category => templateCategories.includes(category))).toBe(true);
+    expect(premiumExampleCatalog.some(example => example.category === "books")).toBe(false);
     expect(new Set(premiumExampleCatalog.map(example => example.slug)).size).toBe(7);
   });
 

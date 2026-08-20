@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useLocale } from "@/contexts/LocaleContext";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, CircleAlert, FileAudio, Heart, Image as ImageIcon, Layers3, Loader2, RotateCcw, Search, ShoppingBag, Trophy, Video, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, CircleAlert, CreditCard, FileAudio, FileText, Heart, Image as ImageIcon, Layers3, Loader2, RotateCcw, Search, ShoppingBag, Trophy, Video, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useRoute } from "wouter";
 
@@ -25,6 +25,9 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
   const finishSettings = asRecord(components.find(component => component.componentType === "FinishGate")?.properties);
   const controls = asRecord(components.find(component => component.componentType === "TouchControls")?.properties);
   const scoreSettings = asRecord(components.find(component => component.componentType === "Score")?.properties);
+  const animations = useMemo(() => components.filter(component => component.componentType === "ImageAnimation").map(component => asRecord(component.properties)), [components]);
+  const maxAnimationFps = Math.max(1, ...animations.map(animation => bounded(Math.round(numberValue(animation, "fps", 8)), 1, 30)));
+  const [animationTick, setAnimationTick] = useState(0);
   const duration = Math.max(10, numberValue(scene, "durationSeconds", 90));
   const startingX = bounded(numberValue(playerSettings, "startX", 8), 0, 96);
   const playerSpeed = Math.max(2, numberValue(playerSettings, "speed", 6));
@@ -59,6 +62,44 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
     }), 1000);
     return () => window.clearInterval(timer);
   }, [status]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setAnimationTick(value => value + 1), Math.round(1000 / maxAnimationFps));
+    return () => window.clearInterval(timer);
+  }, [maxAnimationFps]);
+
+  useEffect(() => {
+    const board = document.querySelector<HTMLElement>('[role="application"]');
+    if (!board || !animations.length) return;
+    const layer = document.createElement("div");
+    layer.style.position = "absolute";
+    layer.style.inset = "0";
+    layer.style.pointerEvents = "none";
+    layer.style.zIndex = "20";
+    animations.filter(animation => text(animation, "assetUrl")).forEach((animation, index) => {
+      const frameCount = bounded(Math.round(numberValue(animation, "frameCount", 1)), 1, 32);
+      const frame = animationTick % frameCount;
+      const targetPlayer = text(animation, "target", "player") === "player";
+      const sprite = document.createElement("div");
+      sprite.setAttribute("aria-hidden", "true");
+      sprite.style.position = "absolute";
+      sprite.style.left = `${targetPlayer ? playerX : bounded(numberValue(animation, "x", 12), 0, 100)}%`;
+      sprite.style.top = `${targetPlayer ? playerY : bounded(numberValue(animation, "y", 20), 0, 100)}%`;
+      sprite.style.width = targetPlayer ? "3.5rem" : `${bounded(numberValue(animation, "width", 18), 2, 100)}%`;
+      sprite.style.height = targetPlayer ? "3.5rem" : `${bounded(numberValue(animation, "height", 18), 2, 100)}%`;
+      sprite.style.backgroundImage = `url(${text(animation, "assetUrl")})`;
+      sprite.style.backgroundRepeat = "no-repeat";
+      sprite.style.backgroundSize = `${frameCount * 100}% 100%`;
+      sprite.style.backgroundPosition = `${frameCount === 1 ? 0 : (frame / (frameCount - 1)) * 100}% 50%`;
+      sprite.style.filter = "drop-shadow(0 4px 4px rgb(15 23 42 / 0.24))";
+      sprite.style.transform = `translateY(${animationTick % 2 === 0 ? -3 : 3}px)`;
+      sprite.style.transition = "transform 120ms linear";
+      sprite.style.zIndex = String(20 + index);
+      layer.appendChild(sprite);
+    });
+    board.appendChild(layer);
+    return () => layer.remove();
+  }, [animations, animationTick, playerX, playerY]);
 
   function move(delta: number) {
     if (status !== "playing") return;
@@ -121,6 +162,8 @@ function ProjectScreen({ components, pages, activePageId, onNavigate, isArabic }
     if (component.componentType === "Image") return <figure key={component.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">{text(props, "assetUrl") ? <img className="max-h-[28rem] w-full object-cover" src={text(props, "assetUrl")} alt={text(props, isArabic ? "altAr" : "altEn", label)} /> : <div className="flex aspect-[16/8] items-center justify-center bg-slate-100 text-slate-400"><ImageIcon /></div>}<figcaption className="px-4 py-3 text-sm text-slate-600">{text(props, isArabic ? "altAr" : "altEn", label)}</figcaption></figure>;
     if (component.componentType === "Video") return <figure key={component.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">{text(props, "assetUrl") ? <video className="w-full bg-black" controls preload="metadata" src={text(props, "assetUrl")} /> : <div className="flex aspect-video items-center justify-center bg-slate-900 text-slate-300"><Video /></div>}<figcaption className="px-4 py-3 text-sm text-slate-600">{text(props, isArabic ? "captionAr" : "captionEn", label)}</figcaption></figure>;
     if (component.componentType === "Audio") return <figure key={component.id} className="rounded-3xl border border-indigo-100 bg-indigo-50 p-5"><div className="mb-3 flex items-center gap-3"><span className="rounded-2xl bg-indigo-600 p-3 text-white"><FileAudio className="h-5 w-5" /></span><strong className="text-slate-900">{text(props, isArabic ? "captionAr" : "captionEn", label)}</strong></div>{text(props, "assetUrl") ? <audio className="w-full" controls preload="metadata" src={text(props, "assetUrl")} /> : <p className="text-sm text-slate-500">{isArabic ? "لم يُحدد ملف صوتي بعد." : "No audio attachment selected yet."}</p>}</figure>;
+    if (component.componentType === "PDFDocument") return <article key={component.id} className="overflow-hidden rounded-3xl border border-amber-200 bg-amber-50 shadow-sm"><div className="flex items-center gap-3 px-5 py-4 text-amber-950"><span className="rounded-2xl bg-amber-600 p-3 text-white"><FileText className="h-5 w-5" /></span><div><strong>{text(props, isArabic ? "titleAr" : "titleEn", label)}</strong><p className="mt-1 text-sm text-amber-900/80">{text(props, isArabic ? "descriptionAr" : "descriptionEn", isArabic ? "ملف قراءة PDF" : "PDF reading file")}</p></div></div>{text(props, "assetUrl") ? <iframe className="h-[32rem] w-full border-0 bg-white" src={text(props, "assetUrl")} title={text(props, isArabic ? "titleAr" : "titleEn", label)} /> : <p className="px-5 pb-5 text-sm text-amber-900">{isArabic ? "لم يُحدد ملف PDF بعد." : "No PDF file has been selected yet."}</p>}</article>;
+    if (component.componentType === "PaymentPlatform") { const successPage = typeof props.successPageId === "number" ? props.successPageId : null; const amount = numberValue(props, "amount", 0); const currency = text(props, "currency", "SAR"); return <article key={component.id} className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm"><div className="flex items-start gap-3"><span className="rounded-2xl bg-emerald-600 p-3 text-white"><CreditCard className="h-5 w-5" /></span><div><strong className="text-slate-900">{text(props, isArabic ? "titleAr" : "titleEn", label)}</strong><p className="mt-1 text-sm text-slate-600">{text(props, isArabic ? "descriptionAr" : "descriptionEn", isArabic ? "فاتورة دفع تاجر بعد التهيئة." : "Merchant invoice after setup.")}</p></div></div><Button type="button" disabled className="mt-4 w-full">{amount > 0 ? `${amount} ${currency}` : (isArabic ? "أدخل مبلغًا أولًا" : "Set an amount first")}</Button><p className="mt-2 text-xs text-emerald-800">{isArabic ? "تتطلب الفاتورة الحقيقية تهيئة حساب التاجر والتحقق الخادمي قبل تفعيل هذا الزر." : "A real invoice requires merchant-account setup and server verification before this button is enabled."}</p>{successPage ? <span className="mt-2 block text-xs font-semibold text-emerald-700">{isArabic ? `سيُتابع إلى: ${pageTitle(successPage) ?? "صفحة النجاح"}` : `Will continue to: ${pageTitle(successPage) ?? "Success page"}`}</span> : null}</article>; }
     if (component.componentType === "Button") { const target = typeof props.targetPageId === "number" ? props.targetPageId : null; return <button key={component.id} type="button" onClick={() => target && onNavigate(target)} disabled={!target} className={cn("flex w-full items-center justify-between rounded-2xl px-5 py-4 text-start font-bold shadow-sm transition active:scale-[0.98]", target ? "bg-gradient-to-l from-indigo-600 to-violet-600 text-white" : "cursor-not-allowed bg-slate-200 text-slate-500")}>{text(props, isArabic ? "textAr" : "textEn", label)}{target ? <span className="flex items-center gap-2 text-xs font-medium text-white/80">{pageTitle(target)}{isArabic ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}</span> : <span className="text-xs">{isArabic ? "اختر صفحة الربط" : "Choose link page"}</span>}</button>; }
     if (component.componentType === "List") { const listItems = items(props); const title = text(props, isArabic ? "titleAr" : "titleEn", label); return <nav key={component.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">{title && <div className="border-b border-slate-100 px-5 py-4"><strong className="text-slate-900">{title}</strong></div>}{listItems.length ? listItems.map((item, index) => { const target = typeof item.targetPageId === "number" ? item.targetPageId : null; return <button type="button" key={`${component.id}-${index}`} onClick={() => target && onNavigate(target)} disabled={!target} className="flex w-full items-center justify-between border-b border-slate-100 px-5 py-4 text-start text-sm font-semibold text-slate-700 last:border-0 disabled:cursor-not-allowed disabled:text-slate-400">{text(item, isArabic ? "labelAr" : "labelEn", isArabic ? "زر قائمة" : "List button")}{isArabic ? <ChevronLeft className="h-4 w-4 text-indigo-500" /> : <ChevronRight className="h-4 w-4 text-indigo-500" />}</button>; }) : <p className="px-5 py-4 text-sm text-slate-500">{isArabic ? "لا توجد أزرار داخل هذه القائمة بعد." : "This list has no buttons yet."}</p>}</nav>; }
     if (component.componentType === "Product") { const price = typeof props.price === "number" ? props.price : 0; const salePrice = typeof props.salePrice === "number" ? props.salePrice : null; const currency = text(props, "currency", "SAR"); return <article key={component.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">{text(props, "assetUrl") ? <img src={text(props, "assetUrl")} className="h-48 w-full object-cover" alt="" /> : <div className="flex h-40 items-center justify-center bg-slate-100 text-slate-400"><ShoppingBag /></div>}<div className="p-5"><strong className="text-lg text-slate-900">{text(props, isArabic ? "nameAr" : "nameEn", label)}</strong><p className="mt-1 text-sm leading-6 text-slate-600">{text(props, isArabic ? "descriptionAr" : "descriptionEn")}</p><div className="mt-4 flex items-end justify-between"><div>{salePrice !== null ? <><del className="mr-2 text-sm text-slate-400">{price} {currency}</del><strong className="text-indigo-700">{salePrice} {currency}</strong></> : <strong className="text-indigo-700">{price} {currency}</strong>}</div><span className="text-xs text-slate-500">{isArabic ? `المخزون: ${typeof props.stock === "number" ? props.stock : 0}` : `Stock: ${typeof props.stock === "number" ? props.stock : 0}`}</span></div></div></article>; }

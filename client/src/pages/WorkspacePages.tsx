@@ -25,7 +25,7 @@ function PageHeading({ kicker, title, description, action }: { kicker?: string; 
 function LoadingPanel() { return <div className="workspace-panel loading-panel"><Loader2 className="h-5 w-5 animate-spin text-indigo-500" /></div>; }
 
 const categoryLabels: Record<TemplateCategory, { ar: string; en: string }> = {
-  ecommerce: { ar: "متجر إلكتروني", en: "E-commerce" }, education: { ar: "تطبيق تعليمي", en: "Education" }, games: { ar: "تطبيق ألعاب", en: "Games" }, music: { ar: "تطبيق موسيقى", en: "Music" }, podcasts: { ar: "تطبيق بودكاست", en: "Podcasts" }, movies: { ar: "أفلام ومسلسلات", en: "Movies & shows" }, services: { ar: "تطبيق خدمات", en: "Services" },
+  ecommerce: { ar: "متجر إلكتروني", en: "E-commerce" }, education: { ar: "تطبيق تعليمي", en: "Education" }, games: { ar: "تطبيق ألعاب", en: "Games" }, music: { ar: "تطبيق موسيقى", en: "Music" }, podcasts: { ar: "تطبيق بودكاست", en: "Podcasts" }, movies: { ar: "أفلام ومسلسلات", en: "Movies & shows" }, services: { ar: "تطبيق خدمات", en: "Services" }, books: { ar: "تطبيق كتب", en: "Books App" },
 };
 
 const exportStatusLabels: Record<string, { ar: string; en: string }> = {

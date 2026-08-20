@@ -1,0 +1,2 @@
+ALTER TABLE `projects` MODIFY COLUMN `category` enum('ecommerce','education','games','music','podcasts','movies','services','books','custom') NOT NULL;--> statement-breakpoint
+ALTER TABLE `templates` MODIFY COLUMN `category` enum('ecommerce','education','games','music','podcasts','movies','services','books') NOT NULL;

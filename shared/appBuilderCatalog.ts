@@ -6,6 +6,7 @@ export const templateCategories = [
   "podcasts",
   "movies",
   "services",
+  "books",
 ] as const;
 
 export type TemplateCategory = (typeof templateCategories)[number];
@@ -152,6 +153,25 @@ export const templateCatalog: TemplateCatalogItem[] = [
       { key: "booking", titleAr: "الحجز", titleEn: "Booking" },
       { key: "clients", titleAr: "العملاء", titleEn: "Clients" },
       { key: "checkout", titleAr: "الدفع", titleEn: "Checkout" },
+    ],
+  },
+  {
+    slug: "books-library",
+    category: "books",
+    nameAr: "تطبيق كتب",
+    nameEn: "Books App",
+    descriptionAr: "مكتبة كتب رقمية للقراءة والتصنيفات وتفاصيل الكتب والمفضلة والحساب.",
+    descriptionEn: "A digital library for reading, categories, book details, favorites, and account access.",
+    accentColor: "#A16207",
+    iconName: "BookOpen",
+    components: ["Book cards", "PDF reader", "Category list", "Search", "Favorites"],
+    suggestedStructure: [
+      { key: "library", titleAr: "المكتبة", titleEn: "Library" },
+      { key: "categories", titleAr: "التصنيفات", titleEn: "Categories" },
+      { key: "book", titleAr: "تفاصيل الكتاب", titleEn: "Book details" },
+      { key: "reader", titleAr: "القارئ", titleEn: "Reader" },
+      { key: "favorites", titleAr: "المفضلة", titleEn: "Favorites" },
+      { key: "account", titleAr: "الحساب", titleEn: "Account" },
     ],
   },
 ];

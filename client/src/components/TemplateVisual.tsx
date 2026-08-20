@@ -1,8 +1,8 @@
 import { useLocale } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
-import { Clapperboard, Gamepad2, GraduationCap, Music2, Mic2, ShoppingBag, BriefcaseBusiness, type LucideIcon } from "lucide-react";
+import { BookOpen, Clapperboard, Gamepad2, GraduationCap, Music2, Mic2, ShoppingBag, BriefcaseBusiness, type LucideIcon } from "lucide-react";
 
-const icons: Record<string, LucideIcon> = { ShoppingBag, GraduationCap, Gamepad2, Music2, Mic2, Clapperboard, BriefcaseBusiness };
+const icons: Record<string, LucideIcon> = { ShoppingBag, GraduationCap, Gamepad2, Music2, Mic2, Clapperboard, BriefcaseBusiness, BookOpen };
 
 export function TemplateVisual({ iconName, color, size = "regular" }: { iconName: string; color: string; size?: "regular" | "small" }) {
   const Icon = icons[iconName] ?? ShoppingBag;

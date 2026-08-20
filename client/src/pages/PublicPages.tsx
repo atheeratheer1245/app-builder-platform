@@ -10,7 +10,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2, CircleHelp, Crown, FileBox, Layers
 import { Link, useLocation, useRoute } from "wouter";
 import "./public-pages.css";
 
-const labels = { ecommerce: { ar: "متجر إلكتروني", en: "E-commerce" }, education: { ar: "تطبيق تعليمي", en: "Education" }, games: { ar: "تطبيق ألعاب", en: "Games" }, music: { ar: "تطبيق موسيقى", en: "Music" }, podcasts: { ar: "تطبيق بودكاست", en: "Podcasts" }, movies: { ar: "أفلام ومسلسلات", en: "Movies & shows" }, services: { ar: "تطبيق خدمات", en: "Services" } } as const;
+const labels = { ecommerce: { ar: "متجر إلكتروني", en: "E-commerce" }, education: { ar: "تطبيق تعليمي", en: "Education" }, games: { ar: "تطبيق ألعاب", en: "Games" }, music: { ar: "تطبيق موسيقى", en: "Music" }, podcasts: { ar: "تطبيق بودكاست", en: "Podcasts" }, movies: { ar: "أفلام ومسلسلات", en: "Movies & shows" }, services: { ar: "تطبيق خدمات", en: "Services" }, books: { ar: "تطبيق كتب", en: "Books App" } } as const;
 
 function PublicHeader() { const { copy } = useLocale(); return <header className="public-header container"><Link href="/"><BrandMark /></Link><div><Link href="/guide" className="public-header-link"><CircleHelp />{copy("الدليل", "Guide")}</Link><LanguageToggle /><Link href="/auth"><Button variant="outline">{copy("تسجيل الدخول", "Sign in")}</Button></Link></div></header>; }
 

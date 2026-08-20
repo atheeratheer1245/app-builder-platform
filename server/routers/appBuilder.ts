@@ -61,6 +61,12 @@ function validateComponentProperties(componentType: string, properties: Record<s
       throw new TRPCError({ code: "BAD_REQUEST", message: "Product price, currency, and stock are invalid" });
     }
   }
+  if (componentType === "PaymentPlatform") {
+    const supportedCurrencies = new Set(["SAR", "AED", "BHD", "EGP", "EUR", "GBP", "JOD", "KWD", "OMR", "QAR", "USD"]);
+    if ((properties.mode !== "product" && properties.mode !== "subscription") || typeof properties.amount !== "number" || !Number.isFinite(properties.amount) || properties.amount < 0 || !supportedCurrencies.has(typeof properties.currency === "string" ? properties.currency : "SAR")) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Payment platform amount, currency, or mode is invalid" });
+    }
+  }
 }
 
 async function validateDestinationPages(projectId: number, componentType: string, properties: Record<string, unknown>) {
@@ -70,6 +76,7 @@ async function validateDestinationPages(projectId: number, componentType: string
   if (componentType === "Card") addDestination(properties.actionPageId);
   if (componentType === "List") for (const item of Array.isArray(properties.items) ? properties.items : []) addDestination(item && typeof item === "object" && !Array.isArray(item) ? (item as Record<string, unknown>).targetPageId : undefined);
   if (componentType === "Condition") { addDestination(properties.successPageId); addDestination(properties.failurePageId); }
+  if (componentType === "PaymentPlatform") addDestination(properties.successPageId);
   if (!destinationIds.size) return;
   const db = await getRequiredDb();
   const matches = await Promise.all(Array.from(destinationIds).map(pageId => db.select({ id: projectPages.id }).from(projectPages).where(and(eq(projectPages.id, pageId), eq(projectPages.projectId, projectId))).limit(1)));
@@ -83,7 +90,7 @@ async function getNextPageOrder(projectId: number) {
 }
 
 async function normalizeMediaProperties(input: { ownerId: number; projectId: number; componentType: string; properties: Record<string, unknown> }) {
-  const mimePrefix = input.componentType === "Image" ? "image/" : input.componentType === "Video" ? "video/" : input.componentType === "Audio" ? "audio/" : null;
+  const mimePrefix = input.componentType === "Image" || input.componentType === "ImageAnimation" ? "image/" : input.componentType === "Video" ? "video/" : input.componentType === "Audio" ? "audio/" : input.componentType === "PDFDocument" ? "application/pdf" : null;
   if (!mimePrefix) return input.properties;
   const assetId = input.properties.assetId;
   if (assetId === null || assetId === undefined || assetId === "") return { ...input.properties, assetId: null, assetUrl: "" };
@@ -301,9 +308,9 @@ export const appBuilderRouter = router({
     upload: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), filename: z.string().min(1).max(255), mimeType: z.string().min(1).max(120), kind: z.enum(["icon", "image", "font", "document", "other"]), dataBase64: z.string().min(1) })).mutation(async ({ ctx, input }) => {
       if (!await getOwnedProject(ctx.user.id, input.projectId)) unauthenticatedProject();
       const bytes = Buffer.from(input.dataBase64, "base64");
-      const supportsExpandedMedia = input.mimeType.startsWith("video/") || input.mimeType.startsWith("audio/");
+      const supportsExpandedMedia = input.mimeType.startsWith("video/") || input.mimeType.startsWith("audio/") || input.mimeType === "application/pdf";
       const byteLimit = supportsExpandedMedia ? 25 * 1024 * 1024 : 5 * 1024 * 1024;
-      if (!bytes.length || bytes.length > byteLimit) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: supportsExpandedMedia ? "Audio and video assets must be no larger than 25 MB" : "Asset must be no larger than 5 MB" });
+      if (!bytes.length || bytes.length > byteLimit) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: supportsExpandedMedia ? "Audio, video, and PDF assets must be no larger than 25 MB" : "Asset must be no larger than 5 MB" });
       const safeName = input.filename.replace(/[^a-zA-Z0-9._-]/g, "_");
       const { key, url } = await storagePut(`app-builder/${ctx.user.id}/${input.projectId}/${Date.now()}-${safeName}`, bytes, input.mimeType);
       const db = await getRequiredDb();

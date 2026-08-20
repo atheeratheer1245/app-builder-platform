@@ -42,4 +42,14 @@ describe("runnable project route", () => {
     expect(editorSource).toContain('if (type === "Platform")');
     expect(editorSource).toContain('if (type === "TouchControls")');
   });
+
+  it("renders selected PDF documents and animates uploaded sprite images inside the runnable app", () => {
+    expect(runtimeSource).toContain('component.componentType === "PDFDocument"');
+    expect(runtimeSource).toContain("<iframe");
+    expect(runtimeSource).toContain('component.componentType === "ImageAnimation"');
+    expect(runtimeSource).toContain("setAnimationTick");
+    expect(runtimeSource).toContain("backgroundPosition");
+    expect(editorSource).toContain('if (type === "PDFDocument")');
+    expect(editorSource).toContain('if (type === "ImageAnimation")');
+  });
 });

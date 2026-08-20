@@ -3,7 +3,7 @@ import { getAllowedComponentTypes, getDefaultComponentProperties } from "../shar
 
 describe("builder component catalog", () => {
   it("provides functional defaults for every standard component in each template family", () => {
-    for (const category of ["ecommerce", "education", "games", "music", "podcasts", "movies", "services"] as const) {
+    for (const category of ["ecommerce", "education", "games", "music", "podcasts", "movies", "services", "books"] as const) {
       for (const type of getAllowedComponentTypes(category)) {
         expect(getDefaultComponentProperties(type, category)).toEqual(expect.any(Object));
       }
@@ -11,7 +11,7 @@ describe("builder component catalog", () => {
   });
 
   it("exposes programmable game blocks only to game projects", () => {
-    expect(getAllowedComponentTypes("games")).toEqual(expect.arrayContaining(["GameScene", "Player", "Platform", "Collectible", "Hazard", "FinishGate", "TouchControls", "Physics", "Score", "Level", "Condition"]));
+    expect(getAllowedComponentTypes("games")).toEqual(expect.arrayContaining(["GameScene", "Player", "ImageAnimation", "Platform", "Collectible", "Hazard", "FinishGate", "TouchControls", "Physics", "Score", "Level", "Condition"]));
     expect(getAllowedComponentTypes("ecommerce")).not.toContain("GameScene");
     expect(getAllowedComponentTypes("ecommerce")).not.toContain("Platform");
   });
@@ -22,6 +22,7 @@ describe("builder component catalog", () => {
     expect(getDefaultComponentProperties("Collectible", "games")).toMatchObject({ amount: 3, value: 10 });
     expect(getDefaultComponentProperties("FinishGate", "games")).toMatchObject({ requiredScore: 30 });
     expect(getDefaultComponentProperties("TouchControls", "games")).toMatchObject({ showDirections: true, showJump: true });
+    expect(getDefaultComponentProperties("ImageAnimation", "games")).toMatchObject({ target: "player", frameCount: 1, fps: 8 });
   });
 
   it("exposes the editable search bar to storefront and media discovery projects", () => {
@@ -29,6 +30,7 @@ describe("builder component catalog", () => {
     expect(getAllowedComponentTypes("music")).toContain("SearchBar");
     expect(getAllowedComponentTypes("podcasts")).toContain("SearchBar");
     expect(getAllowedComponentTypes("movies")).toContain("SearchBar");
+    expect(getAllowedComponentTypes("books")).toEqual(expect.arrayContaining(["SearchBar", "PDFDocument", "PaymentPlatform"]));
     expect(getAllowedComponentTypes("education")).not.toContain("SearchBar");
     expect(getAllowedComponentTypes("games")).not.toContain("SearchBar");
     expect(getAllowedComponentTypes("ecommerce")).toContain("Product");
@@ -39,6 +41,8 @@ describe("builder component catalog", () => {
       emptyAr: "لا توجد نتائج مطابقة للبحث",
     });
     expect(getDefaultComponentProperties("Product", "ecommerce")).toMatchObject({ currency: "SAR", price: 0, stock: 0 });
+    expect(getDefaultComponentProperties("PDFDocument", "books")).toMatchObject({ assetId: null, assetUrl: "", startPage: 1 });
+    expect(getDefaultComponentProperties("PaymentPlatform", "books")).toMatchObject({ provider: "moyasar", mode: "product", currency: "SAR" });
   });
 
   it("builds a template-aware booking form plus editable button, titled list, and audio defaults", () => {

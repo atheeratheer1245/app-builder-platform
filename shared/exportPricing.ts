@@ -1,8 +1,9 @@
 import type { TemplateCategory } from "./appBuilderCatalog";
 
 export const TEN_MB_BYTES = 10 * 1024 * 1024;
+export type PaidExportCategory = Exclude<TemplateCategory, "books">;
 
-export const paidExportPricePerTenMbSar: Record<TemplateCategory, number> = {
+export const paidExportPricePerTenMbSar: Record<PaidExportCategory, number> = {
   ecommerce: 50,
   education: 70,
   games: 120,
@@ -12,7 +13,12 @@ export const paidExportPricePerTenMbSar: Record<TemplateCategory, number> = {
   services: 40,
 };
 
+export function hasPaidExportPrice(category: TemplateCategory): category is PaidExportCategory {
+  return category !== "books";
+}
+
 export function getPaidExportPrice(category: TemplateCategory, estimatedSizeBytes: number) {
+  if (!hasPaidExportPrice(category)) throw new Error("Paid export price has not been configured for this template category");
   const sizeUnits = Math.max(1, Math.ceil(Math.max(0, estimatedSizeBytes) / TEN_MB_BYTES));
   const unitPriceSar = paidExportPricePerTenMbSar[category];
   return {

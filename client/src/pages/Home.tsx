@@ -15,7 +15,7 @@ export default function Home() {
   const Arrow = isArabic ? ArrowLeft : ArrowRight;
   const headline = isArabic ? <>من فكرتك إلى <em>تطبيق موبايل</em> احترافي.</> : <>From your idea to a <em>professional mobile app</em>.</>;
   const features: Array<[LucideIcon, string, string]> = [
-    [Layers3, copy("قوالب منظمة", "Structured templates"), copy("سبع فئات محسّنة لبداية أسرع.", "Seven focused categories for a faster start.")],
+    [Layers3, copy("قوالب منظمة", "Structured templates"), copy("ثماني فئات محسّنة لبداية أسرع.", "Eight focused categories for a faster start.")],
     [Box, copy("محرر بصري", "Visual editor"), copy("أدر الصفحات والمكونات من لوحة واحدة.", "Manage pages and components in one place.")],
     [ShieldCheck, copy("تصدير واضح", "Clear export flow"), copy("تابع حالة APK وAAB وIPA قبل التنزيل.", "Track APK, AAB, and IPA status before download.")],
   ];
@@ -30,5 +30,6 @@ export default function Home() {
       <div className="container"><PremiumExamplesPanel isArabic={isArabic} /></div>
       <div className="container"><ExportPlansPanel isArabic={isArabic} /></div>
     </main>
+    <footer className="container flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 py-8 text-sm text-slate-500"><span>{copy("استخدم المنصة بمسؤولية واحترم الحقوق والتراخيص.", "Use the platform responsibly and respect rights and licenses.")}</span><div className="flex items-center gap-4 font-semibold text-slate-600"><Link href="/terms">{copy("سياسة الاستخدام", "Terms of Use")}</Link><Link href="/privacy">{copy("سياسة الخصوصية", "Privacy Policy")}</Link></div></footer>
   </div>;
 }

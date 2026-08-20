@@ -7,6 +7,7 @@ import { CreateProjectPage, EditorPage } from "@/pages/BuilderPages";
 import ProjectRuntimePage from "@/pages/ProjectRuntimePage";
 import SettingsPage from "@/pages/SettingsPage";
 import Home from "@/pages/Home";
+import { LegalPage } from "@/pages/LegalPages";
 import NotFound from "@/pages/NotFound";
 import { GuidePage, PremiumExamplePreviewPage } from "@/pages/PublicPages";
 import { DashboardPage, ExportsPage, ProjectsPage, TemplatesPage } from "@/pages/WorkspacePages";
@@ -18,6 +19,8 @@ function Router() {
     <Route path="/" component={Home} />
     <Route path="/auth" component={Auth} />
     <Route path="/guide" component={GuidePage} />
+    <Route path="/terms">{() => <LegalPage kind="terms" />}</Route>
+    <Route path="/privacy">{() => <LegalPage kind="privacy" />}</Route>
     <Route path="/examples/:slug" component={PremiumExamplePreviewPage} />
     <Route path="/app" component={DashboardPage} />
     <Route path="/projects" component={ProjectsPage} />
