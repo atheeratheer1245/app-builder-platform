@@ -175,7 +175,7 @@
 - [x] Add authenticated project-gallery upload and selection for image, video, and audio attachments, with type-aware validation and previews in the editor.
 - [x] Add a PDF attachment component with authenticated project-gallery upload, validation, reader preview, and runtime viewing for book applications.
 - [ ] Add an optional in-app payment-platform component for all template categories, supporting products or subscriptions through a server-verified merchant invoice flow and real invoices only after merchant credentials are configured.
-- [ ] Assess and implement a secure Gemini Flash integration for approved AI features after a server-side API key is supplied, with no client-side key exposure.
+- [x] Assess and implement a secure Gemini Flash integration for approved AI features after a server-side API key is supplied, with no client-side key exposure.
 - [x] Make Form insert a ready-to-customize form appropriate to the active template category, with editable fields and submit label.
 - [x] Add game-specific programmable blocks for scenes, player movement, collisions, score, levels, and win or lose conditions in game projects.
 - [ ] Define and implement a professional game-template component blueprint covering genre presets, scenes, entities, controls, rules, progression, UI, audio, persistence, testing, and export readiness.
@@ -197,3 +197,4 @@
 - [x] Build an authenticated runnable project route that renders saved pages, image/video/audio media, buttons, and titled list navigation from project data rather than showing editor metadata only.
 - [x] Refresh the project gallery after every upload and open the new component’s configuration immediately so clients can select media and page links without navigating through inactive-looking controls.
 - [x] Enforce server-side ownership of every selected page destination so saved buttons and list navigation cannot point outside the current project.
+- [ ] Reproduce and repair Google sign-in on the published website, verify the canonical authorization URL and callback, and record any remaining Google Auth Platform audience requirement.

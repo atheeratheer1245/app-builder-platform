@@ -18,6 +18,7 @@ import { getOwnedProject, getProjectWorkspace, getRequiredDb, ensureTemplateCata
 import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { storagePut } from "../storage";
 import { createMoyasarInvoice, requestOrigin, verifyPaidExportInvoice } from "../moyasarPaid";
+import { invokeLLM } from "../_core/llm";
 
 const categorySchema = z.enum(templateCategories);
 const exportInput = z.object({ projectId: z.number().int().positive(), format: z.enum(["apk", "aab", "ipa"]) });
@@ -30,10 +31,28 @@ const projectSchema = z.object({
   language: z.enum(["ar", "en", "both"]).default("both"),
   exportFormat: z.enum(["apk", "aab", "ipa"]).default("apk"),
 });
+const aiSuggestionInput = z.object({
+  projectId: z.number().int().positive(),
+  kind: z.enum(["page", "card", "product"]),
+  brief: z.string().trim().min(3).max(800),
+  language: z.enum(["ar", "en", "both"]).default("both"),
+});
+const aiSuggestionResult = z.object({
+  titleAr: z.string().trim().min(1).max(120),
+  titleEn: z.string().trim().min(1).max(120),
+  descriptionAr: z.string().trim().min(1).max(700),
+  descriptionEn: z.string().trim().min(1).max(700),
+  route: z.string().trim().min(1).max(120),
+});
 
 function generatedPackageName(projectName: string) {
   const fragment = projectName.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "").slice(0, 72) || "app";
   return `com.appbuilder.${fragment}`;
+}
+
+function normalizedSuggestedRoute(value: string, fallback: string) {
+  const toRouteFragment = (candidate: string) => candidate.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 90);
+  return `/${toRouteFragment(value) || toRouteFragment(fallback) || "page"}`;
 }
 
 function unauthenticatedProject(): never {
@@ -297,6 +316,51 @@ export const appBuilderRouter = router({
       const db = await getRequiredDb();
       await db.delete(projectComponents).where(and(eq(projectComponents.id, input.componentId), eq(projectComponents.projectId, input.projectId)));
       return { success: true };
+    }),
+  }),
+  ai: router({
+    suggest: protectedProcedure.input(aiSuggestionInput).mutation(async ({ ctx, input }) => {
+      const project = await getOwnedProject(ctx.user.id, input.projectId);
+      if (!project) unauthenticatedProject();
+      const requestLabel = input.kind === "page" ? "mobile application page" : input.kind === "card" ? "information card" : "product listing";
+      try {
+        const response = await invokeLLM({
+          model: "gemini-3-flash-preview",
+          maxTokens: 900,
+          messages: [
+            {
+              role: "system",
+              content: "You write concise, original app content. Never reproduce copyrighted passages, lyrics, book text, or distinctive trademarks. Do not assist with illegal, hateful, sexual, or deceptive content. Return only the JSON object required by the response schema. Provide clear Modern Standard Arabic and natural English, even if one language is requested, because the editor stores bilingual fields.",
+            },
+            {
+              role: "user",
+              content: `Create copy for a ${requestLabel} in an App Builder project. Project category: ${project.category}. Requested interface language: ${input.language}. User brief: ${input.brief}`,
+            },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "app_builder_content_suggestion",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  titleAr: { type: "string" }, titleEn: { type: "string" }, descriptionAr: { type: "string" }, descriptionEn: { type: "string" }, route: { type: "string" },
+                },
+                required: ["titleAr", "titleEn", "descriptionAr", "descriptionEn", "route"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+        const content = response.choices[0]?.message.content;
+        const parsed = typeof content === "string" ? aiSuggestionResult.safeParse(JSON.parse(content)) : { success: false as const };
+        if (!parsed.success) throw new Error("Invalid AI response");
+        return { ...parsed.data, route: normalizedSuggestedRoute(parsed.data.route, parsed.data.titleEn) };
+      } catch (error) {
+        console.error("[App Builder AI] Suggestion failed", error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "AI suggestion could not be generated" });
+      }
     }),
   }),
   assets: router({

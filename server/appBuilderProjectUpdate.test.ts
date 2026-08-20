@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => {
     select,
     insert,
     insertValues,
+    invokeLLM: vi.fn(),
   };
 });
 
@@ -31,6 +32,8 @@ vi.mock("./appBuilderDb", () => ({
   ensureTemplateCatalog: mocks.ensureTemplateCatalog,
   getProjectWorkspace: vi.fn(),
 }));
+
+vi.mock("./_core/llm", () => ({ invokeLLM: mocks.invokeLLM }));
 
 import { appBuilderRouter } from "./routers/appBuilder";
 
@@ -87,6 +90,23 @@ describe("protected project update", () => {
 
     await expect(caller.projects.update({ projectId: 99, data: { name: "Blocked update" } })).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("creates a bounded bilingual Gemini Flash suggestion only for the matching project owner", async () => {
+    mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "books" });
+    mocks.invokeLLM.mockResolvedValueOnce({ choices: [{ message: { content: JSON.stringify({ titleAr: "اختيارات نهاية الأسبوع", titleEn: "Weekend Picks", descriptionAr: "كتب مختارة لقراءتك الهادئة.", descriptionEn: "Curated books for relaxed reading.", route: "Weekend Picks" }) } }] });
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.ai.suggest({ projectId: 42, kind: "card", brief: "كتب خفيفة لعطلة نهاية الأسبوع", language: "both" })).resolves.toEqual(expect.objectContaining({ titleAr: "اختيارات نهاية الأسبوع", titleEn: "Weekend Picks", route: "/weekend-picks" }));
+    expect(mocks.invokeLLM).toHaveBeenCalledWith(expect.objectContaining({ model: "gemini-3-flash-preview", maxTokens: 900 }));
+  });
+
+  it("does not call Gemini Flash for a project outside the signed-in owner scope", async () => {
+    mocks.getOwnedProject.mockResolvedValueOnce(undefined);
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.ai.suggest({ projectId: 99, kind: "page", brief: "صفحة جديدة للتطبيق", language: "ar" })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(mocks.invokeLLM).not.toHaveBeenCalled();
   });
 
   it("rejects game-only blocks when a non-game project calls the editor API directly", async () => {
