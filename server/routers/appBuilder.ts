@@ -3,6 +3,7 @@ import { and, asc, desc, eq, max } from "drizzle-orm";
 import { z } from "zod";
 import {
   exportJobs,
+  payments,
   projectAssets,
   projectComponents,
   projectPages,
@@ -10,14 +11,17 @@ import {
   templates,
 } from "../../drizzle/schema";
 import { templateCategories } from "../../shared/appBuilderCatalog";
+import { getPaidExportPrice } from "../../shared/exportPricing";
 import { builderComponentTypes, getAllowedComponentTypes, getDefaultComponentProperties } from "../../shared/componentCatalog";
 import { premiumExampleCatalog } from "../../shared/premiumExamples";
 import { getOwnedProject, getProjectWorkspace, getRequiredDb, ensureTemplateCatalog } from "../appBuilderDb";
 import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { storagePut } from "../storage";
+import { createMoyasarInvoice, requestOrigin, verifyPaidExportInvoice } from "../moyasarPaid";
 
 const categorySchema = z.enum(templateCategories);
 const exportInput = z.object({ projectId: z.number().int().positive(), format: z.enum(["apk", "aab", "ipa"]) });
+const paidExportInput = exportInput.extend({ estimatedSizeBytes: z.number().int().min(0).max(2 * 1024 * 1024 * 1024).optional() });
 const projectSchema = z.object({
   name: z.string().trim().min(2).max(160),
   description: z.string().trim().max(2000).optional(),
@@ -296,6 +300,76 @@ export const appBuilderRouter = router({
       const exportJobId = Number(result[0]?.insertId ?? 0);
       if (!exportJobId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Unable to create export request" });
       return { exportJobId, status: "queued" as const };
+    }),
+    quotePaid: protectedProcedure.input(paidExportInput).query(async ({ ctx, input }) => {
+      const project = await getOwnedProject(ctx.user.id, input.projectId);
+      if (!project) unauthenticatedProject();
+      if (project.category === "custom") throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a supported template category before export" });
+      const estimatedSizeBytes = input.estimatedSizeBytes ?? project.estimatedSizeBytes;
+      return { ...getPaidExportPrice(project.category, estimatedSizeBytes), format: input.format, estimatedSizeBytes };
+    }),
+    createPaidInvoice: protectedProcedure.input(paidExportInput).mutation(async ({ ctx, input }) => {
+      const project = await getOwnedProject(ctx.user.id, input.projectId);
+      if (!project) unauthenticatedProject();
+      if (project.category === "custom") throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a supported template category before export" });
+      const estimatedSizeBytes = input.estimatedSizeBytes ?? project.estimatedSizeBytes;
+      const quote = getPaidExportPrice(project.category, estimatedSizeBytes);
+      const db = await getRequiredDb();
+      const jobResult = await db.insert(exportJobs).values({
+        projectId: project.id,
+        ownerId: ctx.user.id,
+        format: input.format,
+        status: "pending_payment",
+        estimatedSizeBytes,
+        sizeUnits: quote.sizeUnits,
+        unitPriceHalalas: quote.unitPriceHalalas,
+        totalPriceHalalas: quote.totalPriceHalalas,
+      });
+      const exportJobId = Number(jobResult[0]?.insertId ?? 0);
+      if (!exportJobId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Unable to prepare paid export" });
+      try {
+        const invoice = await createMoyasarInvoice({
+          amountHalalas: quote.totalPriceHalalas,
+          description: `App Builder ${input.format.toUpperCase()} export · ${project.name}`,
+          origin: requestOrigin(ctx.req),
+          exportJobId,
+          projectId: project.id,
+        });
+        const paymentResult = await db.insert(payments).values({
+          ownerId: ctx.user.id,
+          exportJobId,
+          provider: "moyasar",
+          status: invoice.status === "paid" ? "paid" : "pending",
+          amountHalalas: quote.totalPriceHalalas,
+          currency: "SAR",
+          providerChargeId: invoice.id,
+          checkoutUrl: invoice.url,
+          metadata: { kind: "paid_export", invoiceStatus: invoice.status, format: input.format, category: project.category },
+          ...(invoice.status === "paid" ? { paidAt: new Date() } : {}),
+        });
+        const paymentId = Number(paymentResult[0]?.insertId ?? 0);
+        if (!paymentId) throw new Error("Unable to record paid export invoice");
+        if (invoice.status === "paid") await verifyPaidExportInvoice({ paymentId, ownerId: ctx.user.id });
+        return { exportJobId, paymentId, checkoutUrl: invoice.url, quote };
+      } catch (cause) {
+        await db.update(exportJobs).set({ status: "cancelled", failureReason: "Unable to create Moyasar invoice", updatedAt: new Date() }).where(eq(exportJobs.id, exportJobId));
+        throw new TRPCError({ code: "BAD_GATEWAY", message: cause instanceof Error ? cause.message : "Unable to create payment invoice" });
+      }
+    }),
+    verifyPaidInvoice: protectedProcedure.input(z.object({ paymentId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const result = await verifyPaidExportInvoice({ paymentId: input.paymentId, ownerId: ctx.user.id });
+      if (!result.paid) return result;
+      return result;
+    }),
+    download: protectedProcedure.input(z.number().int().positive()).query(async ({ ctx, input }) => {
+      const db = await getRequiredDb();
+      const rows = await db.select().from(exportJobs).where(and(eq(exportJobs.id, input), eq(exportJobs.ownerId, ctx.user.id))).limit(1);
+      const job = rows[0];
+      if (!job) unauthenticatedProject();
+      if (job.status !== "ready" || !job.artifactUrl) {
+        return { available: false as const, status: job.status, artifactUrl: null };
+      }
+      return { available: true as const, status: job.status, artifactUrl: job.artifactUrl };
     }),
   }),
 });

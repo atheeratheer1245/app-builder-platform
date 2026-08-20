@@ -119,8 +119,58 @@ class MainActivity : ComponentActivity() {
             row.addView(TextView(this).apply { text = name; textSize = 16f; setTextColor(Color.rgb(30, 41, 59)); setTypeface(typeface, Typeface.BOLD) })
             content.addView(row, full(top = 5, bottom = 5))
         }
-        primary(tr("استخدم هذا القالب", "Use this template")) { createProject(t) }.also(content::addView)
+        primary(tr("معاينة تفاعلية للقالب", "Interactive template preview")) { showTemplatePreview(t) }.also(content::addView)
+        secondary(tr("استخدم هذا القالب", "Use this template")) { createProject(t) }.also(content::addView)
         secondary(tr("العودة إلى القوالب", "Back to templates")) { showTemplates() }.also(content::addView)
+    }
+
+    private fun showTemplatePreview(t: Template) {
+        val content = screen(tr("معاينة ${templateTitle(t)}", "Preview · ${templateTitle(t)}"), tr("مثال حي لشكل التطبيق قبل إنشاء مشروعك.", "A live visual sample before creating your project."))
+        val device = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(13), dp(13), dp(13), dp(13)); background = rounded(Color.rgb(15, 23, 42), 26) }
+        val canvas = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(18), dp(16), dp(14)); background = rounded(Color.WHITE, 20) }
+        val previewTop = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; layoutDirection = direction() }
+        previewTop.addView(TextView(this).apply { text = "${t.mark} ${templateTitle(t)}"; textSize = 18f; setTypeface(typeface, Typeface.BOLD); setTextColor(Color.rgb(15, 23, 42)) }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        previewTop.addView(TextView(this).apply { text = "●"; textSize = 14f; setTextColor(t.color) })
+        canvas.addView(previewTop, full(bottom = 12))
+        if (t.id in setOf("ecommerce", "music", "podcasts", "movies")) {
+            val search = TextView(this).apply { text = tr("⌕  ابحث داخل التطبيق", "⌕  Search this app"); textSize = 14f; setTextColor(Color.rgb(100, 116, 139)); setPadding(dp(13), dp(12), dp(13), dp(12)); background = rounded(Color.rgb(248, 250, 252), 13, Color.rgb(226, 232, 240)) }
+            canvas.addView(search, full(bottom = 11))
+        }
+        val feature = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(15), dp(15), dp(15), dp(15)); background = rounded(t.color, 17) }
+        addPreviewText(feature, templatePages(t).first(), 20, Color.WHITE, true)
+        addPreviewText(feature, templateDescription(t), 13, Color.WHITE, false)
+        canvas.addView(feature, full(bottom = 10))
+        when (t.id) {
+            "ecommerce" -> {
+                val product = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(13), dp(12), dp(13), dp(12)); background = rounded(Color.rgb(248, 250, 252), 15, Color.rgb(226, 232, 240)) }
+                addPreviewText(product, tr("سماعات لاسلكية", "Wireless headphones"), 16, Color.rgb(15, 23, 42), true)
+                addPreviewText(product, tr("250 ر.س  ·  خصم 20%  ·  متبقي 8", "SAR 250  ·  20% off  ·  8 left"), 13, Color.rgb(79, 70, 229), false)
+                canvas.addView(product, full(bottom = 9))
+            }
+            "education" -> previewLesson(canvas, tr("دورة اليوم", "Today's course"), tr("أساسيات تصميم التطبيقات", "Mobile app design foundations"), t.color)
+            "games" -> previewLesson(canvas, tr("المستوى 12", "Level 12"), tr("اجمع النقاط وافتح التحدي التالي", "Collect points and unlock the next challenge"), t.color)
+            "music" -> previewLesson(canvas, tr("يعمل الآن", "Now playing"), tr("قائمة تركيز المساء", "Evening focus playlist"), t.color)
+            "podcasts" -> previewLesson(canvas, tr("حلقة جديدة", "New episode"), tr("كيف تحوّل الفكرة إلى منتج", "From idea to product"), t.color)
+            "movies" -> previewLesson(canvas, tr("مختار لك", "Picked for you"), tr("رحلة عبر المدن", "A journey through cities"), t.color)
+            "services" -> previewLesson(canvas, tr("الخدمة التالية", "Next service"), tr("احجز موعدك خلال دقيقة", "Book your appointment in a minute"), t.color)
+        }
+        val miniNav = TextView(this).apply { text = templatePages(t).take(4).joinToString("     "); textSize = 11f; gravity = Gravity.CENTER; setTextColor(Color.rgb(100, 116, 139)); setPadding(dp(5), dp(11), dp(5), dp(1)) }
+        canvas.addView(miniNav, full())
+        device.addView(canvas)
+        content.addView(device, full(bottom = 14))
+        primary(tr("إنشاء مشروعي من هذه المعاينة", "Create my project from this preview")) { createProject(t) }.also(content::addView)
+        secondary(tr("العودة إلى تفاصيل القالب", "Back to template details")) { showTemplate(t) }.also(content::addView)
+    }
+
+    private fun previewLesson(parent: LinearLayout, eyebrow: String, title: String, accent: Int) {
+        val item = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(13), dp(12), dp(13), dp(12)); background = rounded(Color.rgb(248, 250, 252), 15, Color.rgb(226, 232, 240)) }
+        addPreviewText(item, eyebrow, 12, accent, true)
+        addPreviewText(item, title, 16, Color.rgb(15, 23, 42), true)
+        parent.addView(item, full(bottom = 9))
+    }
+
+    private fun addPreviewText(parent: LinearLayout, value: String, size: Int, color: Int, bold: Boolean) {
+        parent.addView(TextView(this).apply { text = value; textSize = size.toFloat(); setTextColor(color); setTypeface(typeface, if (bold) Typeface.BOLD else Typeface.NORMAL); gravity = if (isEnglish) Gravity.LEFT else Gravity.RIGHT }, full(bottom = 4))
     }
 
     private fun showProjects() {

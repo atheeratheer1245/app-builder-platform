@@ -143,6 +143,18 @@
 - [x] Upgrade the standalone Android app with a professional native navigation system, polished dashboard, template discovery, richer project editing, examples, exports, account settings, and clear mobile states without WebView or browser navigation.
 - [x] Add practical bilingual language switching and Arabic RTL/English LTR layouts across the standalone Android experience.
 - [ ] Validate the standalone Android experience visually on device or emulator and rebuild a polished signed APK.
+- [ ] Refine the standalone Android visual hierarchy and add a polished, interactive preview screen for every template before project creation.
+- [ ] Add a native export-files center that shows APK, AAB, and IPA availability, build status, and download actions only when a real artifact is available.
+- [ ] Add the approved per-10-MB paid export pricing to the Android app, including template category, file size, format, free path, and paid path presentation.
+- [ ] Integrate Moyasar checkout and server-side payment verification for paid exports only, preserving no-charge free exports and unlocking a file only after a verified payment plus a real build artifact.
+- [ ] Receive and validate the owner-provided `pk_live_...` and `sk_live_...` Moyasar keys through secure fields before switching any paid-export flow from test to live mode.
+- [ ] Restore `pk_test_...` and `sk_test_...` credentials for the current integration and show a clear test-mode state; keep live checkout disabled until account activation succeeds.
+- [ ] Deliver the current published website URL and the latest standalone Android APK download after verified test-mode build and checks.
+- [ ] Save the pending Moyasar and Android-preview changes in a published checkpoint, then confirm the current public site URL for the owner.
+- [ ] Connect the user-owned custom domain to the App Builder published site after receiving the exact domain name and completing the required DNS records.
+- [ ] Connect `appbuilder.com` and, where supported, `www.appbuilder.com` to the published App Builder site after the owner adds the required DNS records.
+- [ ] Preserve the existing proxied A/AAAA records for `appbuilder.com` and `www` until the website domain panel provides the exact replacement or verification record.
+- [ ] Identify an alternate administrative path to request the official custom-domain DNS record because the owner cannot access the Domains panel.
 - [x] Make Card create an editable information card with title, description, icon or image, and action settings in every template category.
 - [x] Make Button accept bilingual visible text and navigate to a selected project page through an editable internal link.
 - [x] Make List create editable navigation items that each route to a selected project page.

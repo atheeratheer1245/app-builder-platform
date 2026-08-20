@@ -185,7 +185,7 @@ export const exportJobs = mysqlTable(
   ],
 );
 
-/** Historical payment ledger retained read-only after the platform became fully free. */
+/** Payment ledger for paid export invoices; historical records remain immutable evidence. */
 export const payments = mysqlTable(
   "payments",
   {
@@ -225,7 +225,7 @@ export const tapWebhookEvents = mysqlTable(
   table => [uniqueIndex("tap_webhook_event_unique").on(table.providerEventId), index("tap_webhook_payment_idx").on(table.paymentId)],
 );
 
-/** Immutable evidence for Moyasar callback notifications; every provider event is processed at most once. */
+/** Immutable evidence reserved for Moyasar callback notifications; every provider event is processed at most once. */
 export const moyasarWebhookEvents = mysqlTable(
   "moyasarWebhookEvents",
   {
