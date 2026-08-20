@@ -92,6 +92,14 @@ describe("protected project update", () => {
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
+  it("stores a cleared app-icon setting only for the matching project owner", async () => {
+    mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, settings: { exportFormat: "apk" } });
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.editor.updateAppIcon({ projectId: 42, assetId: null })).resolves.toEqual({ success: true, appIconAssetId: null, appIconUrl: "" });
+    expect(mocks.set).toHaveBeenCalledWith(expect.objectContaining({ settings: expect.objectContaining({ exportFormat: "apk", appIconAssetId: null, appIconUrl: "" }) }));
+  });
+
   it("stores a validated solid page background for the matching project owner", async () => {
     mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "books" });
     const caller = appBuilderRouter.createCaller(createOwnerContext());
