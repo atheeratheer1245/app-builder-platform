@@ -162,7 +162,7 @@ export const appBuilderRouter = router({
         description: example.descriptionAr,
         category: example.category,
         language: "both",
-        settings: { theme: "system", primaryColor: example.accentColor, source: "premium-example", exampleSlug: example.slug },
+        settings: { theme: "system", primaryColor: example.accentColor, source: "premium-example", exampleSlug: example.slug, exportFormat: "apk" },
       });
       const projectId = Number(result[0]?.insertId ?? 0);
       if (!projectId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Example project creation failed" });

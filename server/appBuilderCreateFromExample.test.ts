@@ -37,7 +37,7 @@ describe("create project from premium example", () => {
     const result = await appBuilderRouter.createCaller(ownerContext()).projects.createFromExample({ slug: "nova-market" });
     expect(result).toEqual({ id: 501, nameAr: "متجر نوفا", nameEn: "Nova Market" });
     expect(mocks.values).toHaveBeenCalledTimes(14);
-    expect(mocks.values).toHaveBeenNthCalledWith(1, expect.objectContaining({ ownerId: 23, category: "ecommerce", name: "متجر نوفا" }));
+    expect(mocks.values).toHaveBeenNthCalledWith(1, expect.objectContaining({ ownerId: 23, category: "ecommerce", name: "متجر نوفا", settings: expect.objectContaining({ exportFormat: "apk" }) }));
     expect(mocks.values).toHaveBeenNthCalledWith(2, expect.objectContaining({ projectId: 501, route: "/home", titleAr: "الرئيسية" }));
     expect(mocks.values).toHaveBeenNthCalledWith(7, expect.objectContaining({ projectId: 501, pageId: 601, componentType: "SearchBar" }));
     expect(mocks.values).toHaveBeenNthCalledWith(10, expect.objectContaining({ projectId: 501, pageId: 601, componentType: "Product", properties: expect.objectContaining({ salePrice: 149, stock: 12, currency: "SAR" }) }));
