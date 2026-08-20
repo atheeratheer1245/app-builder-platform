@@ -3,7 +3,7 @@ import type { TemplateCategory } from "./appBuilderCatalog";
 export const baseComponentTypes = ["Card", "Button", "List", "Image", "Video", "Audio", "Form"] as const;
 export const ecommerceComponentTypes = ["Product", "SearchBar"] as const;
 export const searchableComponentCategories = ["ecommerce", "music", "podcasts", "movies"] as const;
-export const gameComponentTypes = ["GameScene", "Player", "Physics", "Score", "Level", "Condition"] as const;
+export const gameComponentTypes = ["GameScene", "Player", "Platform", "Collectible", "Hazard", "FinishGate", "TouchControls", "Physics", "Score", "Level", "Condition"] as const;
 export const builderComponentTypes = [...baseComponentTypes, ...ecommerceComponentTypes, ...gameComponentTypes] as const;
 
 export type BuilderComponentType = (typeof builderComponentTypes)[number];
@@ -21,6 +21,11 @@ export const componentTypeLabels: Record<BuilderComponentType, { ar: string; en:
   SearchBar: { ar: "شريط بحث", en: "Search bar" },
   GameScene: { ar: "مشهد لعبة", en: "Game scene" },
   Player: { ar: "لاعب", en: "Player" },
+  Platform: { ar: "منصة أو أرض", en: "Platform or ground" },
+  Collectible: { ar: "عنصر قابل للجمع", en: "Collectible" },
+  Hazard: { ar: "عائق أو خطر", en: "Hazard" },
+  FinishGate: { ar: "بوابة النهاية", en: "Finish gate" },
+  TouchControls: { ar: "تحكم باللمس", en: "Touch controls" },
   Physics: { ar: "فيزياء وحركة", en: "Physics & movement" },
   Score: { ar: "نقاط", en: "Score" },
   Level: { ar: "مستوى", en: "Level" },
@@ -54,8 +59,13 @@ export function getDefaultComponentProperties(type: BuilderComponentType, catego
   if (type === "Form") return { fields: formFieldsByCategory[category], submitLabelAr: "إرسال", submitLabelEn: "Submit", contextPageId: null };
   if (type === "Product") return { nameAr: "", nameEn: "", descriptionAr: "", descriptionEn: "", price: 0, salePrice: null, currency: "SAR", stock: 0, assetId: null, assetUrl: "" };
   if (type === "SearchBar") return { placeholderAr: category === "ecommerce" ? "ابحث في المنتجات" : "ابحث في المحتوى", placeholderEn: category === "ecommerce" ? "Search products" : "Search content", emptyAr: "لا توجد نتائج مطابقة للبحث", emptyEn: "No results match your search" };
-  if (type === "GameScene") return { sceneNameAr: "المشهد الأول", sceneNameEn: "First scene", backgroundAssetId: null, durationSeconds: 90 };
-  if (type === "Player") return { spriteAssetId: null, speed: 6, jumpForce: 12, lives: 3 };
+  if (type === "GameScene") return { preset: "platformer", sceneNameAr: "المشهد الأول", sceneNameEn: "First scene", backgroundAssetId: null, durationSeconds: 90 };
+  if (type === "Player") return { spriteAssetId: null, speed: 6, jumpForce: 12, lives: 3, startX: 8, startY: 64 };
+  if (type === "Platform") return { x: 8, y: 78, width: 84, height: 10, moving: false };
+  if (type === "Collectible") return { x: 48, y: 58, amount: 3, value: 10, assetId: null, assetUrl: "" };
+  if (type === "Hazard") return { x: 70, y: 70, width: 10, height: 8, damage: 1 };
+  if (type === "FinishGate") return { x: 88, y: 58, requiredScore: 30, successPageId: null };
+  if (type === "TouchControls") return { showDirections: true, showJump: true, showAction: false, position: "bottom" };
   if (type === "Physics") return { gravity: 1, collisions: true, boundaryMode: "screen" };
   if (type === "Score") return { startScore: 0, pointsPerCollectible: 10, showLeaderboard: true };
   if (type === "Level") return { levelNumber: 1, targetScore: 100, timeLimitSeconds: 90 };

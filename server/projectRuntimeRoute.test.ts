@@ -29,4 +29,17 @@ describe("runnable project route", () => {
     expect(editorSource).toContain("utils.appBuilder.assets.list.invalidate(projectId)");
     expect(editorSource).toContain('copy("الحفظ تلقائي", "Auto-saved")');
   });
+
+  it("runs the platformer preset with touch controls, collectibles, hazards, score, lives, timer, and a finish gate", () => {
+    expect(runtimeSource).toContain("function PlatformerRuntime");
+    expect(runtimeSource).toContain('component.componentType === "Platform"');
+    expect(runtimeSource).toContain('component.componentType === "Collectible"');
+    expect(runtimeSource).toContain('component.componentType === "Hazard"');
+    expect(runtimeSource).toContain('component.componentType === "FinishGate"');
+    expect(runtimeSource).toContain('component.componentType === "TouchControls"');
+    expect(runtimeSource).toContain('setStatus("won")');
+    expect(runtimeSource).toContain('setStatus("lost")');
+    expect(editorSource).toContain('if (type === "Platform")');
+    expect(editorSource).toContain('if (type === "TouchControls")');
+  });
 });

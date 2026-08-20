@@ -4,16 +4,103 @@ import { Button } from "@/components/ui/button";
 import { useLocale } from "@/contexts/LocaleContext";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, CircleAlert, FileAudio, Image as ImageIcon, Layers3, Loader2, Search, ShoppingBag, Video, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, CircleAlert, FileAudio, Heart, Image as ImageIcon, Layers3, Loader2, RotateCcw, Search, ShoppingBag, Trophy, Video, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useRoute } from "wouter";
 
 function asRecord(value: unknown): Record<string, unknown> { return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 function text(properties: Record<string, unknown>, key: string, fallback = "") { const value = properties[key]; return typeof value === "string" && value.trim() ? value : fallback; }
 function items(properties: Record<string, unknown>) { return Array.isArray(properties.items) ? properties.items.map(asRecord) : []; }
+function numberValue(properties: Record<string, unknown>, key: string, fallback: number) { const value = properties[key]; return typeof value === "number" && Number.isFinite(value) ? value : fallback; }
+function bounded(value: number, min: number, max: number) { return Math.min(max, Math.max(min, value)); }
 
 type RuntimeComponent = { id: number; componentType: string; labelAr: string; labelEn: string; properties: unknown };
 type RuntimePage = { id: number; titleAr: string; titleEn: string; route: string };
+
+function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { components: RuntimeComponent[]; pages: RuntimePage[]; onNavigate: (pageId: number) => void; isArabic: boolean }) {
+  const scene = asRecord(components.find(component => component.componentType === "GameScene")?.properties);
+  const playerSettings = asRecord(components.find(component => component.componentType === "Player")?.properties);
+  const platformSettings = components.filter(component => component.componentType === "Platform").map(component => asRecord(component.properties));
+  const hazardSettings = components.filter(component => component.componentType === "Hazard").map(component => asRecord(component.properties));
+  const finishSettings = asRecord(components.find(component => component.componentType === "FinishGate")?.properties);
+  const controls = asRecord(components.find(component => component.componentType === "TouchControls")?.properties);
+  const scoreSettings = asRecord(components.find(component => component.componentType === "Score")?.properties);
+  const duration = Math.max(10, numberValue(scene, "durationSeconds", 90));
+  const startingX = bounded(numberValue(playerSettings, "startX", 8), 0, 96);
+  const playerSpeed = Math.max(2, numberValue(playerSettings, "speed", 6));
+  const initialLives = Math.max(1, Math.round(numberValue(playerSettings, "lives", 3)));
+  const initialScore = numberValue(scoreSettings, "startScore", 0);
+  const requiredScore = Math.max(0, numberValue(finishSettings, "requiredScore", 30));
+  const gateX = bounded(numberValue(finishSettings, "x", 88), 0, 96);
+  const gateY = bounded(numberValue(finishSettings, "y", 58), 0, 90);
+  const collectiblePoints = useMemo(() => components.filter(component => component.componentType === "Collectible").flatMap(component => {
+    const props = asRecord(component.properties);
+    const amount = bounded(Math.round(numberValue(props, "amount", 3)), 1, 50);
+    const startX = bounded(numberValue(props, "x", 48), 2, 96);
+    const y = bounded(numberValue(props, "y", 58), 4, 90);
+    const value = Math.max(1, numberValue(props, "value", numberValue(scoreSettings, "pointsPerCollectible", 10)));
+    return Array.from({ length: amount }, (_, index) => ({ id: `${component.id}-${index}`, x: bounded(startX + index * 7, 2, 96), y, value }));
+  }), [components, scoreSettings]);
+  const [playerX, setPlayerX] = useState(startingX);
+  const [playerY, setPlayerY] = useState(bounded(numberValue(playerSettings, "startY", 64), 4, 90));
+  const [lives, setLives] = useState(initialLives);
+  const [score, setScore] = useState(initialScore);
+  const [collected, setCollected] = useState<string[]>([]);
+  const [secondsLeft, setSecondsLeft] = useState(duration);
+  const [status, setStatus] = useState<"playing" | "won" | "lost">("playing");
+  const successPageId = typeof finishSettings.successPageId === "number" ? finishSettings.successPageId : null;
+  const reset = () => { setPlayerX(startingX); setPlayerY(bounded(numberValue(playerSettings, "startY", 64), 4, 90)); setLives(initialLives); setScore(initialScore); setCollected([]); setSecondsLeft(duration); setStatus("playing"); };
+
+  useEffect(() => {
+    if (status !== "playing") return;
+    const timer = window.setInterval(() => setSecondsLeft(current => {
+      if (current <= 1) { setStatus("lost"); return 0; }
+      return current - 1;
+    }), 1000);
+    return () => window.clearInterval(timer);
+  }, [status]);
+
+  function move(delta: number) {
+    if (status !== "playing") return;
+    const nextX = bounded(playerX + delta, 2, 96);
+    const hit = hazardSettings.some(hazard => {
+      const hazardX = bounded(numberValue(hazard, "x", 70), 0, 100);
+      const hazardWidth = Math.max(2, numberValue(hazard, "width", 10));
+      return nextX >= hazardX - 4 && nextX <= hazardX + hazardWidth;
+    });
+    if (hit) {
+      const damage = Math.max(1, ...hazardSettings.map(hazard => numberValue(hazard, "damage", 1)));
+      const nextLives = lives - damage;
+      setLives(nextLives);
+      if (nextLives <= 0) { setStatus("lost"); return; }
+      setPlayerX(startingX);
+      return;
+    }
+    const newlyCollected = collectiblePoints.filter(item => !collected.includes(item.id) && Math.abs(nextX - item.x) < 5 && Math.abs(playerY - item.y) < 20);
+    const nextScore = score + newlyCollected.reduce((sum, item) => sum + item.value, 0);
+    if (newlyCollected.length) { setCollected(previous => [...previous, ...newlyCollected.map(item => item.id)]); setScore(nextScore); }
+    setPlayerX(nextX);
+    if (nextX >= gateX - 5 && nextScore >= requiredScore) setStatus("won");
+  }
+
+  function jump() {
+    if (status !== "playing") return;
+    setPlayerY(42);
+    window.setTimeout(() => setPlayerY(bounded(numberValue(playerSettings, "startY", 64), 4, 90)), 430);
+  }
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (["ArrowLeft", "a", "A"].includes(event.key)) { event.preventDefault(); move(-playerSpeed); }
+      if (["ArrowRight", "d", "D"].includes(event.key)) { event.preventDefault(); move(playerSpeed); }
+      if (["ArrowUp", " "].includes(event.key)) { event.preventDefault(); jump(); }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
+
+  return <div className="space-y-3"><div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-xs font-bold text-white"><span>{isArabic ? `النقاط: ${score}` : `Score: ${score}`}</span><span className="flex items-center gap-1 text-rose-200"><Heart className="h-3.5 w-3.5 fill-current" />{lives}</span><span>{isArabic ? `الوقت: ${secondsLeft}` : `Time: ${secondsLeft}`}</span></div><div className="relative h-80 overflow-hidden rounded-[1.6rem] border-4 border-indigo-950 bg-gradient-to-b from-sky-300 via-indigo-200 to-emerald-100 shadow-inner" role="application" aria-label={isArabic ? "لعبة منصات قابلة للعب" : "Playable platform game"}>{platformSettings.map((platform, index) => <div key={`platform-${index}`} className={cn("absolute rounded-xl border-b-4 border-emerald-800 bg-emerald-500 shadow", platform.moving === true && "animate-pulse")} style={{ left: `${bounded(numberValue(platform, "x", 8), 0, 100)}%`, top: `${bounded(numberValue(platform, "y", 78), 0, 96)}%`, width: `${bounded(numberValue(platform, "width", 84), 4, 100)}%`, height: `${bounded(numberValue(platform, "height", 10), 2, 40)}%` }} />)}{collectiblePoints.map(item => !collected.includes(item.id) && <button key={item.id} type="button" onClick={() => move(item.x - playerX)} className="absolute grid h-7 w-7 place-items-center rounded-full border-2 border-amber-100 bg-amber-400 text-xs shadow-lg" style={{ left: `${item.x}%`, top: `${item.y}%` }} aria-label={isArabic ? "جمع عنصر" : "Collect item"}>◆</button>)}{hazardSettings.map((hazard, index) => <div key={`hazard-${index}`} className="absolute h-7 bg-gradient-to-t from-rose-700 to-rose-400 [clip-path:polygon(0_100%,25%_0,50%_100%,75%_0,100%_100%)]" style={{ left: `${bounded(numberValue(hazard, "x", 70), 0, 100)}%`, top: `${bounded(numberValue(hazard, "y", 70), 0, 90)}%`, width: `${bounded(numberValue(hazard, "width", 10), 2, 40)}%` }} />)}<div className={cn("absolute grid h-12 w-9 place-items-center rounded-t-xl border-2", score >= requiredScore ? "border-emerald-200 bg-emerald-600 text-white" : "border-slate-300 bg-slate-500 text-slate-200")} style={{ left: `${gateX}%`, top: `${gateY}%` }} title={score >= requiredScore ? (isArabic ? "البوابة مفتوحة" : "Gate open") : (isArabic ? `تحتاج ${requiredScore} نقطة` : `Need ${requiredScore} points`)}>▣</div><div className="absolute grid h-10 w-8 place-items-center rounded-xl border-2 border-white bg-indigo-700 text-sm font-black text-white shadow-lg transition-transform" style={{ left: `${playerX}%`, top: `${playerY}%` }}>▲</div>{status !== "playing" && <div className="absolute inset-0 grid place-items-center bg-slate-950/70 p-5 text-center"><div className="w-full rounded-3xl bg-white p-5 shadow-2xl">{status === "won" ? <><Trophy className="mx-auto h-9 w-9 text-amber-500" /><strong className="mt-2 block text-lg text-slate-950">{isArabic ? "أكملت المرحلة" : "Level complete"}</strong><p className="mt-1 text-sm text-slate-600">{isArabic ? `النتيجة: ${score}` : `Score: ${score}`}</p>{successPageId && <Button className="mt-4 w-full" onClick={() => onNavigate(successPageId)}>{isArabic ? "تابع" : "Continue"}</Button>}</> : <><CircleAlert className="mx-auto h-9 w-9 text-rose-500" /><strong className="mt-2 block text-lg text-slate-950">{isArabic ? "انتهت المحاولة" : "Try again"}</strong><p className="mt-1 text-sm text-slate-600">{isArabic ? "انتهى الوقت أو نفدت المحاولات." : "Time expired or lives ran out."}</p></>}<Button variant="outline" className="mt-3 w-full" onClick={reset}><RotateCcw className="h-4 w-4" />{isArabic ? "إعادة المرحلة" : "Restart level"}</Button></div></div>}</div><div className="flex items-end justify-between gap-3 rounded-2xl bg-slate-100 p-3">{controls.showDirections !== false && <div className="flex gap-2"><Button type="button" size="icon" variant="outline" onClick={() => move(isArabic ? playerSpeed : -playerSpeed)} aria-label={isArabic ? "تحرك يمينًا" : "Move left"}>{isArabic ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}</Button><Button type="button" size="icon" variant="outline" onClick={() => move(isArabic ? -playerSpeed : playerSpeed)} aria-label={isArabic ? "تحرك يسارًا" : "Move right"}>{isArabic ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}</Button></div>}{controls.showJump !== false && <Button type="button" onClick={jump} className="bg-violet-600 text-white hover:bg-violet-700">{isArabic ? "اقفز" : "Jump"}</Button>}</div><p className="text-center text-xs text-slate-500">{isArabic ? `اجمع ${requiredScore} نقطة ثم اقترب من البوابة. يمكنك استخدام اللمس أو مفاتيح الأسهم.` : `Collect ${requiredScore} points, then reach the gate. Use touch controls or arrow keys.`}</p></div>;
+}
 
 function ProjectScreen({ components, pages, activePageId, onNavigate, isArabic }: { components: RuntimeComponent[]; pages: RuntimePage[]; activePageId: number; onNavigate: (pageId: number) => void; isArabic: boolean }) {
   const [query, setQuery] = useState("");
@@ -22,6 +109,8 @@ function ProjectScreen({ components, pages, activePageId, onNavigate, isArabic }
   const pageTitle = (id: unknown) => pages.find(page => page.id === id)?.[isArabic ? "titleAr" : "titleEn"];
   const searchConfiguration = components.find(component => component.componentType === "SearchBar");
   const searchProps = asRecord(searchConfiguration?.properties);
+
+  if (components.some(component => component.componentType === "GameScene") && components.some(component => component.componentType === "Player")) return <PlatformerRuntime components={components} pages={pages} onNavigate={onNavigate} isArabic={isArabic} />;
 
   if (!components.length) return <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500"><Layers3 className="mx-auto mb-3 h-8 w-8 text-indigo-400" /><strong className="block text-slate-800">{isArabic ? "هذه الصفحة فارغة" : "This page is empty"}</strong><p className="mt-1 text-sm">{isArabic ? "ارجع إلى المحرر وأضف صورًا أو فيديو أو صوتًا أو أزرارًا أو قائمة." : "Return to the editor and add images, video, audio, buttons, or a list."}</p></div>;
 

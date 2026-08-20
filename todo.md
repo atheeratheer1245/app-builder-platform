@@ -171,6 +171,7 @@
 - [x] Make Form insert a ready-to-customize form appropriate to the active template category, with editable fields and submit label.
 - [x] Add game-specific programmable blocks for scenes, player movement, collisions, score, levels, and win or lose conditions in game projects.
 - [ ] Define and implement a professional game-template component blueprint covering genre presets, scenes, entities, controls, rules, progression, UI, audio, persistence, testing, and export readiness.
+- [x] Implement the first runnable 2D platformer preset with player, platforms, collectibles, hazards, finish gate, health, score, touch controls, and editable game rules.
 - [x] Add an editable, functional Search Bar component to the e-commerce template only, with live preview behavior in the editor.
 - [x] Add an e-commerce Product component with optional bilingual name and description, price, discounted or updated price, supported common currency, and remaining stock.
 - [x] Make Card an optional-label rich-text content block suitable for lessons, courses, and articles across all template categories.

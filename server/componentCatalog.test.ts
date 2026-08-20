@@ -11,8 +11,17 @@ describe("builder component catalog", () => {
   });
 
   it("exposes programmable game blocks only to game projects", () => {
-    expect(getAllowedComponentTypes("games")).toEqual(expect.arrayContaining(["GameScene", "Player", "Physics", "Score", "Level", "Condition"]));
+    expect(getAllowedComponentTypes("games")).toEqual(expect.arrayContaining(["GameScene", "Player", "Platform", "Collectible", "Hazard", "FinishGate", "TouchControls", "Physics", "Score", "Level", "Condition"]));
     expect(getAllowedComponentTypes("ecommerce")).not.toContain("GameScene");
+    expect(getAllowedComponentTypes("ecommerce")).not.toContain("Platform");
+  });
+
+  it("supplies usable platformer defaults for the core scene objects and touch controls", () => {
+    expect(getDefaultComponentProperties("GameScene", "games")).toMatchObject({ preset: "platformer", durationSeconds: 90 });
+    expect(getDefaultComponentProperties("Platform", "games")).toMatchObject({ x: 8, y: 78, width: 84, height: 10 });
+    expect(getDefaultComponentProperties("Collectible", "games")).toMatchObject({ amount: 3, value: 10 });
+    expect(getDefaultComponentProperties("FinishGate", "games")).toMatchObject({ requiredScore: 30 });
+    expect(getDefaultComponentProperties("TouchControls", "games")).toMatchObject({ showDirections: true, showJump: true });
   });
 
   it("exposes the editable search bar to storefront and media discovery projects", () => {
