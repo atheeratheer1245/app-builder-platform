@@ -73,16 +73,16 @@ export function getDefaultComponentProperties(type: BuilderComponentType, catego
   if (type === "PaymentPlatform") return { mode: "product", provider: "moyasar", titleAr: "شراء الآن", titleEn: "Buy now", descriptionAr: "ادفع بأمان لإتمام الطلب", descriptionEn: "Pay securely to complete your order", amount: 0, currency: "SAR", billingCycle: "monthly", successPageId: null };
   if (type === "Product") return { nameAr: "", nameEn: "", descriptionAr: "", descriptionEn: "", price: 0, salePrice: null, currency: "SAR", stock: 0, assetId: null, assetUrl: "" };
   if (type === "SearchBar") return { placeholderAr: category === "ecommerce" ? "ابحث في المنتجات" : "ابحث في المحتوى", placeholderEn: category === "ecommerce" ? "Search products" : "Search content", emptyAr: "لا توجد نتائج مطابقة للبحث", emptyEn: "No results match your search" };
-  if (type === "GameScene") return { gameMode: "platformer", preset: "platformer", sceneNameAr: "", sceneNameEn: "", backgroundAssetId: null, durationSeconds: 90 };
-  if (type === "Player") return { gameMode: "platformer", spriteAssetId: null, imageAssetId: null, imageAssetUrl: "", videoAssetId: null, videoAssetUrl: "", audioAssetId: null, audioAssetUrl: "", speed: 6, jumpForce: 12, lives: 3, startX: 8, startY: 64 };
-  if (type === "ImageAnimation") return { gameMode: "platformer", assetId: null, assetUrl: "", target: "player", frameCount: 1, fps: 8, x: 12, y: 20, width: 18, height: 18, loop: true };
-  if (type === "Platform") return { gameMode: "platformer", x: 8, y: 78, width: 84, height: 10, moving: false };
-  if (type === "Collectible") return { gameMode: "platformer", x: 48, y: 58, amount: 3, value: 10, assetId: null, assetUrl: "" };
-  if (type === "Hazard") return { gameMode: "platformer", x: 70, y: 70, width: 10, height: 8, damage: 1 };
-  if (type === "FinishGate") return { gameMode: "platformer", x: 88, y: 58, requiredScore: 30, successPageId: null };
-  if (type === "TouchControls") return { gameMode: "platformer", showDirections: true, showJump: true, showAction: false, position: "bottom" };
-  if (type === "Physics") return { gameMode: "platformer", gravity: 1, collisions: true, boundaryMode: "screen" };
-  if (type === "Score") return { gameMode: "platformer", startScore: 0, pointsPerCollectible: 10, showLeaderboard: true };
-  if (type === "Level") return { gameMode: "platformer", levelNumber: 1, targetScore: 100, timeLimitSeconds: 90 };
-  return { gameMode: "platformer", condition: "score_at_least", targetValue: 100, successPageId: null, failurePageId: null };
+  if (type === "GameScene") return { gameMode: "platformer", preset: "platformer", sceneNameAr: "", sceneNameEn: "", backgroundAssetId: null, durationSeconds: 90, layer: 1 };
+  if (type === "Player") return { gameMode: "platformer", spriteAssetId: null, imageAssetId: null, imageAssetUrl: "", videoAssetId: null, videoAssetUrl: "", audioAssetId: null, audioAssetUrl: "", speed: 6, jumpForce: 12, lives: 3, startX: 8, startY: 64, layer: 30 };
+  if (type === "ImageAnimation") return { gameMode: "platformer", assetId: null, assetUrl: "", target: "player", frameCount: 1, fps: 8, x: 12, y: 20, width: 18, height: 18, loop: true, layer: 40 };
+  if (type === "Platform") return { gameMode: "platformer", x: 8, y: 78, width: 84, height: 10, moving: false, layer: 10 };
+  if (type === "Collectible") return { gameMode: "platformer", x: 48, y: 58, amount: 3, value: 10, assetId: null, assetUrl: "", layer: 20 };
+  if (type === "Hazard") return { gameMode: "platformer", x: 70, y: 70, width: 10, height: 8, damage: 1, layer: 21 };
+  if (type === "FinishGate") return { gameMode: "platformer", x: 88, y: 58, requiredScore: 30, successPageId: null, layer: 25 };
+  if (type === "TouchControls") return { gameMode: "platformer", showDirections: true, showJump: true, showAction: false, position: "bottom", layer: 90 };
+  if (type === "Physics") return { gameMode: "platformer", gravity: 1, collisions: true, boundaryMode: "screen", layer: 2 };
+  if (type === "Score") return { gameMode: "platformer", startScore: 0, pointsPerCollectible: 10, showLeaderboard: true, layer: 80 };
+  if (type === "Level") return { gameMode: "platformer", levelNumber: 1, targetScore: 100, timeLimitSeconds: 90, layer: 80 };
+  return { gameMode: "platformer", condition: "score_at_least", targetValue: 100, successPageId: null, failurePageId: null, layer: 80 };
 }

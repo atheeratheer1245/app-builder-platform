@@ -83,7 +83,9 @@
 - [x] Publish bilingual Terms of Use and Privacy Policy pages, including prohibited-content rules, user responsibility for rights and licenses, reporting, review, removal, and repeat-violation handling.
 - [x] Verify desktop and mobile public pages do not visually expose Manus branding.
 - [ ] Prepare the project for a user-owned custom domain and provide the required DNS connection steps.
-- [ ] Run a full-project scan for Manus, hosting domains, and Manus asset paths; remove or replace every user-facing or metadata reference that can be changed safely. (The remaining storage prefix is documented as an infrastructure constraint.)
+- [x] Run a full-project scan for Manus, hosting domains, and Manus asset paths; remove or replace every user-facing or metadata reference that can be changed safely. (The remaining storage prefix is documented as an infrastructure constraint.)
+- [x] Classify every remaining branding-audit hit as application-controlled or hosting-injected, removing or replacing each application-controlled user-facing reference that is safe to change.
+- [x] Re-run the branding audit after classification and document the final set of unavoidable hosting references separately from application UI and metadata.
 - [ ] Perform and document a post-change desktop and mobile public-page visual QA pass confirming no Manus branding appears in rendered UI or browser-visible asset surfaces. (Rendered pages are verified; browser metadata inspection remains.)
 - [x] Verify whether appbuilder.com is available and collect current first-year pricing from reputable registrars. (Unavailable: registered by another party.)
 - [ ] Verify whether appbuilder.sa is available and collect current first-year pricing from reputable Saudi domain registrars.
@@ -214,3 +216,6 @@
 - [x] Add a polished editable premium example for the Books template with bilingual pages, book discovery, categories, reading flow, favorites, and account navigation.
 - [x] Move the Gemini Flash production tool into a dedicated editor panel above the template canvas, while preserving draft review before any save.
 - [x] Remove active screen names from phone, tablet, and runtime device previews while keeping names visible in page-management and page-creation controls.
+- [ ] Add per-screen layer ordering for game components, with explicit bring-forward/send-back controls, persistent order, and z-index-aware game preview rendering.
+- [ ] Add image-to-video generation for the Image Animation game component that animates the principal subject, using a server-safe video-generation path and saving the generated result as a project asset after user review.
+- [x] Make the dedicated Gemini Flash panel above the preview usable without opening an edit dialog, with target selection, server-side suggestion generation, and an explicit review-and-apply step.

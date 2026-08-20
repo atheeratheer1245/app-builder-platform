@@ -27,6 +27,7 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
   const playerImageUrl = text(playerSettings, "imageAssetUrl");
   const playerVideoUrl = text(playerSettings, "videoAssetUrl");
   const playerAudioUrl = text(playerSettings, "audioAssetUrl");
+  const playerLayer = bounded(Math.round(numberValue(playerSettings, "layer", 30)), 0, 100);
   const platformSettings = components.filter(component => component.componentType === "Platform").map(component => asRecord(component.properties));
   const hazardSettings = components.filter(component => component.componentType === "Hazard").map(component => asRecord(component.properties));
   const finishSettings = asRecord(components.find(component => component.componentType === "FinishGate")?.properties);
@@ -115,7 +116,7 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
     playerLayer.style.top = `${playerY}%`;
     playerLayer.style.width = "2rem";
     playerLayer.style.height = "2.5rem";
-    playerLayer.style.zIndex = "28";
+    playerLayer.style.zIndex = String(playerLayer);
     playerLayer.style.overflow = "hidden";
     playerLayer.style.borderRadius = "0.5rem";
     playerLayer.style.pointerEvents = "none";
@@ -146,7 +147,7 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
     if (backgroundUrl) board.prepend(backgroundLayer);
     if (playerVideoUrl || playerImageUrl || playerAudioUrl) board.appendChild(playerLayer);
     return () => { backgroundLayer.remove(); playerLayer.remove(); };
-  }, [backgroundType, backgroundUrl, backgroundOverlay, playerImageUrl, playerVideoUrl, playerAudioUrl, playerX, playerY]);
+  }, [backgroundType, backgroundUrl, backgroundOverlay, playerImageUrl, playerVideoUrl, playerAudioUrl, playerLayer, playerX, playerY]);
 
   useEffect(() => {
     const board = document.querySelector<HTMLElement>('[role="application"]');
@@ -155,7 +156,6 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
     layer.style.position = "absolute";
     layer.style.inset = "0";
     layer.style.pointerEvents = "none";
-    layer.style.zIndex = "20";
     animations.filter(animation => text(animation, "assetUrl")).forEach((animation, index) => {
       const frameCount = bounded(Math.round(numberValue(animation, "frameCount", 1)), 1, 32);
       const frame = animationTick % frameCount;
@@ -174,7 +174,7 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
       sprite.style.filter = "drop-shadow(0 4px 4px rgb(15 23 42 / 0.24))";
       sprite.style.transform = `translateY(${animationTick % 2 === 0 ? -3 : 3}px)`;
       sprite.style.transition = "transform 120ms linear";
-      sprite.style.zIndex = String(20 + index);
+      sprite.style.zIndex = String(bounded(Math.round(numberValue(animation, "layer", 40 + index)), 0, 100));
       layer.appendChild(sprite);
     });
     board.appendChild(layer);

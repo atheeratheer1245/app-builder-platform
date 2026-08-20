@@ -72,6 +72,9 @@ function validateComponentProperties(componentType: string, properties: Record<s
   if ((gameComponentTypes as readonly string[]).includes(componentType) && properties.gameMode !== undefined && !(gameModes as readonly string[]).includes(properties.gameMode as string)) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Game mode is not supported" });
   }
+  if ((gameComponentTypes as readonly string[]).includes(componentType) && properties.layer !== undefined && (!Number.isInteger(properties.layer) || (properties.layer as number) < 0 || (properties.layer as number) > 100)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Game component layer must be an integer from 0 to 100" });
+  }
   if (componentType === "List") {
     const items = Array.isArray(properties.items) ? properties.items : [];
     for (const item of items) {
