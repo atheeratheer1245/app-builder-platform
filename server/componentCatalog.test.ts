@@ -18,10 +18,12 @@ describe("builder component catalog", () => {
 
   it("supplies usable platformer defaults for the core scene objects and touch controls", () => {
     expect(gameModes).toEqual(["platformer", "endless_runner", "puzzle", "quiz", "memory_cards", "tower_defense", "simple_shooter", "racing", "light_simulation"]);
-    expect(getDefaultComponentProperties("GameScene", "games")).toMatchObject({ preset: "platformer", gameMode: "platformer", durationSeconds: 90 });
-    expect(getDefaultComponentProperties("Platform", "games")).toMatchObject({ x: 8, y: 78, width: 84, height: 10 });
-    expect(getDefaultComponentProperties("Collectible", "games")).toMatchObject({ amount: 3, value: 10 });
-    expect(getDefaultComponentProperties("FinishGate", "games")).toMatchObject({ requiredScore: 30 });
+    expect(getDefaultComponentProperties("GameScene", "games")).toMatchObject({ preset: "platformer", gameMode: "platformer", durationSeconds: 90, layer: 1 });
+    expect(getDefaultComponentProperties("Platform", "games")).toMatchObject({ x: 8, y: 78, width: 84, height: 10, layer: 10 });
+    expect(getDefaultComponentProperties("Collectible", "games")).toMatchObject({ amount: 3, value: 10, layer: 20 });
+    expect(getDefaultComponentProperties("FinishGate", "games")).toMatchObject({ requiredScore: 30, layer: 25 });
+    expect(getDefaultComponentProperties("Player", "games")).toMatchObject({ layer: 30 });
+    expect(getDefaultComponentProperties("ImageAnimation", "games")).toMatchObject({ layer: 40 });
     expect(getDefaultComponentProperties("TouchControls", "games")).toMatchObject({ showDirections: true, showJump: true });
     expect(getDefaultComponentProperties("ImageAnimation", "games")).toMatchObject({ target: "player", frameCount: 1, fps: 8 });
   });
