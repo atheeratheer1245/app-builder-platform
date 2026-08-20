@@ -162,6 +162,7 @@
 - [ ] Connect `appbuilder.com` and, where supported, `www.appbuilder.com` to the published App Builder site after the owner adds the required DNS records.
 - [ ] Preserve the existing proxied A/AAAA records for `appbuilder.com` and `www` until the website domain panel provides the exact replacement or verification record.
 - [ ] Identify an alternate administrative path to request the official custom-domain DNS record because the owner cannot access the Domains panel.
+- [ ] Add `appbuilder.com` as the requested custom domain and validate the exact Cloudflare DNS record before replacing the current published address.
 - [x] Make Card create an editable information card with title, description, icon or image, and action settings in every template category.
 - [x] Make Button accept bilingual visible text and navigate to a selected project page through an editable internal link.
 - [x] Make List create editable navigation items that each route to a selected project page.
@@ -169,6 +170,7 @@
 - [x] Add authenticated project-gallery upload and selection for image, video, and audio attachments, with type-aware validation and previews in the editor.
 - [x] Make Form insert a ready-to-customize form appropriate to the active template category, with editable fields and submit label.
 - [x] Add game-specific programmable blocks for scenes, player movement, collisions, score, levels, and win or lose conditions in game projects.
+- [ ] Define and implement a professional game-template component blueprint covering genre presets, scenes, entities, controls, rules, progression, UI, audio, persistence, testing, and export readiness.
 - [x] Add an editable, functional Search Bar component to the e-commerce template only, with live preview behavior in the editor.
 - [x] Add an e-commerce Product component with optional bilingual name and description, price, discounted or updated price, supported common currency, and remaining stock.
 - [x] Make Card an optional-label rich-text content block suitable for lessons, courses, and articles across all template categories.
