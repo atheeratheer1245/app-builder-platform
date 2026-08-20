@@ -182,6 +182,7 @@
 - [x] Add game-specific programmable blocks for scenes, player movement, collisions, score, levels, and win or lose conditions in game projects.
 - [ ] Define and implement a professional game-template component blueprint covering genre presets, scenes, entities, controls, rules, progression, UI, audio, persistence, testing, and export readiness.
 - [ ] Add editable game-blueprint settings for entity behavior, progression targets, HUD visibility, audio switches, and persistence readiness, with safe defaults for each supported game mode.
+- [x] Add a visible Player editor toggle for respawn behavior and keep its saved value synchronized with collision handling in the runtime.
 - [x] Implement the first runnable 2D platformer preset with player, platforms, collectibles, hazards, finish gate, health, score, touch controls, and editable game rules.
 - [x] Add an editable game image-animation player that uses uploaded sprite frames or an image sheet to animate characters and scenes inside the runnable game preview.
 - [x] Add an editable, functional Search Bar component to the e-commerce template only, with live preview behavior in the editor.
