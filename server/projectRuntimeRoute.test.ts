@@ -22,6 +22,14 @@ describe("runnable project route", () => {
     expect(runtimeSource).toContain("item.targetPageId");
   });
 
+  it("uses saved asset URLs and disables incomplete navigation rather than rendering inert actions", () => {
+    expect(runtimeSource).toContain('text(props, "assetUrl")');
+    expect(runtimeSource).toContain("autoPlay muted loop playsInline");
+    expect(runtimeSource).toContain("disabled={!target}");
+    expect(runtimeSource).toContain("const target = typeof item.targetPageId === \"number\" ? item.targetPageId : null");
+    expect(runtimeSource).toContain("const target = typeof props.targetPageId === \"number\" ? props.targetPageId : null");
+  });
+
   it("gives the editor a direct run-app action instead of a non-functional preview button", () => {
     expect(editorSource).toContain("href={`/run/${projectId}`}");
     expect(editorSource).toContain('copy("تشغيل التطبيق", "Run app")');
