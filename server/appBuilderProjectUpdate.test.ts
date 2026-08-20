@@ -140,6 +140,14 @@ describe("protected project update", () => {
     await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "GameScene", labelAr: "", labelEn: "", properties: { gameMode: "unsupported_mode" } })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
+  it("rejects unsupported game-scene blueprint settings", async () => {
+    mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "games" }).mockResolvedValueOnce({ id: 42, ownerId: 7, category: "games" });
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "GameScene", labelAr: "", labelEn: "", properties: { progressionMode: "random" } })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "GameScene", labelAr: "", labelEn: "", properties: { showHud: "yes" } })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
   it("rejects a background component with an unsupported media type", async () => {
     mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "books" });
     const caller = appBuilderRouter.createCaller(createOwnerContext());

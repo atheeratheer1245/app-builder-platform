@@ -76,6 +76,16 @@ function validateComponentProperties(componentType: string, properties: Record<s
   if ((gameComponentTypes as readonly string[]).includes(componentType) && properties.layer !== undefined && (!Number.isInteger(properties.layer) || (properties.layer as number) < 0 || (properties.layer as number) > 100)) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Game component layer must be an integer from 0 to 100" });
   }
+  if (componentType === "GameScene") {
+    if (properties.progressionMode !== undefined && !["linear", "branching", "endless"].includes(properties.progressionMode as string)) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Game-scene progression mode is not supported" });
+    }
+    for (const key of ["showHud", "musicEnabled", "soundEffectsEnabled", "checkpointEnabled", "persistenceEnabled"]) {
+      if (properties[key] !== undefined && typeof properties[key] !== "boolean") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: `Game-scene ${key} must be a boolean` });
+      }
+    }
+  }
   if (componentType === "List") {
     const items = Array.isArray(properties.items) ? properties.items : [];
     for (const item of items) {
