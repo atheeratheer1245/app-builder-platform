@@ -134,6 +134,7 @@
 - [ ] Reproduce the currently reported Google sign-in failure on the published site and retain the exact final provider or callback status before applying the next repair.
 - [ ] Obtain authorized Google Auth Platform access or a configuration export to change the consent-screen name and OAuth audience; this cannot be performed by the App Builder server or OAuth client secret alone.
 - [ ] Activate the user-requested Google sign-in path by completing the Google Auth Platform audience configuration and a real published callback test.
+- [x] Force Google OAuth to use the single published App Builder callback host and redirect preview or alternate hosts there before authorization, preventing host-dependent 403 failures.
 - [x] Identify that the reported Google 403 occurs inside the APK WebView, where Google blocks embedded OAuth authorization despite correct external production OAuth settings.
 - [x] Ensure every Google sign-in action inside the APK triggers Android Credential Manager and never navigates the WebView to accounts.google.com.
 - [x] Capture the real Google-side denial: the selected account receives Google error 403 before callback, proving the block is in the OAuth app audience or account-access configuration rather than the website.

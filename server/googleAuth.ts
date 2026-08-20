@@ -13,6 +13,7 @@ const GOOGLE_AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_STATE_COOKIE = "app_builder_google_state";
 const GOOGLE_STATE_TTL_MS = 10 * 60 * 1000;
+const DEFAULT_GOOGLE_OAUTH_ORIGIN = "https://appbuilder-ewgsiuw6.manus.space";
 const googleJwks = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
 
 function getGoogleConfig() {
@@ -20,6 +21,26 @@ function getGoogleConfig() {
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
   if (!clientId || !clientSecret) throw new Error("Google OAuth is not configured");
   return { clientId, clientSecret };
+}
+
+/** Google accepts only registered exact callbacks, so all entry links converge on one published origin. */
+export function getGoogleOAuthOrigin() {
+  const configured = process.env.GOOGLE_OAUTH_CANONICAL_ORIGIN || DEFAULT_GOOGLE_OAUTH_ORIGIN;
+  const url = new URL(configured);
+  if (url.protocol !== "https:" || url.username || url.password || url.pathname !== "/" || url.search || url.hash) throw new Error("Google OAuth canonical origin is invalid");
+  return url.origin;
+}
+
+function getCanonicalGoogleCallbackUrl() {
+  return `${getGoogleOAuthOrigin()}/api/auth/google/callback`;
+}
+
+function isCanonicalGoogleRequest(req: Request) {
+  try {
+    return getRequestBaseUrl(req) === getGoogleOAuthOrigin();
+  } catch {
+    return false;
+  }
 }
 
 export function buildGoogleAuthorizationUrl(input: { clientId: string; redirectUri: string; state: string }) {
@@ -104,16 +125,10 @@ function clearGoogleState(req: Request, res: Response) {
   res.clearCookie(GOOGLE_STATE_COOKIE, { ...getSessionCookieOptions(req), sameSite: "lax", maxAge: -1 });
 }
 
-function getGoogleCallbackUrl(req: Request, stored?: string) {
-  if (stored) {
-    try {
-      const url = new URL(stored);
-      if (url.protocol === "https:" && url.pathname === "/api/auth/google/callback" && !url.search && !url.hash) return url.toString();
-    } catch {
-      // Fall back to the validated request origin below.
-    }
-  }
-  return `${getRequestBaseUrl(req)}/api/auth/google/callback`;
+function getGoogleCallbackUrl(stored?: string) {
+  const canonicalCallback = getCanonicalGoogleCallbackUrl();
+  if (stored && stored !== canonicalCallback) throw new Error("Google OAuth callback host is not canonical");
+  return canonicalCallback;
 }
 
 function readGoogleState(req: Request) {
@@ -131,8 +146,12 @@ function readGoogleState(req: Request) {
 export function registerGoogleAuthRoutes(app: Express) {
   app.get("/api/auth/google", (req, res) => {
     try {
+      if (!isCanonicalGoogleRequest(req)) {
+        res.redirect(`${getGoogleOAuthOrigin()}/api/auth/google`);
+        return;
+      }
       const { clientId } = getGoogleConfig();
-      const redirectUri = getGoogleCallbackUrl(req);
+      const redirectUri = getGoogleCallbackUrl();
       const state = createGoogleState({ nonce: randomBytes(32).toString("base64url"), redirectUri });
       res.set("Cache-Control", "no-store");
       // Google returns to this site through a top-level GET navigation. Lax keeps CSRF
@@ -145,6 +164,13 @@ export function registerGoogleAuthRoutes(app: Express) {
   });
 
   app.get("/api/auth/google/callback", async (req, res) => {
+    if (!isCanonicalGoogleRequest(req)) {
+      const callback = new URL("/api/auth/google/callback", getGoogleOAuthOrigin());
+      const rawQuery = req.originalUrl?.split("?", 2)[1];
+      if (rawQuery) callback.search = rawQuery;
+      res.redirect(callback.toString());
+      return;
+    }
     const callbackState = typeof req.query.state === "string" ? req.query.state : "";
     const { state: expectedState } = readGoogleState(req);
     const code = typeof req.query.code === "string" ? req.query.code : "";
@@ -162,7 +188,7 @@ export function registerGoogleAuthRoutes(app: Express) {
     }
     let stage: "exchange" | "identity" | "account" | "session" = "exchange";
     try {
-      const redirectUri = getGoogleCallbackUrl(req, signedState.redirectUri);
+      const redirectUri = getGoogleCallbackUrl(signedState.redirectUri);
       const idToken = await exchangeGoogleCode(code, redirectUri);
       stage = "identity";
       const identity = await verifyGoogleIdentity(idToken);

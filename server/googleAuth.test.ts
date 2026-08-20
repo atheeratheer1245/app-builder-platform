@@ -73,8 +73,10 @@ function signedState(redirectUri = "https://app.example.com/api/auth/google/call
 describe("Google OAuth", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getRequestBaseUrl.mockReturnValue("https://app.example.com");
     process.env.GOOGLE_OAUTH_CLIENT_ID = "test-client-id";
     process.env.GOOGLE_OAUTH_CLIENT_SECRET = "test-client-secret";
+    process.env.GOOGLE_OAUTH_CANONICAL_ORIGIN = "https://app.example.com";
   });
 
   it("builds an OpenID authorization request with state and a matching callback URI", () => {
@@ -94,6 +96,21 @@ describe("Google OAuth", () => {
     const call = vi.mocked(res.cookie).mock.calls.find(([name]) => name === "app_builder_google_state");
     expect(call?.[2]).toMatchObject({ sameSite: "lax", maxAge: 10 * 60 * 1000 });
     expect(JSON.parse(String(call?.[1]))).toMatchObject({ redirectUri: "https://app.example.com/api/auth/google/callback" });
+  });
+
+  it("converges every preview or alternate link on the one registered published OAuth origin before starting Google", async () => {
+    mocks.getRequestBaseUrl.mockReturnValue("https://preview.example.com");
+    const res = responseRecorder();
+    await getStartHandler()({ protocol: "https", headers: {} } as Request, res);
+    expect(res.redirect).toHaveBeenCalledWith("https://app.example.com/api/auth/google");
+    expect(res.cookie).not.toHaveBeenCalled();
+  });
+
+  it("forwards a callback that reaches an alternate host to the canonical callback with its query intact", async () => {
+    mocks.getRequestBaseUrl.mockReturnValue("https://preview.example.com");
+    const res = responseRecorder();
+    await getCallbackHandler()({ query: { error: "access_denied" }, originalUrl: "/api/auth/google/callback?error=access_denied", headers: {} } as Request, res);
+    expect(res.redirect).toHaveBeenCalledWith("https://app.example.com/api/auth/google/callback?error=access_denied");
   });
 
   it("rejects a callback with a mismatched state cookie before exchanging the code", async () => {
@@ -119,9 +136,8 @@ describe("Google OAuth", () => {
     expect(mocks.setLocalSession).not.toHaveBeenCalled();
   });
 
-  it("uses the exact callback URL stored at authorization start during code exchange", async () => {
+  it("uses the canonical callback URL stored at authorization start during code exchange", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
-    mocks.getRequestBaseUrl.mockReturnValue("https://different.example.com");
     const handler = getCallbackHandler();
     const res = responseRecorder();
 
