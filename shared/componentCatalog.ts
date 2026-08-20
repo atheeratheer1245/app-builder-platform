@@ -1,6 +1,6 @@
 import type { TemplateCategory } from "./appBuilderCatalog";
 
-export const baseComponentTypes = ["Card", "Button", "List", "Image", "Video", "Audio", "PaymentPlatform"] as const;
+export const baseComponentTypes = ["Card", "Button", "List", "Image", "Video", "Audio", "Background", "PaymentPlatform"] as const;
 export const ecommerceComponentTypes = ["Product", "SearchBar"] as const;
 export const booksComponentTypes = ["PDFDocument", "SearchBar"] as const;
 /** Legacy-only type retained to read old saved projects. It is never returned to the editor picker. */
@@ -32,6 +32,7 @@ export const componentTypeLabels: Record<BuilderComponentType, { ar: string; en:
   Image: { ar: "صورة", en: "Image" },
   Video: { ar: "فيديو", en: "Video" },
   Audio: { ar: "مقطع صوتي", en: "Audio" },
+  Background: { ar: "الخلفية", en: "Background" },
   Form: { ar: "نموذج قديم", en: "Legacy form" },
   PaymentPlatform: { ar: "منصة دفع اختيارية", en: "Optional payment platform" },
   Product: { ar: "منتج", en: "Product" },
@@ -66,13 +67,14 @@ export function getDefaultComponentProperties(type: BuilderComponentType, catego
   if (type === "Image") return { assetId: null, assetUrl: "", altAr: "", altEn: "" };
   if (type === "Video") return { assetId: null, assetUrl: "", captionAr: "", captionEn: "", autoplay: true };
   if (type === "Audio") return { assetId: null, assetUrl: "", captionAr: "", captionEn: "" };
+  if (type === "Background") return { mediaType: "image", assetId: null, assetUrl: "", overlayOpacity: 0.72 };
   if (type === "PDFDocument") return { assetId: null, assetUrl: "", titleAr: "", titleEn: "", descriptionAr: "", descriptionEn: "", startPage: 1 };
   if (type === "Form") return { fields: [], submitLabelAr: "", submitLabelEn: "", contextPageId: null };
   if (type === "PaymentPlatform") return { mode: "product", provider: "moyasar", titleAr: "شراء الآن", titleEn: "Buy now", descriptionAr: "ادفع بأمان لإتمام الطلب", descriptionEn: "Pay securely to complete your order", amount: 0, currency: "SAR", billingCycle: "monthly", successPageId: null };
   if (type === "Product") return { nameAr: "", nameEn: "", descriptionAr: "", descriptionEn: "", price: 0, salePrice: null, currency: "SAR", stock: 0, assetId: null, assetUrl: "" };
   if (type === "SearchBar") return { placeholderAr: category === "ecommerce" ? "ابحث في المنتجات" : "ابحث في المحتوى", placeholderEn: category === "ecommerce" ? "Search products" : "Search content", emptyAr: "لا توجد نتائج مطابقة للبحث", emptyEn: "No results match your search" };
   if (type === "GameScene") return { gameMode: "platformer", preset: "platformer", sceneNameAr: "", sceneNameEn: "", backgroundAssetId: null, durationSeconds: 90 };
-  if (type === "Player") return { gameMode: "platformer", spriteAssetId: null, speed: 6, jumpForce: 12, lives: 3, startX: 8, startY: 64 };
+  if (type === "Player") return { gameMode: "platformer", spriteAssetId: null, imageAssetId: null, imageAssetUrl: "", videoAssetId: null, videoAssetUrl: "", audioAssetId: null, audioAssetUrl: "", speed: 6, jumpForce: 12, lives: 3, startX: 8, startY: 64 };
   if (type === "ImageAnimation") return { gameMode: "platformer", assetId: null, assetUrl: "", target: "player", frameCount: 1, fps: 8, x: 12, y: 20, width: 18, height: 18, loop: true };
   if (type === "Platform") return { gameMode: "platformer", x: 8, y: 78, width: 84, height: 10, moving: false };
   if (type === "Collectible") return { gameMode: "platformer", x: 48, y: 58, amount: 3, value: 10, assetId: null, assetUrl: "" };

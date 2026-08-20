@@ -132,6 +132,13 @@ describe("protected project update", () => {
     await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "GameScene", labelAr: "", labelEn: "", properties: { gameMode: "unsupported_mode" } })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
+  it("rejects a background component with an unsupported media type", async () => {
+    mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "books" });
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "Background", labelAr: "", labelEn: "", properties: { mediaType: "document" } })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
   it("allows optional component labels but rejects incomplete navigation items", async () => {
     mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "ecommerce" });
     const caller = appBuilderRouter.createCaller(createOwnerContext());

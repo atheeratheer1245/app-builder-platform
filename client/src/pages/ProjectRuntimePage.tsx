@@ -20,6 +20,13 @@ type RuntimePage = { id: number; titleAr: string; titleEn: string; route: string
 function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { components: RuntimeComponent[]; pages: RuntimePage[]; onNavigate: (pageId: number) => void; isArabic: boolean }) {
   const scene = asRecord(components.find(component => component.componentType === "GameScene")?.properties);
   const playerSettings = asRecord(components.find(component => component.componentType === "Player")?.properties);
+  const backgroundSettings = asRecord(components.find(component => component.componentType === "Background")?.properties);
+  const backgroundType = text(backgroundSettings, "mediaType", "image");
+  const backgroundUrl = text(backgroundSettings, "assetUrl");
+  const backgroundOverlay = bounded(numberValue(backgroundSettings, "overlayOpacity", 0.72), 0, 0.95);
+  const playerImageUrl = text(playerSettings, "imageAssetUrl");
+  const playerVideoUrl = text(playerSettings, "videoAssetUrl");
+  const playerAudioUrl = text(playerSettings, "audioAssetUrl");
   const platformSettings = components.filter(component => component.componentType === "Platform").map(component => asRecord(component.properties));
   const hazardSettings = components.filter(component => component.componentType === "Hazard").map(component => asRecord(component.properties));
   const finishSettings = asRecord(components.find(component => component.componentType === "FinishGate")?.properties);
@@ -67,6 +74,79 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
     const timer = window.setInterval(() => setAnimationTick(value => value + 1), Math.round(1000 / maxAnimationFps));
     return () => window.clearInterval(timer);
   }, [maxAnimationFps]);
+
+  useEffect(() => {
+    const board = document.querySelector<HTMLElement>('[role="application"]');
+    if (!board) return;
+    const backgroundLayer = document.createElement("div");
+    backgroundLayer.style.position = "absolute";
+    backgroundLayer.style.inset = "0";
+    backgroundLayer.style.zIndex = "0";
+    backgroundLayer.style.pointerEvents = "none";
+    if (backgroundType === "image" && backgroundUrl) {
+      backgroundLayer.style.backgroundImage = `linear-gradient(rgb(255 255 255 / ${backgroundOverlay}), rgb(255 255 255 / ${backgroundOverlay})), url(${backgroundUrl})`;
+      backgroundLayer.style.backgroundSize = "cover";
+      backgroundLayer.style.backgroundPosition = "center";
+    }
+    if (backgroundType === "video" && backgroundUrl) {
+      const video = document.createElement("video");
+      video.src = backgroundUrl;
+      video.autoplay = true;
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.style.width = "100%";
+      video.style.height = "100%";
+      video.style.objectFit = "cover";
+      backgroundLayer.appendChild(video);
+      backgroundLayer.style.background = `rgb(255 255 255 / ${backgroundOverlay})`;
+    }
+    if (backgroundType === "audio" && backgroundUrl) {
+      const audio = document.createElement("audio");
+      audio.src = backgroundUrl;
+      audio.autoplay = true;
+      audio.loop = true;
+      audio.style.display = "none";
+      backgroundLayer.appendChild(audio);
+    }
+    const playerLayer = document.createElement("div");
+    playerLayer.style.position = "absolute";
+    playerLayer.style.left = `${playerX}%`;
+    playerLayer.style.top = `${playerY}%`;
+    playerLayer.style.width = "2rem";
+    playerLayer.style.height = "2.5rem";
+    playerLayer.style.zIndex = "28";
+    playerLayer.style.overflow = "hidden";
+    playerLayer.style.borderRadius = "0.5rem";
+    playerLayer.style.pointerEvents = "none";
+    if (playerVideoUrl) {
+      const video = document.createElement("video");
+      video.src = playerVideoUrl;
+      video.autoplay = true;
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.style.width = "100%";
+      video.style.height = "100%";
+      video.style.objectFit = "cover";
+      playerLayer.appendChild(video);
+    } else if (playerImageUrl) {
+      playerLayer.style.backgroundImage = `url(${playerImageUrl})`;
+      playerLayer.style.backgroundSize = "cover";
+      playerLayer.style.backgroundPosition = "center";
+    }
+    if (playerAudioUrl) {
+      const audio = document.createElement("audio");
+      audio.src = playerAudioUrl;
+      audio.autoplay = true;
+      audio.loop = true;
+      audio.style.display = "none";
+      playerLayer.appendChild(audio);
+    }
+    if (backgroundUrl) board.prepend(backgroundLayer);
+    if (playerVideoUrl || playerImageUrl || playerAudioUrl) board.appendChild(playerLayer);
+    return () => { backgroundLayer.remove(); playerLayer.remove(); };
+  }, [backgroundType, backgroundUrl, backgroundOverlay, playerImageUrl, playerVideoUrl, playerAudioUrl, playerX, playerY]);
 
   useEffect(() => {
     const board = document.querySelector<HTMLElement>('[role="application"]');
@@ -159,6 +239,12 @@ function GameModeRuntime({ components, pages, onNavigate, isArabic, mode }: { co
   const scoreSettings = asRecord(components.find(component => component.componentType === "Score")?.properties);
   const levelSettings = asRecord(components.find(component => component.componentType === "Level")?.properties);
   const playerSettings = asRecord(components.find(component => component.componentType === "Player")?.properties);
+  const backgroundSettings = asRecord(components.find(component => component.componentType === "Background")?.properties);
+  const backgroundType = text(backgroundSettings, "mediaType", "image");
+  const backgroundUrl = text(backgroundSettings, "assetUrl");
+  const playerImageUrl = text(playerSettings, "imageAssetUrl");
+  const playerVideoUrl = text(playerSettings, "videoAssetUrl");
+  const playerAudioUrl = text(playerSettings, "audioAssetUrl");
   const hazardCount = Math.max(1, components.filter(component => component.componentType === "Hazard").length);
   const collectibleCount = Math.max(1, components.filter(component => component.componentType === "Collectible").length);
   const pointsPerAction = Math.max(1, numberValue(scoreSettings, "pointsPerCollectible", 10));
@@ -179,7 +265,7 @@ function GameModeRuntime({ components, pages, onNavigate, isArabic, mode }: { co
     if (nextScore >= targetScore || nextProgress >= Math.max(4, collectibleCount * 2)) setComplete(true);
   }
   const boardContent = mode === "quiz" ? <div className="grid gap-2"><p className="rounded-2xl bg-white/15 p-4 text-sm font-bold">{isArabic ? "ما الهدف الذي يحقق نقاط التقدم؟" : "What earns progress points?"}</p><div className="grid grid-cols-2 gap-2">{["A", "B", "C", "D"].map((answer, index) => <button key={answer} type="button" onClick={index === 0 ? playTurn : () => setLives(current => Math.max(0, current - 1))} className="rounded-xl bg-white/90 px-3 py-3 text-sm font-black text-slate-800 transition hover:bg-white">{answer}</button>)}</div></div> : mode === "memory_cards" ? <div className="grid grid-cols-4 gap-2">{Array.from({ length: 8 }, (_, index) => <button key={index} type="button" onClick={playTurn} className="aspect-square rounded-xl bg-white/85 text-lg font-black text-violet-700 transition hover:scale-105">{progress > index / 2 ? "◆" : "?"}</button>)}</div> : mode === "puzzle" ? <div className="grid grid-cols-3 gap-2">{Array.from({ length: 9 }, (_, index) => <button key={index} type="button" onClick={playTurn} className="aspect-square rounded-xl bg-white/85 text-xl font-black text-fuchsia-700 transition hover:scale-105">{(index + progress) % 9 + 1}</button>)}</div> : <div className="relative h-48 overflow-hidden rounded-2xl bg-slate-950/25">{Array.from({ length: Math.max(3, collectibleCount + hazardCount) }, (_, index) => <button key={index} type="button" onClick={playTurn} className="absolute grid h-9 w-9 place-items-center rounded-full border-2 border-white/70 bg-white/90 text-xs font-black text-slate-900 shadow-lg" style={{ left: `${12 + (index * 19) % 72}%`, top: `${18 + (index * 23) % 58}%` }}>{mode === "racing" ? "▰" : mode === "tower_defense" ? "✦" : mode === "simple_shooter" ? "◎" : mode === "light_simulation" ? "▣" : "◆"}</button>)}</div>;
-  return <div className="space-y-3"><div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-xs font-bold text-white"><span>{isArabic ? `النقاط: ${score}` : `Score: ${score}`}</span><span>{isArabic ? `الحياة: ${lives}` : `Lives: ${lives}`}</span><span>{isArabic ? `المستوى ${numberValue(levelSettings, "levelNumber", 1)}` : `Level ${numberValue(levelSettings, "levelNumber", 1)}`}</span></div><div className={cn("rounded-[1.6rem] bg-gradient-to-br p-5 text-white shadow-inner", colors[mode])}><p className="mb-4 text-sm leading-6 text-white/90">{isArabic ? info.ar : info.en}</p>{boardContent}<Button type="button" className="mt-4 w-full bg-white text-slate-900 hover:bg-white/90" onClick={playTurn} disabled={complete || lives <= 0}>{isArabic ? info.actionAr : info.actionEn}</Button>{complete ? <div className="mt-4 rounded-2xl bg-emerald-950/30 p-3 text-center text-sm font-bold">{isArabic ? "اكتمل الهدف — انتقل إلى المرحلة التالية من إعدادات البوابة." : "Goal complete — continue through the finish-gate configuration."}</div> : lives <= 0 ? <div className="mt-4 rounded-2xl bg-rose-950/30 p-3 text-center text-sm font-bold">{isArabic ? "انتهت المحاولات. أعد تشغيل المستوى من المحرر." : "Lives are exhausted. Restart the level from the editor."}</div> : null}</div></div>;
+  return <div className="space-y-3"><div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-xs font-bold text-white"><span>{isArabic ? `النقاط: ${score}` : `Score: ${score}`}</span><span>{isArabic ? `الحياة: ${lives}` : `Lives: ${lives}`}</span><span>{isArabic ? `المستوى ${numberValue(levelSettings, "levelNumber", 1)}` : `Level ${numberValue(levelSettings, "levelNumber", 1)}`}</span></div><div className={cn("relative overflow-hidden rounded-[1.6rem] bg-gradient-to-br p-5 text-white shadow-inner", colors[mode])}>{backgroundType === "image" && backgroundUrl ? <><div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: `url(${backgroundUrl})` }} /><div className="absolute inset-0 bg-slate-950/20" /></> : null}{backgroundType === "video" && backgroundUrl ? <><video className="absolute inset-0 h-full w-full object-cover opacity-30" autoPlay muted loop playsInline src={backgroundUrl} /><div className="absolute inset-0 bg-slate-950/20" /></> : null}{backgroundType === "audio" && backgroundUrl ? <audio className="sr-only" autoPlay loop src={backgroundUrl} /> : null}<div className="relative z-10"><p className="mb-4 text-sm leading-6 text-white/90">{isArabic ? info.ar : info.en}</p>{playerVideoUrl ? <video className="mb-4 h-20 w-20 rounded-xl object-cover shadow-lg" autoPlay muted loop playsInline src={playerVideoUrl} /> : playerImageUrl ? <img className="mb-4 h-20 w-20 rounded-xl object-cover shadow-lg" src={playerImageUrl} alt="" /> : null}{playerAudioUrl ? <audio className="mb-3 w-full" controls preload="metadata" src={playerAudioUrl} /> : null}{boardContent}<Button type="button" className="mt-4 w-full bg-white text-slate-900 hover:bg-white/90" onClick={playTurn} disabled={complete || lives <= 0}>{isArabic ? info.actionAr : info.actionEn}</Button>{complete ? <div className="mt-4 rounded-2xl bg-emerald-950/30 p-3 text-center text-sm font-bold">{isArabic ? "اكتمل الهدف — انتقل إلى المرحلة التالية من إعدادات البوابة." : "Goal complete — continue through the finish-gate configuration."}</div> : lives <= 0 ? <div className="mt-4 rounded-2xl bg-rose-950/30 p-3 text-center text-sm font-bold">{isArabic ? "انتهت المحاولات. أعد تشغيل المستوى من المحرر." : "Lives are exhausted. Restart the level from the editor."}</div> : null}</div></div></div>;
 }
 
 function ProjectScreen({ components, pages, activePageId, onNavigate, isArabic }: { components: RuntimeComponent[]; pages: RuntimePage[]; activePageId: number; onNavigate: (pageId: number) => void; isArabic: boolean }) {
@@ -191,9 +277,12 @@ function ProjectScreen({ components, pages, activePageId, onNavigate, isArabic }
   const searchProps = asRecord(searchConfiguration?.properties);
   const pageConfiguration = asRecord(pages.find(page => page.id === activePageId)?.configuration);
   const pageBackground = asRecord(pageConfiguration.background);
-  const backgroundType = ["color", "image", "video", "audio"].includes(typeof pageBackground.type === "string" ? pageBackground.type : "") ? pageBackground.type as "color" | "image" | "video" | "audio" : "none";
+  const backgroundComponent = asRecord(components.find(component => component.componentType === "Background")?.properties);
+  const componentBackgroundType = text(backgroundComponent, "mediaType", "");
+  const hasComponentBackground = ["image", "video", "audio"].includes(componentBackgroundType) && Boolean(text(backgroundComponent, "assetUrl"));
+  const backgroundType = hasComponentBackground ? componentBackgroundType as "image" | "video" | "audio" : ["color", "image", "video", "audio"].includes(typeof pageBackground.type === "string" ? pageBackground.type : "") ? pageBackground.type as "color" | "image" | "video" | "audio" : "none";
   const backgroundColor = /^#[0-9a-fA-F]{3,8}$/.test(typeof pageBackground.color === "string" ? pageBackground.color : "") ? String(pageBackground.color) : "#f8fafc";
-  const backgroundUrl = text(pageBackground, "assetUrl");
+  const backgroundUrl = hasComponentBackground ? text(backgroundComponent, "assetUrl") : text(pageBackground, "assetUrl");
 
   if (components.some(component => component.componentType === "GameScene") && components.some(component => component.componentType === "Player")) {
     const scene = asRecord(components.find(component => component.componentType === "GameScene")?.properties);

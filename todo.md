@@ -205,3 +205,7 @@
 - [x] Remove the ready-made Form component from every template catalog, editor selector, and runtime handling without deleting already-saved project data.
 - [x] Add the eight requested game modes—platformer, endless runner, puzzle, quiz, memory cards, tower defense, simple shooter, racing, and light simulation—to game scene and related game-component settings.
 - [x] Render game-mode-specific setup and preview behavior for scene, animation, collectible, hazard, finish gate, touch controls, physics, score, and level blocks.
+- [x] Add image, video, and audio asset selection to the Player game component, validate project ownership and MIME type server-side, and render the chosen media in editor and runtime game previews.
+- [x] Add a reusable Background component to every template that selects one project image, video, or audio asset and renders it as the active screen background in editor and runtime previews.
+- [x] Make the Background component available in every template category and ensure it safely takes precedence over the optional page-level background setting for its page.
+- [x] Add a Gemini Flash production assistant that turns a user brief into bilingual page or component content suggestions, keeps model access server-side, and requires user review before saving.

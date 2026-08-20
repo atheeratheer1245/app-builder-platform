@@ -66,6 +66,9 @@ function unauthenticatedProject(): never {
 }
 
 function validateComponentProperties(componentType: string, properties: Record<string, unknown>) {
+  if (componentType === "Background" && !["image", "video", "audio"].includes(typeof properties.mediaType === "string" ? properties.mediaType : "image")) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Background media type is not supported" });
+  }
   if ((gameComponentTypes as readonly string[]).includes(componentType) && properties.gameMode !== undefined && !(gameModes as readonly string[]).includes(properties.gameMode as string)) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Game mode is not supported" });
   }
@@ -118,7 +121,23 @@ async function getNextPageOrder(projectId: number) {
 }
 
 async function normalizeMediaProperties(input: { ownerId: number; projectId: number; componentType: string; properties: Record<string, unknown> }) {
-  const mimePrefix = input.componentType === "Image" || input.componentType === "ImageAnimation" ? "image/" : input.componentType === "Video" ? "video/" : input.componentType === "Audio" ? "audio/" : input.componentType === "PDFDocument" ? "application/pdf" : null;
+  if (input.componentType === "Player") {
+    const normalized = { ...input.properties };
+    const playerMedia = [{ idKey: "imageAssetId", urlKey: "imageAssetUrl", mimePrefix: "image/" }, { idKey: "videoAssetId", urlKey: "videoAssetUrl", mimePrefix: "video/" }, { idKey: "audioAssetId", urlKey: "audioAssetUrl", mimePrefix: "audio/" }];
+    const db = await getRequiredDb();
+    for (const media of playerMedia) {
+      const assetId = normalized[media.idKey];
+      if (assetId === null || assetId === undefined || assetId === "") { normalized[media.idKey] = null; normalized[media.urlKey] = ""; continue; }
+      if (typeof assetId !== "number" || !Number.isInteger(assetId) || assetId < 1) throw new TRPCError({ code: "BAD_REQUEST", message: "Select a valid player media attachment from this project gallery" });
+      const asset = (await db.select({ id: projectAssets.id, url: projectAssets.url, mimeType: projectAssets.mimeType }).from(projectAssets).where(and(eq(projectAssets.id, assetId), eq(projectAssets.projectId, input.projectId), eq(projectAssets.ownerId, input.ownerId))).limit(1))[0];
+      if (!asset || !asset.mimeType.startsWith(media.mimePrefix)) throw new TRPCError({ code: "BAD_REQUEST", message: "Selected player media does not match the required type" });
+      normalized[media.idKey] = asset.id;
+      normalized[media.urlKey] = asset.url;
+    }
+    return normalized;
+  }
+  const backgroundType = typeof input.properties.mediaType === "string" ? input.properties.mediaType : "image";
+  const mimePrefix = input.componentType === "Image" || input.componentType === "ImageAnimation" ? "image/" : input.componentType === "Video" ? "video/" : input.componentType === "Audio" ? "audio/" : input.componentType === "PDFDocument" ? "application/pdf" : input.componentType === "Background" ? backgroundType === "video" ? "video/" : backgroundType === "audio" ? "audio/" : "image/" : null;
   if (!mimePrefix) return input.properties;
   const assetId = input.properties.assetId;
   if (assetId === null || assetId === undefined || assetId === "") return { ...input.properties, assetId: null, assetUrl: "" };

@@ -48,7 +48,10 @@ describe("builder component catalog", () => {
 
   it("removes the ready-made form from new template pickers while retaining clean editable defaults", () => {
     for (const category of ["ecommerce", "education", "games", "music", "podcasts", "movies", "services", "books"] as const) expect(getAllowedComponentTypes(category)).not.toContain("Form");
+    for (const category of ["ecommerce", "education", "games", "music", "podcasts", "movies", "services", "books"] as const) expect(getAllowedComponentTypes(category)).toContain("Background");
     expect(getDefaultComponentProperties("Button", "ecommerce")).toMatchObject({ targetPageId: null, textAr: "", textEn: "" });
+    expect(getDefaultComponentProperties("Background", "books")).toMatchObject({ mediaType: "image", assetId: null, assetUrl: "" });
+    expect(getDefaultComponentProperties("Player", "games")).toMatchObject({ imageAssetId: null, imageAssetUrl: "", videoAssetId: null, videoAssetUrl: "", audioAssetId: null, audioAssetUrl: "" });
     expect(getDefaultComponentProperties("List", "education")).toMatchObject({ titleAr: "", titleEn: "", items: [] });
     expect(getAllowedComponentTypes("podcasts")).toContain("Audio");
     expect(getDefaultComponentProperties("Video", "movies")).toMatchObject({ assetId: null, assetUrl: "", captionAr: "", autoplay: true });
