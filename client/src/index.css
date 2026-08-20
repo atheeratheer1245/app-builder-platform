@@ -78,6 +78,7 @@ button { cursor: pointer; }
 @media (max-width: 740px) { .tablet-frame { width: min(420px,94%); min-height: 380px; } }
 .app-main, .app-content { width: 100%; max-width: 100%; min-width: 0; }
 .app-content { overflow-x: clip; }
+.app-main main > .grid > section h2.mb-4 { display: none; }
 .workspace-access-state { display: flex; min-height: calc(100vh - 130px); flex-direction: column; align-items: center; justify-content: center; padding: 40px 18px; text-align: center; color: #78869b; }.workspace-access-state > svg { width: 24px; height: 24px; color: #5a50d9; }.access-icon { display: grid; width: 52px; height: 52px; place-items: center; border-radius: 17px; color: #5a50d9; background: #efefff; }.access-icon svg { width: 23px; height: 23px; }.workspace-access-state h1 { margin: 16px 0 7px; color: #344159; font-size: 22px; font-weight: 800; }.workspace-access-state p { max-width: 410px; margin: 0 0 18px; font-size: 13px; line-height: 1.9; }
 .projects-head, .projects-row { grid-template-columns: 1.5fr 1fr .8fr 1fr auto; }.project-row-link { display: contents; color: inherit; text-decoration: none; }.project-delete { color: #a9b1bd; }.project-delete:hover { color: #d34d58; background: #fff2f3; }.project-delete svg { width: 15px; height: 15px; }
 .project-row-actions { display: flex; gap: 2px; }.project-edit { color: #7480a3; }.project-edit:hover { color: #5347dc; background: #f0efff; }.project-edit svg { width: 15px; height: 15px; }

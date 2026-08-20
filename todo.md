@@ -212,3 +212,5 @@
 - [x] Add an app-icon setting for every template project, allow selection of an uploaded image asset with server-side ownership and MIME validation, and render it in editor and runtime headers.
 - [x] Make Background image and video layers cover the entire mobile or tablet screen surface behind the header and page content in editor and runtime views.
 - [x] Add a polished editable premium example for the Books template with bilingual pages, book discovery, categories, reading flow, favorites, and account navigation.
+- [x] Move the Gemini Flash production tool into a dedicated editor panel above the template canvas, while preserving draft review before any save.
+- [x] Remove active screen names from phone, tablet, and runtime device previews while keeping names visible in page-management and page-creation controls.
