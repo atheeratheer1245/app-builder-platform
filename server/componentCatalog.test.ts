@@ -18,7 +18,7 @@ describe("builder component catalog", () => {
 
   it("supplies usable platformer defaults for the core scene objects and touch controls", () => {
     expect(gameModes).toEqual(["platformer", "endless_runner", "puzzle", "quiz", "memory_cards", "tower_defense", "simple_shooter", "racing", "light_simulation"]);
-    expect(getDefaultComponentProperties("GameScene", "games")).toMatchObject({ preset: "platformer", gameMode: "platformer", durationSeconds: 90, layer: 1 });
+    expect(getDefaultComponentProperties("GameScene", "games")).toMatchObject({ preset: "platformer", gameMode: "platformer", durationSeconds: 90, progressionMode: "linear", showHud: true, musicEnabled: true, soundEffectsEnabled: true, checkpointEnabled: true, persistenceEnabled: false, layer: 1 });
     expect(getDefaultComponentProperties("Platform", "games")).toMatchObject({ x: 8, y: 78, width: 84, height: 10, layer: 10 });
     expect(getDefaultComponentProperties("Collectible", "games")).toMatchObject({ amount: 3, value: 10, layer: 20 });
     expect(getDefaultComponentProperties("FinishGate", "games")).toMatchObject({ requiredScore: 30, layer: 25 });
