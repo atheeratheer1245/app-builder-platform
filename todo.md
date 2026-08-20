@@ -32,6 +32,7 @@
 - [x] Build a library of seven editable templates: e-commerce, education, games, music, podcasts, movies and shows, and services.
 - [x] Build project creation, listing, update, and deletion flows with ownership checks.
 - [x] Add a project-edit interface using the protected update procedure and verify it updates only the signed-in owner’s project.
+- [x] Replace the package-name field in project creation with the client-entered project name and a required export target selector: Android APK, Android AAB, or Apple IPA.
 - [x] Build a professional template editor for adding, editing, deleting, and reordering pages and components.
 - [x] Build a direct mobile-device preview that renders the editable project structure.
 - [x] Add secure asset upload and listing flows backed by object storage, retaining only asset metadata in the database.

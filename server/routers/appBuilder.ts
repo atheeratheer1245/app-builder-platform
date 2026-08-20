@@ -28,8 +28,13 @@ const projectSchema = z.object({
   category: categorySchema,
   templateId: z.number().int().positive().optional(),
   language: z.enum(["ar", "en", "both"]).default("both"),
-  packageName: z.string().trim().max(180).optional(),
+  exportFormat: z.enum(["apk", "aab", "ipa"]).default("apk"),
 });
+
+function generatedPackageName(projectName: string) {
+  const fragment = projectName.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "").slice(0, 72) || "app";
+  return `com.appbuilder.${fragment}`;
+}
 
 function unauthenticatedProject(): never {
   throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -126,8 +131,8 @@ export const appBuilderRouter = router({
         description: input.description || null,
         category: input.category,
         language: input.language,
-        packageName: input.packageName || null,
-        settings: { theme: "system", primaryColor: selectedTemplate?.accentColor ?? "#2563EB" },
+        packageName: generatedPackageName(input.name),
+        settings: { theme: "system", primaryColor: selectedTemplate?.accentColor ?? "#2563EB", exportFormat: input.exportFormat },
       });
       const projectId = Number(result[0]?.insertId ?? 0);
       if (!projectId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Project creation failed" });
@@ -211,7 +216,6 @@ export const appBuilderRouter = router({
         ...(data.name ? { name: data.name } : {}),
         ...(data.description !== undefined ? { description: data.description || null } : {}),
         ...(data.language ? { language: data.language } : {}),
-        ...(data.packageName !== undefined ? { packageName: data.packageName || null } : {}),
         updatedAt: new Date(),
       }).where(eq(projects.id, input.projectId));
       return { success: true };

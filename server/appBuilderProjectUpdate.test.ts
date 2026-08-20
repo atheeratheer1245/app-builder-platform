@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => {
     where,
     select,
     insert,
+    insertValues,
   };
 });
 
@@ -64,6 +65,20 @@ describe("protected project update", () => {
     expect(mocks.update).toHaveBeenCalledOnce();
     expect(mocks.set).toHaveBeenCalledWith(expect.objectContaining({ name: "Updated project" }));
     expect(mocks.where).toHaveBeenCalledOnce();
+  });
+
+  it("creates a project with the selected export target while deriving its technical package identifier from the visible name", async () => {
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.projects.create({ name: "Sky Runner", category: "games", language: "both", exportFormat: "aab" })).resolves.toEqual({ id: 18 });
+
+    expect(mocks.insert).toHaveBeenCalledOnce();
+    expect(mocks.set).not.toHaveBeenCalled();
+    expect(mocks.insertValues).toHaveBeenCalledWith(expect.objectContaining({
+      name: "Sky Runner",
+      packageName: "com.appbuilder.sky.runner",
+      settings: expect.objectContaining({ exportFormat: "aab" }),
+    }));
   });
 
   it("does not expose an update path when the project is not owned", async () => {
