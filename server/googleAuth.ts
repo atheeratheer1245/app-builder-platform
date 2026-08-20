@@ -1,5 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import { randomBytes } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { parse } from "cookie";
 import type { Express, Request, Response } from "express";
 import { eq, or } from "drizzle-orm";
@@ -12,6 +12,7 @@ import { getRequestBaseUrl } from "./publicUrl";
 const GOOGLE_AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_STATE_COOKIE = "app_builder_google_state";
+const GOOGLE_STATE_TTL_MS = 10 * 60 * 1000;
 const googleJwks = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
 
 function getGoogleConfig() {
@@ -31,6 +32,42 @@ export function buildGoogleAuthorizationUrl(input: { clientId: string; redirectU
     prompt: "select_account",
   });
   return `${GOOGLE_AUTHORIZE_URL}?${params.toString()}`;
+}
+
+type SignedGoogleState = { nonce: string; redirectUri: string; issuedAt: number };
+
+function googleStateSecret() {
+  const secret = process.env.JWT_SECRET || process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  if (!secret) throw new Error("Google state signing secret is unavailable");
+  return secret;
+}
+
+function stateSignature(payload: string) {
+  return createHmac("sha256", googleStateSecret()).update(payload).digest("base64url");
+}
+
+/** Keeps CSRF protection intact even if privacy controls drop the temporary state cookie. */
+export function createGoogleState(input: Omit<SignedGoogleState, "issuedAt"> & { issuedAt?: number }) {
+  const payload = Buffer.from(JSON.stringify({ ...input, issuedAt: input.issuedAt ?? Date.now() })).toString("base64url");
+  return `${payload}.${stateSignature(payload)}`;
+}
+
+export function verifyGoogleState(state: string): SignedGoogleState | null {
+  const [payload, signature, ...extra] = state.split(".");
+  if (!payload || !signature || extra.length) return null;
+  const expected = stateSignature(payload);
+  const receivedBytes = Buffer.from(signature);
+  const expectedBytes = Buffer.from(expected);
+  if (receivedBytes.length !== expectedBytes.length || !timingSafeEqual(receivedBytes, expectedBytes)) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as Partial<SignedGoogleState>;
+    const callback = typeof parsed.redirectUri === "string" ? new URL(parsed.redirectUri) : null;
+    const validCallback = callback?.protocol === "https:" && callback.pathname === "/api/auth/google/callback" && !callback.search && !callback.hash;
+    if (!validCallback || typeof parsed.nonce !== "string" || parsed.nonce.length < 32 || typeof parsed.issuedAt !== "number" || !Number.isFinite(parsed.issuedAt) || Date.now() - parsed.issuedAt > GOOGLE_STATE_TTL_MS || parsed.issuedAt > Date.now() + 30_000) return null;
+    return { nonce: parsed.nonce, redirectUri: callback.toString(), issuedAt: parsed.issuedAt };
+  } catch {
+    return null;
+  }
 }
 
 async function exchangeGoogleCode(code: string, redirectUri: string) {
@@ -95,12 +132,12 @@ export function registerGoogleAuthRoutes(app: Express) {
   app.get("/api/auth/google", (req, res) => {
     try {
       const { clientId } = getGoogleConfig();
-      const state = randomBytes(32).toString("base64url");
       const redirectUri = getGoogleCallbackUrl(req);
+      const state = createGoogleState({ nonce: randomBytes(32).toString("base64url"), redirectUri });
       res.set("Cache-Control", "no-store");
       // Google returns to this site through a top-level GET navigation. Lax keeps CSRF
       // state protection while ensuring browsers return this short-lived cookie reliably.
-      res.cookie(GOOGLE_STATE_COOKIE, JSON.stringify({ state, redirectUri }), { ...getSessionCookieOptions(req), sameSite: "lax", maxAge: 10 * 60 * 1000 });
+      res.cookie(GOOGLE_STATE_COOKIE, JSON.stringify({ state, redirectUri }), { ...getSessionCookieOptions(req), sameSite: "lax", maxAge: GOOGLE_STATE_TTL_MS });
       res.redirect(buildGoogleAuthorizationUrl({ clientId, redirectUri, state }));
     } catch {
       res.redirect("/auth?google=configuration_error");
@@ -109,22 +146,23 @@ export function registerGoogleAuthRoutes(app: Express) {
 
   app.get("/api/auth/google/callback", async (req, res) => {
     const callbackState = typeof req.query.state === "string" ? req.query.state : "";
-    const { state: expectedState, redirectUri: storedRedirectUri } = readGoogleState(req);
+    const { state: expectedState } = readGoogleState(req);
     const code = typeof req.query.code === "string" ? req.query.code : "";
     const providerError = typeof req.query.error === "string" ? req.query.error : "";
     if (providerError) {
       clearGoogleState(req, res);
-      res.redirect("/auth?google=provider_error");
+      res.redirect(`/auth?google=${providerError === "access_denied" ? "audience_error" : "provider_error"}`);
       return;
     }
-    if (!code || !callbackState || !expectedState || callbackState !== expectedState) {
+    const signedState = callbackState ? verifyGoogleState(callbackState) : null;
+    if (!code || !callbackState || !signedState || (expectedState && callbackState !== expectedState)) {
       clearGoogleState(req, res);
       res.redirect("/auth?google=state_error");
       return;
     }
     let stage: "exchange" | "identity" | "account" | "session" = "exchange";
     try {
-      const redirectUri = getGoogleCallbackUrl(req, storedRedirectUri);
+      const redirectUri = getGoogleCallbackUrl(req, signedState.redirectUri);
       const idToken = await exchangeGoogleCode(code, redirectUri);
       stage = "identity";
       const identity = await verifyGoogleIdentity(idToken);

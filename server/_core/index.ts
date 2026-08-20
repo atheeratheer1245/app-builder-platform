@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerGoogleAuthRoutes } from "../googleAuth";
 import { registerMobileNativeAuthRoutes } from "../mobileNativeAuth";
+import { registerMobilePaidExportRoutes } from "../mobilePaidExports";
 import { registerMoyasarPaidRoutes } from "../moyasarPaid";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
@@ -41,6 +42,7 @@ async function startServer() {
   registerOAuthRoutes(app);
   registerGoogleAuthRoutes(app);
   registerMobileNativeAuthRoutes(app);
+  registerMobilePaidExportRoutes(app);
   registerMoyasarPaidRoutes(app);
   // tRPC API
   app.use(

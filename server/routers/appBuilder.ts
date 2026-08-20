@@ -64,6 +64,18 @@ async function getNextPageOrder(projectId: number) {
   return (current[0]?.maxOrder ?? -1) + 1;
 }
 
+async function normalizeMediaProperties(input: { ownerId: number; projectId: number; componentType: string; properties: Record<string, unknown> }) {
+  const mimePrefix = input.componentType === "Image" ? "image/" : input.componentType === "Video" ? "video/" : input.componentType === "Audio" ? "audio/" : null;
+  if (!mimePrefix) return input.properties;
+  const assetId = input.properties.assetId;
+  if (assetId === null || assetId === undefined || assetId === "") return { ...input.properties, assetId: null, assetUrl: "" };
+  if (typeof assetId !== "number" || !Number.isInteger(assetId) || assetId < 1) throw new TRPCError({ code: "BAD_REQUEST", message: "Select a valid media attachment from this project gallery" });
+  const db = await getRequiredDb();
+  const asset = (await db.select({ id: projectAssets.id, url: projectAssets.url, mimeType: projectAssets.mimeType }).from(projectAssets).where(and(eq(projectAssets.id, assetId), eq(projectAssets.projectId, input.projectId), eq(projectAssets.ownerId, input.ownerId))).limit(1))[0];
+  if (!asset || !asset.mimeType.startsWith(mimePrefix)) throw new TRPCError({ code: "BAD_REQUEST", message: "Selected attachment does not match the required media type" });
+  return { ...input.properties, assetId: asset.id, assetUrl: asset.url };
+}
+
 export const appBuilderRouter = router({
   templates: router({
     list: publicProcedure.query(async () => ensureTemplateCatalog()),
@@ -230,7 +242,7 @@ export const appBuilderRouter = router({
       if (!project) unauthenticatedProject();
       const categoryForDefaults = project.category === "custom" ? "services" : project.category;
       if (!getAllowedComponentTypes(categoryForDefaults).includes(input.componentType)) throw new TRPCError({ code: "BAD_REQUEST", message: "Component is not available for this template category" });
-      const properties = { ...getDefaultComponentProperties(input.componentType, categoryForDefaults), ...input.properties };
+      const properties = await normalizeMediaProperties({ ownerId: ctx.user.id, projectId: input.projectId, componentType: input.componentType, properties: { ...getDefaultComponentProperties(input.componentType, categoryForDefaults), ...input.properties } });
       validateComponentProperties(input.componentType, properties);
       const db = await getRequiredDb();
       const current = await db.select({ maxOrder: max(projectComponents.sortOrder) }).from(projectComponents).where(eq(projectComponents.pageId, input.pageId));
@@ -242,9 +254,10 @@ export const appBuilderRouter = router({
       if (!project) unauthenticatedProject();
       const categoryForDefaults = project.category === "custom" ? "services" : project.category;
       if (!getAllowedComponentTypes(categoryForDefaults).includes(input.componentType)) throw new TRPCError({ code: "BAD_REQUEST", message: "Component is not available for this template category" });
-      if (input.properties) validateComponentProperties(input.componentType, input.properties);
+      const properties = input.properties ? await normalizeMediaProperties({ ownerId: ctx.user.id, projectId: input.projectId, componentType: input.componentType, properties: input.properties }) : undefined;
+      if (properties) validateComponentProperties(input.componentType, properties);
       const db = await getRequiredDb();
-      await db.update(projectComponents).set({ componentType: input.componentType, labelAr: input.labelAr, labelEn: input.labelEn, ...(input.properties ? { properties: input.properties } : {}), updatedAt: new Date() }).where(and(eq(projectComponents.id, input.componentId), eq(projectComponents.projectId, input.projectId)));
+      await db.update(projectComponents).set({ componentType: input.componentType, labelAr: input.labelAr, labelEn: input.labelEn, ...(properties ? { properties } : {}), updatedAt: new Date() }).where(and(eq(projectComponents.id, input.componentId), eq(projectComponents.projectId, input.projectId)));
       return { success: true };
     }),
     reorderComponents: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), pageId: z.number().int().positive(), componentIds: z.array(z.number().int().positive()).min(1) })).mutation(async ({ ctx, input }) => {
@@ -269,7 +282,9 @@ export const appBuilderRouter = router({
     upload: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), filename: z.string().min(1).max(255), mimeType: z.string().min(1).max(120), kind: z.enum(["icon", "image", "font", "document", "other"]), dataBase64: z.string().min(1) })).mutation(async ({ ctx, input }) => {
       if (!await getOwnedProject(ctx.user.id, input.projectId)) unauthenticatedProject();
       const bytes = Buffer.from(input.dataBase64, "base64");
-      if (!bytes.length || bytes.length > 5 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Asset must be no larger than 5 MB" });
+      const supportsExpandedMedia = input.mimeType.startsWith("video/") || input.mimeType.startsWith("audio/");
+      const byteLimit = supportsExpandedMedia ? 25 * 1024 * 1024 : 5 * 1024 * 1024;
+      if (!bytes.length || bytes.length > byteLimit) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: supportsExpandedMedia ? "Audio and video assets must be no larger than 25 MB" : "Asset must be no larger than 5 MB" });
       const safeName = input.filename.replace(/[^a-zA-Z0-9._-]/g, "_");
       const { key, url } = await storagePut(`app-builder/${ctx.user.id}/${input.projectId}/${Date.now()}-${safeName}`, bytes, input.mimeType);
       const db = await getRequiredDb();

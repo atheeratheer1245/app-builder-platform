@@ -1,6 +1,6 @@
 import type { TemplateCategory } from "./appBuilderCatalog";
 
-export const baseComponentTypes = ["Card", "Button", "List", "Image", "Video", "Form"] as const;
+export const baseComponentTypes = ["Card", "Button", "List", "Image", "Video", "Audio", "Form"] as const;
 export const ecommerceComponentTypes = ["Product", "SearchBar"] as const;
 export const searchableComponentCategories = ["ecommerce", "music", "podcasts", "movies"] as const;
 export const gameComponentTypes = ["GameScene", "Player", "Physics", "Score", "Level", "Condition"] as const;
@@ -15,6 +15,7 @@ export const componentTypeLabels: Record<BuilderComponentType, { ar: string; en:
   List: { ar: "قائمة تنقل", en: "Navigation list" },
   Image: { ar: "صورة من المعرض", en: "Gallery image" },
   Video: { ar: "فيديو من المعرض", en: "Gallery video" },
+  Audio: { ar: "مقطع صوتي من المعرض", en: "Gallery audio" },
   Form: { ar: "نموذج جاهز", en: "Ready form" },
   Product: { ar: "منتج", en: "Product" },
   SearchBar: { ar: "شريط بحث", en: "Search bar" },
@@ -46,9 +47,10 @@ export function getAllowedComponentTypes(category: TemplateCategory): BuilderCom
 export function getDefaultComponentProperties(type: BuilderComponentType, category: TemplateCategory): ComponentProperties {
   if (type === "Card") return { titleAr: "عنوان البطاقة", titleEn: "Card title", descriptionAr: "وصف مختصر للمعلومة", descriptionEn: "A short information description", icon: "Sparkles", actionPageId: null };
   if (type === "Button") return { textAr: "متابعة", textEn: "Continue", targetPageId: null, variant: "primary" };
-  if (type === "List") return { items: [] as Array<{ labelAr: string; labelEn: string; targetPageId: number | null }> };
+  if (type === "List") return { titleAr: "", titleEn: "", items: [] as Array<{ labelAr: string; labelEn: string; targetPageId: number | null }> };
   if (type === "Image") return { assetId: null, assetUrl: "", altAr: "وصف الصورة", altEn: "Image description" };
   if (type === "Video") return { assetId: null, assetUrl: "", captionAr: "عنوان الفيديو", captionEn: "Video caption" };
+  if (type === "Audio") return { assetId: null, assetUrl: "", captionAr: "عنوان المقطع الصوتي", captionEn: "Audio clip title" };
   if (type === "Form") return { fields: formFieldsByCategory[category], submitLabelAr: "إرسال", submitLabelEn: "Submit", contextPageId: null };
   if (type === "Product") return { nameAr: "", nameEn: "", descriptionAr: "", descriptionEn: "", price: 0, salePrice: null, currency: "SAR", stock: 0, assetId: null, assetUrl: "" };
   if (type === "SearchBar") return { placeholderAr: category === "ecommerce" ? "ابحث في المنتجات" : "ابحث في المحتوى", placeholderEn: category === "ecommerce" ? "Search products" : "Search content", emptyAr: "لا توجد نتائج مطابقة للبحث", emptyEn: "No results match your search" };

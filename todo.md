@@ -130,6 +130,7 @@
 - [ ] Re-test Google OAuth specifically in a standard browser session after separating the Android WebView issue, and record the exact browser-only result before changing website code.
 - [ ] Capture and classify the live published Google OAuth callback failure, then verify the repaired browser flow returns a signed-in user to the workspace.
 - [ ] Capture the exact user-visible error or final callback query from a real failed Google browser sign-in to distinguish Google-side denial, code exchange, identity verification, and session failures.
+- [ ] Complete a root-cause repair of the live Google browser sign-in by validating the active client configuration, callback, consent audience, state exchange, local account link, and final session persistence with a real browser test.
 - [x] Identify that the reported Google 403 occurs inside the APK WebView, where Google blocks embedded OAuth authorization despite correct external production OAuth settings.
 - [x] Ensure every Google sign-in action inside the APK triggers Android Credential Manager and never navigates the WebView to accounts.google.com.
 - [x] Capture the real Google-side denial: the selected account receives Google error 403 before callback, proving the block is in the OAuth app audience or account-access configuration rather than the website.
@@ -147,6 +148,8 @@
 - [ ] Add a native export-files center that shows APK, AAB, and IPA availability, build status, and download actions only when a real artifact is available.
 - [ ] Add the approved per-10-MB paid export pricing to the Android app, including template category, file size, format, free path, and paid path presentation.
 - [ ] Integrate Moyasar checkout and server-side payment verification for paid exports only, preserving no-charge free exports and unlocking a file only after a verified payment plus a real build artifact.
+- [ ] Implement Android paid-export checkout through a server-created Moyasar invoice opened only in the device’s external browser, then verify payment status after the user returns to the native app.
+- [ ] Show a native paid-export quote, pending-payment status, verified state, and download action only when the export has a real artifact URL.
 - [ ] Receive and validate the owner-provided `pk_live_...` and `sk_live_...` Moyasar keys through secure fields before switching any paid-export flow from test to live mode.
 - [ ] Restore `pk_test_...` and `sk_test_...` credentials for the current integration and show a clear test-mode state; keep live checkout disabled until account activation succeeds.
 - [ ] Deliver the current published website URL and the latest standalone Android APK download after verified test-mode build and checks.
@@ -159,12 +162,14 @@
 - [x] Make Button accept bilingual visible text and navigate to a selected project page through an editable internal link.
 - [x] Make List create editable navigation items that each route to a selected project page.
 - [x] Make Image and Video select uploaded project assets from an in-editor gallery, with preview and alternative text or caption.
+- [x] Add authenticated project-gallery upload and selection for image, video, and audio attachments, with type-aware validation and previews in the editor.
 - [x] Make Form insert a ready-to-customize form appropriate to the active template category, with editable fields and submit label.
 - [x] Add game-specific programmable blocks for scenes, player movement, collisions, score, levels, and win or lose conditions in game projects.
 - [x] Add an editable, functional Search Bar component to the e-commerce template only, with live preview behavior in the editor.
 - [x] Add an e-commerce Product component with optional bilingual name and description, price, discounted or updated price, supported common currency, and remaining stock.
 - [x] Make Card an optional-label rich-text content block suitable for lessons, courses, and articles across all template categories.
 - [x] Make every List item require a name and a user-selected destination page, with Arabic, English, or bilingual item labels.
+- [x] Add an optional bilingual List title plus configurable nested navigation buttons, each with visible text and a selected target project page.
 - [x] Make Image and Video use actual project-gallery assets, with Video including an optional visible name.
 - [x] Make Button use optional visible text and a user-selected destination page across all template categories.
 - [x] Make Form derive its ready fields from the active page and template context rather than only a generic category default.

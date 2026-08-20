@@ -32,9 +32,11 @@ describe("builder component catalog", () => {
     expect(getDefaultComponentProperties("Product", "ecommerce")).toMatchObject({ currency: "SAR", price: 0, stock: 0 });
   });
 
-  it("builds a template-aware booking form and editable navigation defaults", () => {
+  it("builds a template-aware booking form plus editable button, titled list, and audio defaults", () => {
     expect(getDefaultComponentProperties("Form", "services")).toMatchObject({ submitLabelAr: "إرسال", fields: expect.arrayContaining([expect.objectContaining({ key: "appointment" })]) });
     expect(getDefaultComponentProperties("Button", "ecommerce")).toMatchObject({ targetPageId: null, textAr: "متابعة" });
-    expect(getDefaultComponentProperties("List", "education")).toMatchObject({ items: [] });
+    expect(getDefaultComponentProperties("List", "education")).toMatchObject({ titleAr: "", titleEn: "", items: [] });
+    expect(getAllowedComponentTypes("podcasts")).toContain("Audio");
+    expect(getDefaultComponentProperties("Audio", "podcasts")).toMatchObject({ assetId: null, assetUrl: "", captionAr: "عنوان المقطع الصوتي" });
   });
 });

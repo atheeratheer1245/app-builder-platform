@@ -6,12 +6,13 @@ const activity = readFileSync(resolve(process.cwd(), "android-companion/app/src/
 const nativeAuth = readFileSync(resolve(process.cwd(), "server/mobileNativeAuth.ts"), "utf8");
 
 describe("standalone Android App Builder", () => {
-  it("uses native Android screens rather than a WebView or browser intent", () => {
+  it("uses native Android screens rather than a WebView and reserves an external intent for hosted payment only", () => {
     expect(activity).not.toContain("WebView");
-    expect(activity).not.toContain("ACTION_VIEW");
     expect(activity).not.toContain("loadUrl(");
     expect(activity).toContain("ScrollView");
     expect(activity).toContain("CredentialManager");
+    expect(activity).toContain("openMoyasarInvoice");
+    expect(activity).toContain("Intent(Intent.ACTION_VIEW, Uri.parse(checkoutUrl))");
   });
 
   it("includes templates, local projects, examples, email auth, and native Google sign-in", () => {
@@ -31,5 +32,13 @@ describe("standalone Android App Builder", () => {
     expect(activity).toContain("toggleLanguage");
     expect(activity).toContain("View.LAYOUT_DIRECTION_LTR");
     expect(activity).toContain("View.LAYOUT_DIRECTION_RTL");
+  });
+
+  it("shows a server quote, verifies payment, and downloads only a ready artifact", () => {
+    expect(activity).toContain("/api/mobile/exports/quote");
+    expect(activity).toContain("/api/mobile/exports/paid-invoice");
+    expect(activity).toContain("/api/mobile/exports/verify");
+    expect(activity).toContain("DownloadManager");
+    expect(activity).toContain("artifactUrl.isNotBlank()");
   });
 });

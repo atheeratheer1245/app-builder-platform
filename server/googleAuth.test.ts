@@ -18,7 +18,7 @@ vi.mock("./localAuth", () => ({ createLocalOpenId: mocks.createLocalOpenId, crea
 vi.mock("./_core/cookies", () => ({ getSessionCookieOptions: mocks.getSessionCookieOptions }));
 vi.mock("./publicUrl", () => ({ getRequestBaseUrl: mocks.getRequestBaseUrl }));
 
-import { buildGoogleAuthorizationUrl, registerGoogleAuthRoutes } from "./googleAuth";
+import { buildGoogleAuthorizationUrl, createGoogleState, registerGoogleAuthRoutes } from "./googleAuth";
 
 function getCallbackHandler() {
   const app = express();
@@ -66,6 +66,10 @@ function callbackRequest(input: { state?: string; code?: string; cookie?: string
   } as unknown as Request;
 }
 
+function signedState(redirectUri = "https://app.example.com/api/auth/google/callback") {
+  return createGoogleState({ nonce: "a".repeat(43), redirectUri });
+}
+
 describe("Google OAuth", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -96,7 +100,7 @@ describe("Google OAuth", () => {
     const handler = getCallbackHandler();
     const res = responseRecorder();
 
-    await handler(callbackRequest({ state: "wrong-state", code: "code", cookie: "app_builder_google_state=expected-state" }), res);
+    await handler(callbackRequest({ state: signedState(), code: "code", cookie: "app_builder_google_state=wrong-state" }), res);
 
     expect(res.redirect).toHaveBeenCalledWith("/auth?google=state_error");
     expect(res.clearCookie).toHaveBeenCalledWith("app_builder_google_state", expect.any(Object));
@@ -106,8 +110,9 @@ describe("Google OAuth", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
     const handler = getCallbackHandler();
     const res = responseRecorder();
+    const state = signedState();
 
-    await handler(callbackRequest({ state: "expected-state", code: "rejected-code", cookie: "app_builder_google_state=expected-state" }), res);
+    await handler(callbackRequest({ state, code: "rejected-code", cookie: `app_builder_google_state=${state}` }), res);
 
     expect(fetch).toHaveBeenCalledWith("https://oauth2.googleapis.com/token", expect.objectContaining({ method: "POST" }));
     expect(res.redirect).toHaveBeenCalledWith("/auth?google=exchange_error");
@@ -120,8 +125,9 @@ describe("Google OAuth", () => {
     const handler = getCallbackHandler();
     const res = responseRecorder();
 
-    const stateCookie = encodeURIComponent(JSON.stringify({ state: "expected-state", redirectUri: "https://app.example.com/api/auth/google/callback" }));
-    await handler(callbackRequest({ state: "expected-state", code: "rejected-code", cookie: `app_builder_google_state=${stateCookie}` }), res);
+    const state = signedState("https://app.example.com/api/auth/google/callback");
+    const stateCookie = encodeURIComponent(JSON.stringify({ state, redirectUri: "https://app.example.com/api/auth/google/callback" }));
+    await handler(callbackRequest({ state, code: "rejected-code", cookie: `app_builder_google_state=${stateCookie}` }), res);
 
     const request = vi.mocked(fetch).mock.calls[0]?.[1];
     expect((request?.body as URLSearchParams).get("redirect_uri")).toBe("https://app.example.com/api/auth/google/callback");
@@ -132,8 +138,9 @@ describe("Google OAuth", () => {
     mocks.jwtVerify.mockRejectedValueOnce(new Error("invalid token"));
     const handler = getCallbackHandler();
     const res = responseRecorder();
+    const state = signedState();
 
-    await handler(callbackRequest({ state: "expected-state", code: "valid-code", cookie: "app_builder_google_state=expected-state" }), res);
+    await handler(callbackRequest({ state, code: "valid-code", cookie: `app_builder_google_state=${state}` }), res);
 
     expect(res.redirect).toHaveBeenCalledWith("/auth?google=identity_error");
   });
@@ -148,12 +155,32 @@ describe("Google OAuth", () => {
     });
     const handler = getCallbackHandler();
     const res = responseRecorder();
+    const state = signedState();
 
-    await handler(callbackRequest({ state: "expected-state", code: "valid-code", cookie: "app_builder_google_state=expected-state" }), res);
+    await handler(callbackRequest({ state, code: "valid-code", cookie: `app_builder_google_state=${state}` }), res);
 
     expect(insertValues).toHaveBeenCalledWith(expect.objectContaining({ openId: "google_google-subject", email: "owner@example.com", loginMethod: "google" }));
     expect(mocks.setLocalSession).toHaveBeenCalledWith(expect.any(Object), res, 7);
     expect(res.redirect).toHaveBeenCalledWith("/app");
+  });
+
+  it("completes a verified callback when a privacy-focused browser omits the temporary state cookie", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id_token: "verified-token" }) }));
+    mocks.jwtVerify.mockResolvedValueOnce({ payload: { sub: "cookie-free-subject", email: "cookie-free@example.com", email_verified: true, name: "Cookie Free" } });
+    mocks.getDb.mockResolvedValueOnce({
+      select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(() => ({ limit: vi.fn().mockResolvedValue([]) })) })) })),
+      insert: vi.fn(() => ({ values: vi.fn().mockResolvedValue([{ insertId: 33 }]) })),
+    });
+    const res = responseRecorder();
+    await getCallbackHandler()(callbackRequest({ state: signedState(), code: "valid-code" }), res);
+    expect(mocks.setLocalSession).toHaveBeenCalledWith(expect.any(Object), res, 33);
+    expect(res.redirect).toHaveBeenCalledWith("/app");
+  });
+
+  it("labels Google access_denied as an OAuth audience configuration problem", async () => {
+    const res = responseRecorder();
+    await getCallbackHandler()({ query: { error: "access_denied" }, headers: {} } as Request, res);
+    expect(res.redirect).toHaveBeenCalledWith("/auth?google=audience_error");
   });
 
   it("verifies a native Google ID token and returns a signed session capability to the APK", async () => {

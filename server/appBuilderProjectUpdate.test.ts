@@ -5,13 +5,19 @@ const mocks = vi.hoisted(() => {
   const where = vi.fn(async () => undefined);
   const set = vi.fn(() => ({ where }));
   const update = vi.fn(() => ({ set }));
+  const selectWhere = vi.fn(() => ({ limit: vi.fn(async () => []) }));
+  const select = vi.fn(() => ({ from: vi.fn(() => ({ where: selectWhere })) }));
+  const insertValues = vi.fn(async () => [{ insertId: 18 }]);
+  const insert = vi.fn(() => ({ values: insertValues }));
   return {
     getOwnedProject: vi.fn(),
-    getRequiredDb: vi.fn(async () => ({ update })),
+    getRequiredDb: vi.fn(async () => ({ update, select, insert })),
     ensureTemplateCatalog: vi.fn(async () => []),
     update,
     set,
     where,
+    select,
+    insert,
   };
 });
 
@@ -79,5 +85,19 @@ describe("protected project update", () => {
 
     await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "List", labelAr: "", labelEn: "", properties: { items: [{ labelAr: "", labelEn: "", targetPageId: null }] } })).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(mocks.getRequiredDb).not.toHaveBeenCalled();
+  });
+
+  it("accepts an optional list title while retaining a required text and page for every nested button", async () => {
+    mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "ecommerce" });
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "List", labelAr: "", labelEn: "", properties: { titleAr: "الأقسام", titleEn: "Sections", items: [{ labelAr: "المنتجات", labelEn: "Products", targetPageId: 9 }] } })).resolves.toEqual(expect.objectContaining({ id: expect.any(Number) }));
+  });
+
+  it("rejects an audio attachment when it is not a matching asset owned by the project", async () => {
+    mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "podcasts" });
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "Audio", labelAr: "", labelEn: "", properties: { assetId: 99 } })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });

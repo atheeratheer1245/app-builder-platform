@@ -48,7 +48,12 @@ export async function createLocalSession(userId: number) {
 }
 
 export async function getLocalSession(req: Request): Promise<LocalSession | null> {
-  const token = parse(req.headers.cookie ?? "")[LOCAL_SESSION_COOKIE];
+  const cookieToken = parse(req.headers.cookie ?? "")[LOCAL_SESSION_COOKIE];
+  const authorization = req.headers.authorization;
+  const bearerToken = typeof authorization === "string" && /^Bearer\s+\S+$/i.test(authorization)
+    ? authorization.replace(/^Bearer\s+/i, "")
+    : "";
+  const token = cookieToken || bearerToken;
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, sessionKey());

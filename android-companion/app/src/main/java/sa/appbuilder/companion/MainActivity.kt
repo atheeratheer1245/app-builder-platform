@@ -1,9 +1,12 @@
 package sa.appbuilder.companion
 
+import android.app.DownloadManager
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
 import android.view.Gravity
@@ -38,11 +41,20 @@ private data class Template(
     val pagesAr: List<String>, val pagesEn: List<String>, val color: Int,
 )
 
+private data class PendingPayment(
+    val localProjectId: String,
+    val paymentId: Int,
+    val exportJobId: Int,
+    val format: String,
+    val projectSnapshot: String,
+)
+
 class MainActivity : ComponentActivity() {
     private val apiUrl = "https://appbuilder-ewgsiuw6.manus.space"
     private val googleWebClientId = "271495009963-n86689drhqhmkqgkoc221ifs3e335a39.apps.googleusercontent.com"
     private val prefs by lazy { getSharedPreferences("app_builder_native", Context.MODE_PRIVATE) }
     private var googleBusy = false
+    private var paymentBrowserOpen = false
     private val isEnglish get() = prefs.getString("language", "ar") == "en"
 
     private val templates = listOf(
@@ -61,6 +73,13 @@ class MainActivity : ComponentActivity() {
         window.statusBarColor = Color.WHITE
         window.navigationBarColor = Color.WHITE
         showDashboard()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!paymentBrowserOpen) return
+        paymentBrowserOpen = false
+        readPendingPayment()?.let { verifyPaidInvoice(it, returnedFromCheckout = true) }
     }
 
     private fun tr(ar: String, en: String) = if (isEnglish) en else ar
@@ -237,11 +256,205 @@ class MainActivity : ComponentActivity() {
         val content = screen(tr("مركز التصدير", "Export center"), tr("${project.getString("name")} · اختر الصيغة المناسبة لتطبيقك.", "${project.optString("nameEn", project.getString("name"))} · Choose the format for your app."))
         val info = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(15), dp(16), dp(15)); background = rounded(Color.rgb(255, 251, 235), 17) }
         addHeading(info, "APK  /  AAB  /  IPA", 19)
-        addText(info, tr("خدمة البناء السحابية مؤجلة حاليًا؛ لذلك يُحفظ طلبك داخل التطبيق فقط.", "Cloud builds are deferred; export requests are stored in the app only."))
+        addText(info, tr("المسار المجاني لا يطلب دفعة. للمسار المدفوع يظهر السعر أولًا، ثم تُفتح فاتورة ميسر في المتصفح الخارجي فقط. لا يظهر زر التنزيل إلا بعد توفر ملف حقيقي.", "The free path never asks for payment. The paid path shows the quote first, then opens a Moyasar invoice only in the external browser. Download appears only for a real artifact."))
         content.addView(info, full(bottom = 10))
-        listOf("APK", "AAB", "IPA").forEach { format -> primary(tr("طلب $format", "Request $format")) { notice(tr("حُفظ طلب $format محليًا", "$format request saved locally")) }.also(content::addView) }
+        val pending = pendingForProject(project)
+        if (pending != null) {
+            val status = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(15), dp(14), dp(15), dp(14)); background = rounded(Color.rgb(238, 242, 255), 16) }
+            addHeading(status, tr("دفعة بانتظار التحقق", "Payment awaiting verification"), 18)
+            addText(status, tr("عد إلى التطبيق بعد إتمام الفاتورة للتحقق من الحالة بأمان.", "Return to the app after completing the invoice to verify it securely."))
+            content.addView(status, full(bottom = 8))
+            secondary(tr("تحقق من الدفع الآن", "Check payment now")) { verifyPaidInvoice(pending) }.also(content::addView)
+        }
+        listOf("APK", "AAB", "IPA").forEach { format ->
+            primary(tr("طلب تصدير مجاني $format", "Request free $format export")) { requestFreeExport(project, format) }.also(content::addView)
+            secondary(tr("عرض سعر وتصدير مدفوع $format", "View quote & paid $format export")) { loadPaidQuote(project, format) }.also(content::addView)
+        }
         secondary(tr("العودة إلى المشروع", "Back to project")) { showProject(project) }.also(content::addView)
     }
+
+    private fun projectTemplate(project: JSONObject): Template? {
+        val category = project.optString("category")
+        return templates.find { it.id == category }
+            ?: templates.find { it.titleAr == project.optString("template") || it.titleEn == project.optString("templateEn") }
+    }
+
+    private fun requireNativeSession(): Boolean {
+        if (!prefs.getString("session", "").isNullOrBlank()) return true
+        notice(tr("سجّل الدخول قبل طلب التصدير.", "Sign in before requesting an export."))
+        showAuth()
+        return false
+    }
+
+    private fun exportPayload(project: JSONObject, format: String): JSONObject? {
+        val template = projectTemplate(project)
+        if (template == null) {
+            notice(tr("تعذر تحديد فئة القالب لهذا المشروع.", "The template category for this project could not be determined."))
+            return null
+        }
+        return JSONObject()
+            .put("localProjectId", project.getString("id"))
+            .put("name", project.optString("name", template.titleAr))
+            .put("category", template.id)
+            .put("format", format.lowercase())
+            .put("estimatedSizeBytes", project.optLong("estimatedSizeBytes", 0L))
+    }
+
+    private fun requestFreeExport(project: JSONObject, format: String) {
+        if (!requireNativeSession()) return
+        val payload = exportPayload(project, format) ?: return
+        notice(tr("جارٍ إرسال طلب التصدير المجاني…", "Submitting free export request…"))
+        lifecycleScope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) { postJson("$apiUrl/api/mobile/exports/free", payload, authenticated = true) }
+                notice(tr("تم وضع طلب $format المجاني في قائمة البناء.", "Free $format export is queued for build."))
+                showQueuedExport(project, format, result.getInt("exportJobId"))
+            } catch (_: Exception) {
+                notice(tr("تعذر إرسال طلب التصدير المجاني الآن.", "The free export request could not be submitted now."))
+            }
+        }
+    }
+
+    private fun loadPaidQuote(project: JSONObject, format: String) {
+        if (!requireNativeSession()) return
+        val payload = exportPayload(project, format) ?: return
+        notice(tr("جارٍ احتساب السعر…", "Calculating quote…"))
+        lifecycleScope.launch {
+            try {
+                val quote = withContext(Dispatchers.IO) { postJson("$apiUrl/api/mobile/exports/quote", payload, authenticated = true) }
+                showPaidQuote(project, format, quote)
+            } catch (_: Exception) {
+                notice(tr("تعذر جلب سعر التصدير الآن.", "The export quote could not be loaded now."))
+            }
+        }
+    }
+
+    private fun showPaidQuote(project: JSONObject, format: String, quote: JSONObject) {
+        val content = screen(tr("سعر التصدير المدفوع", "Paid export quote"), tr("راجع السعر قبل فتح فاتورة الدفع.", "Review the price before opening the payment invoice."))
+        val price = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(17), dp(16), dp(17), dp(16)); background = rounded(Color.rgb(238, 242, 255), 18) }
+        addHeading(price, "${quote.optInt("totalPriceSar")} ${tr("ريال سعودي", "SAR")}", 27)
+        addText(price, tr("${quote.optInt("sizeUnits")} وحدة بحجم 10 ميغابايت · ${format.uppercase()}", "${quote.optInt("sizeUnits")} × 10 MB units · ${format.uppercase()}"))
+        content.addView(price, full(bottom = 12))
+        addText(content, tr("لا تُدخل بيانات البطاقة داخل التطبيق؛ ستنتقل فقط إلى فاتورة ميسر المستضافة في المتصفح الخارجي.", "Card data is never entered in this app; only the hosted Moyasar invoice opens in the external browser."))
+        primary(tr("المتابعة إلى فاتورة ميسر", "Continue to Moyasar invoice")) { createPaidInvoice(project, format) }.also(content::addView)
+        secondary(tr("العودة إلى مركز التصدير", "Back to export center")) { showExports(project) }.also(content::addView)
+    }
+
+    private fun createPaidInvoice(project: JSONObject, format: String) {
+        val payload = exportPayload(project, format) ?: return
+        notice(tr("جارٍ إنشاء فاتورة ميسر…", "Creating Moyasar invoice…"))
+        lifecycleScope.launch {
+            try {
+                val invoice = withContext(Dispatchers.IO) { postJson("$apiUrl/api/mobile/exports/paid-invoice", payload, authenticated = true) }
+                val checkoutUrl = invoice.optString("checkoutUrl")
+                val paymentId = invoice.optInt("paymentId")
+                val exportJobId = invoice.optInt("exportJobId")
+                if (checkoutUrl.isBlank() || paymentId < 1 || exportJobId < 1) throw IllegalStateException("Invalid invoice response")
+                val pending = PendingPayment(project.getString("id"), paymentId, exportJobId, format, project.toString())
+                savePendingPayment(pending)
+                showPaymentPending(pending)
+                openMoyasarInvoice(checkoutUrl)
+            } catch (_: Exception) {
+                notice(tr("تعذر إنشاء فاتورة ميسر التجريبية. تحقق من إعدادات الحساب ثم أعد المحاولة.", "The Moyasar test invoice could not be created. Check account setup and try again."))
+            }
+        }
+    }
+
+    private fun openMoyasarInvoice(checkoutUrl: String) {
+        try {
+            paymentBrowserOpen = true
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(checkoutUrl)))
+        } catch (_: Exception) {
+            paymentBrowserOpen = false
+            notice(tr("لا يتوفر متصفح خارجي لفتح الفاتورة.", "No external browser is available to open the invoice."))
+        }
+    }
+
+    private fun showPaymentPending(pending: PendingPayment) {
+        val project = JSONObject(pending.projectSnapshot)
+        val content = screen(tr("بانتظار الدفع", "Awaiting payment"), tr("أكمل فاتورة ميسر ثم عد إلى التطبيق للتحقق الخادمي.", "Complete the Moyasar invoice, then return to the app for server-side verification."))
+        val card = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(15), dp(16), dp(15)); background = rounded(Color.rgb(255, 251, 235), 17) }
+        addHeading(card, "${pending.format.uppercase()} · ${tr("قيد الانتظار", "Pending")}", 20)
+        addText(card, tr("لن يبدأ البناء المدفوع ولا يظهر تنزيل حتى تؤكد الخوادم الدفع.", "The paid build and a download stay locked until the servers confirm payment."))
+        content.addView(card, full(bottom = 10))
+        primary(tr("تحقق من الدفع", "Verify payment")) { verifyPaidInvoice(pending) }.also(content::addView)
+        secondary(tr("العودة إلى مركز التصدير", "Back to export center")) { showExports(project) }.also(content::addView)
+    }
+
+    private fun verifyPaidInvoice(pending: PendingPayment, returnedFromCheckout: Boolean = false) {
+        if (returnedFromCheckout) notice(tr("جارٍ التحقق من حالة الدفع…", "Checking payment status…"))
+        lifecycleScope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) { postJson("$apiUrl/api/mobile/exports/verify", JSONObject().put("paymentId", pending.paymentId), authenticated = true) }
+                val project = JSONObject(pending.projectSnapshot)
+                if (!result.optBoolean("paid", false)) {
+                    showPaymentPending(pending)
+                    if (returnedFromCheckout) notice(tr("لم تؤكد الفاتورة كمدفوعة بعد.", "The invoice is not confirmed as paid yet."))
+                    return@launch
+                }
+                clearPendingPayment()
+                val artifactUrl = result.optString("artifactUrl")
+                if (result.optString("status") == "ready" && artifactUrl.isNotBlank()) {
+                    showReadyDownload(project, pending.format, pending.exportJobId, artifactUrl)
+                } else {
+                    showQueuedExport(project, pending.format, pending.exportJobId, paid = true)
+                }
+            } catch (_: Exception) {
+                if (returnedFromCheckout) notice(tr("تعذر التحقق الآن؛ يمكنك المحاولة من مركز التصدير.", "Verification is unavailable now; try again from Export Center."))
+                else notice(tr("تعذر التحقق من الفاتورة الآن.", "The invoice could not be verified now."))
+            }
+        }
+    }
+
+    private fun showQueuedExport(project: JSONObject, format: String, exportJobId: Int, paid: Boolean = false) {
+        val content = screen(tr("طلب التصدير قيد البناء", "Export request queued"), tr("تتم متابعة حالة $format من الخادم.", "$format status is tracked by the server."))
+        val card = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(15), dp(16), dp(15)); background = rounded(Color.rgb(238, 242, 255), 17) }
+        addHeading(card, if (paid) tr("تم تأكيد الدفع", "Payment verified") else tr("طلب مجاني مُرسل", "Free request submitted"), 20)
+        addText(card, tr("رقم الطلب: $exportJobId. سيظهر زر التنزيل هنا فقط عند اكتمال ملف حقيقي.", "Request #$exportJobId. Download appears here only when a real file is ready."))
+        content.addView(card, full(bottom = 10))
+        secondary(tr("العودة إلى مركز التصدير", "Back to export center")) { showExports(project) }.also(content::addView)
+    }
+
+    private fun showReadyDownload(project: JSONObject, format: String, exportJobId: Int, artifactUrl: String) {
+        val content = screen(tr("ملف التصدير جاهز", "Export file ready"), tr("تم التحقق من الدفع وأصبح ملف حقيقي متاحًا للتنزيل.", "Payment is verified and a real file is ready to download."))
+        val card = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(15), dp(16), dp(15)); background = rounded(Color.rgb(236, 253, 245), 17) }
+        addHeading(card, "${format.uppercase()} · ${tr("جاهز", "Ready")}", 20)
+        addText(card, tr("رقم الطلب: $exportJobId", "Request #$exportJobId"))
+        content.addView(card, full(bottom = 10))
+        primary(tr("تنزيل الملف", "Download file")) { downloadArtifact(artifactUrl, format) }.also(content::addView)
+        secondary(tr("العودة إلى مركز التصدير", "Back to export center")) { showExports(project) }.also(content::addView)
+    }
+
+    private fun downloadArtifact(artifactUrl: String, format: String) {
+        try {
+            val request = DownloadManager.Request(Uri.parse(artifactUrl))
+                .setTitle("App Builder ${format.uppercase()}")
+                .setDescription(tr("جارٍ تنزيل ملف التصدير", "Downloading export file"))
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            (getSystemService(DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
+            notice(tr("بدأ التنزيل من الملف الجاهز.", "Download started from the ready file."))
+        } catch (_: Exception) {
+            notice(tr("تعذر بدء تنزيل الملف.", "The file download could not be started."))
+        }
+    }
+
+    private fun pendingForProject(project: JSONObject): PendingPayment? = readPendingPayment()?.takeIf { it.localProjectId == project.optString("id") }
+
+    private fun savePendingPayment(pending: PendingPayment) {
+        prefs.edit().putString("pending_paid_export", JSONObject()
+            .put("localProjectId", pending.localProjectId)
+            .put("paymentId", pending.paymentId)
+            .put("exportJobId", pending.exportJobId)
+            .put("format", pending.format)
+            .put("projectSnapshot", pending.projectSnapshot).toString()).apply()
+    }
+
+    private fun readPendingPayment(): PendingPayment? = try {
+        val value = prefs.getString("pending_paid_export", "") ?: ""
+        if (value.isBlank()) null else JSONObject(value).let { PendingPayment(it.getString("localProjectId"), it.getInt("paymentId"), it.getInt("exportJobId"), it.getString("format"), it.getString("projectSnapshot")) }
+    } catch (_: Exception) { null }
+
+    private fun clearPendingPayment() { prefs.edit().remove("pending_paid_export").apply() }
 
     private fun showAccount() {
         val email = prefs.getString("email", "") ?: ""
@@ -294,8 +507,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun postJson(endpoint: String, payload: JSONObject): JSONObject {
-        val c = (URL(endpoint).openConnection() as HttpURLConnection).apply { requestMethod = "POST"; connectTimeout = 15_000; readTimeout = 15_000; doOutput = true; setRequestProperty("Content-Type", "application/json"); setRequestProperty("Accept", "application/json") }
+    private fun postJson(endpoint: String, payload: JSONObject, authenticated: Boolean = false): JSONObject {
+        val c = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"; connectTimeout = 15_000; readTimeout = 15_000; doOutput = true; setRequestProperty("Content-Type", "application/json"); setRequestProperty("Accept", "application/json")
+            if (authenticated) prefs.getString("session", "")?.takeIf { it.isNotBlank() }?.let { setRequestProperty("Authorization", "Bearer $it") }
+        }
         c.outputStream.use { it.write(payload.toString().toByteArray()) }
         val stream = if (c.responseCode in 200..299) c.inputStream else c.errorStream
         val text = stream.bufferedReader().use { it.readText() }
@@ -305,7 +521,7 @@ class MainActivity : ComponentActivity() {
 
     private fun createProject(t: Template) {
         val entries = projects()
-        entries.put(JSONObject().put("id", UUID.randomUUID().toString()).put("name", "${t.titleAr} جديد").put("nameEn", "New ${t.titleEn}").put("template", t.titleAr).put("templateEn", t.titleEn).put("createdAt", tr("الآن", "Now")).put("components", JSONArray()))
+        entries.put(JSONObject().put("id", UUID.randomUUID().toString()).put("name", "${t.titleAr} جديد").put("nameEn", "New ${t.titleEn}").put("template", t.titleAr).put("templateEn", t.titleEn).put("category", t.id).put("estimatedSizeBytes", 0).put("createdAt", tr("الآن", "Now")).put("components", JSONArray()))
         prefs.edit().putString("projects", entries.toString()).apply(); notice(tr("تم إنشاء المشروع على هاتفك", "Project created on your phone")); showProjects()
     }
 
