@@ -180,7 +180,7 @@
 - [x] Assess and implement a secure Gemini Flash integration for approved AI features after a server-side API key is supplied, with no client-side key exposure.
 - [x] Make Form insert a ready-to-customize form appropriate to the active template category, with editable fields and submit label.
 - [x] Add game-specific programmable blocks for scenes, player movement, collisions, score, levels, and win or lose conditions in game projects.
-- [ ] Define and implement a professional game-template component blueprint covering genre presets, scenes, entities, controls, rules, progression, UI, audio, persistence, testing, and export readiness.
+- [x] Define and implement a professional game-template component blueprint covering genre presets, scenes, entities, controls, rules, progression, UI, audio, persistence, testing, and export readiness.
 - [x] Add editable game-blueprint settings for entity behavior, progression targets, HUD visibility, audio switches, and persistence readiness, with safe defaults for each supported game mode.
 - [x] Add a visible Player editor toggle for respawn behavior and keep its saved value synchronized with collision handling in the runtime.
 - [x] Implement the first runnable 2D platformer preset with player, platforms, collectibles, hazards, finish gate, health, score, touch controls, and editable game rules.
@@ -224,4 +224,4 @@
 - [x] Render an explicitly approved Veo video in the Image Animation editor preview and live game runtime, while retaining sprite-sheet fallback behavior.
 - [x] Make the dedicated Gemini Flash panel above the preview usable without opening an edit dialog, with target selection, server-side suggestion generation, and an explicit review-and-apply step.
 - [ ] Audit every user-facing loading, error, export, and payment status; replace raw fallback strings with localized labels and add regression coverage.
-- [ ] Add explicit game-blueprint validation for export readiness and all supported modes before declaring the comprehensive blueprint complete.
+- [x] Add explicit game-blueprint validation for export readiness and all supported modes before declaring the comprehensive blueprint complete.
