@@ -210,3 +210,4 @@
 - [x] Make the Background component available in every template category and ensure it safely takes precedence over the optional page-level background setting for its page.
 - [x] Add a Gemini Flash production assistant that turns a user brief into bilingual page or component content suggestions, keeps model access server-side, and requires user review before saving.
 - [x] Add an app-icon setting for every template project, allow selection of an uploaded image asset with server-side ownership and MIME validation, and render it in editor and runtime headers.
+- [x] Make Background image and video layers cover the entire mobile or tablet screen surface behind the header and page content in editor and runtime views.
