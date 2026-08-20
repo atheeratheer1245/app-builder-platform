@@ -116,7 +116,7 @@
 - [x] Restore the approved per-10-MB paid-export price catalog: e-commerce SAR 50, education SAR 70, games SAR 120, music SAR 100, podcasts SAR 100, movies and shows SAR 150, and services SAR 40.
 - [x] Preserve fully free direct exports as a separate option with no checkout, invoice, or payment-provider call.
 - [x] Build the paid per-export calculation that rounds file size up to 10-MB units and requires verified payment before paid export queueing.
-- [ ] Create one polished, editable paid example app for each of the seven template categories, with preview, bilingual description, and access protection distinct from the free base templates.
+- [x] Create one polished, editable paid example app for each of the seven template categories, with preview, bilingual description, and access protection distinct from the free base templates.
 - [ ] Restrict checkout, payment records, and verified-payment queueing to paid exports only; keep all free exports free and independent of payment state.
 - [x] Make every paid application example card open a dedicated bilingual preview with its pages and components, rather than acting as display-only content.
 - [x] Add a user-facing bilingual guide page that explains free exports, paid exports, examples, and the current cloud-build limitation, with a visible route from the application.
