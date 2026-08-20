@@ -114,8 +114,8 @@
 - [ ] Integrate the selected payment provider only after credentials and explicit approval are available, with server-side verification and no card handling in the application.
 - [ ] Add regression tests for free entitlements, paid entitlements, access denial, successful payment verification, and bilingual plan presentation.
 - [x] Restore the approved per-10-MB paid-export price catalog: e-commerce SAR 50, education SAR 70, games SAR 120, music SAR 100, podcasts SAR 100, movies and shows SAR 150, and services SAR 40.
-- [ ] Preserve fully free direct exports as a separate option with no checkout, invoice, or payment-provider call.
-- [ ] Build the paid per-export calculation that rounds file size up to 10-MB units and requires verified payment before paid export queueing.
+- [x] Preserve fully free direct exports as a separate option with no checkout, invoice, or payment-provider call.
+- [x] Build the paid per-export calculation that rounds file size up to 10-MB units and requires verified payment before paid export queueing.
 - [ ] Create one polished, editable paid example app for each of the seven template categories, with preview, bilingual description, and access protection distinct from the free base templates.
 - [ ] Restrict checkout, payment records, and verified-payment queueing to paid exports only; keep all free exports free and independent of payment state.
 - [x] Make every paid application example card open a dedicated bilingual preview with its pages and components, rather than acting as display-only content.
