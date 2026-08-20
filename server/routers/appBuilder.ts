@@ -58,6 +58,19 @@ function validateComponentProperties(componentType: string, properties: Record<s
   }
 }
 
+async function validateDestinationPages(projectId: number, componentType: string, properties: Record<string, unknown>) {
+  const destinationIds = new Set<number>();
+  const addDestination = (value: unknown) => { if (typeof value === "number" && Number.isInteger(value) && value > 0) destinationIds.add(value); };
+  if (componentType === "Button") addDestination(properties.targetPageId);
+  if (componentType === "Card") addDestination(properties.actionPageId);
+  if (componentType === "List") for (const item of Array.isArray(properties.items) ? properties.items : []) addDestination(item && typeof item === "object" && !Array.isArray(item) ? (item as Record<string, unknown>).targetPageId : undefined);
+  if (componentType === "Condition") { addDestination(properties.successPageId); addDestination(properties.failurePageId); }
+  if (!destinationIds.size) return;
+  const db = await getRequiredDb();
+  const matches = await Promise.all(Array.from(destinationIds).map(pageId => db.select({ id: projectPages.id }).from(projectPages).where(and(eq(projectPages.id, pageId), eq(projectPages.projectId, projectId))).limit(1)));
+  if (matches.some(rows => !rows[0])) throw new TRPCError({ code: "BAD_REQUEST", message: "Each destination page must belong to this project" });
+}
+
 async function getNextPageOrder(projectId: number) {
   const db = await getRequiredDb();
   const current = await db.select({ maxOrder: max(projectPages.sortOrder) }).from(projectPages).where(eq(projectPages.projectId, projectId));
@@ -244,6 +257,7 @@ export const appBuilderRouter = router({
       if (!getAllowedComponentTypes(categoryForDefaults).includes(input.componentType)) throw new TRPCError({ code: "BAD_REQUEST", message: "Component is not available for this template category" });
       const properties = await normalizeMediaProperties({ ownerId: ctx.user.id, projectId: input.projectId, componentType: input.componentType, properties: { ...getDefaultComponentProperties(input.componentType, categoryForDefaults), ...input.properties } });
       validateComponentProperties(input.componentType, properties);
+      await validateDestinationPages(input.projectId, input.componentType, properties);
       const db = await getRequiredDb();
       const current = await db.select({ maxOrder: max(projectComponents.sortOrder) }).from(projectComponents).where(eq(projectComponents.pageId, input.pageId));
       const result = await db.insert(projectComponents).values({ ...input, properties, sortOrder: (current[0]?.maxOrder ?? -1) + 1 });
@@ -256,6 +270,7 @@ export const appBuilderRouter = router({
       if (!getAllowedComponentTypes(categoryForDefaults).includes(input.componentType)) throw new TRPCError({ code: "BAD_REQUEST", message: "Component is not available for this template category" });
       const properties = input.properties ? await normalizeMediaProperties({ ownerId: ctx.user.id, projectId: input.projectId, componentType: input.componentType, properties: input.properties }) : undefined;
       if (properties) validateComponentProperties(input.componentType, properties);
+      if (properties) await validateDestinationPages(input.projectId, input.componentType, properties);
       const db = await getRequiredDb();
       await db.update(projectComponents).set({ componentType: input.componentType, labelAr: input.labelAr, labelEn: input.labelEn, ...(properties ? { properties } : {}), updatedAt: new Date() }).where(and(eq(projectComponents.id, input.componentId), eq(projectComponents.projectId, input.projectId)));
       return { success: true };

@@ -5,8 +5,11 @@ const mocks = vi.hoisted(() => {
   const where = vi.fn(async () => undefined);
   const set = vi.fn(() => ({ where }));
   const update = vi.fn(() => ({ set }));
-  const selectWhere = vi.fn(() => ({ limit: vi.fn(async () => []) }));
-  const select = vi.fn(() => ({ from: vi.fn(() => ({ where: selectWhere })) }));
+  const select = vi.fn((fields: Record<string, unknown>) => {
+    const hasOnlyPageId = Object.keys(fields).length === 1 && "id" in fields;
+    const rows = hasOnlyPageId ? [{ id: 9 }] : [];
+    return { from: vi.fn(() => ({ where: vi.fn(() => ({ limit: vi.fn(async () => rows) })) })) };
+  });
   const insertValues = vi.fn(async () => [{ insertId: 18 }]);
   const insert = vi.fn(() => ({ values: insertValues }));
   return {
@@ -99,5 +102,13 @@ describe("protected project update", () => {
     const caller = appBuilderRouter.createCaller(createOwnerContext());
 
     await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "Audio", labelAr: "", labelEn: "", properties: { assetId: 99 } })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("rejects a list destination page that does not belong to the current project", async () => {
+    mocks.select.mockImplementationOnce(() => ({ from: vi.fn(() => ({ where: vi.fn(() => ({ limit: vi.fn(async () => []) })) })) }));
+    mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "ecommerce" });
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "List", labelAr: "", labelEn: "", properties: { items: [{ labelAr: "خارج المشروع", labelEn: "Outside project", targetPageId: 77 }] } })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });

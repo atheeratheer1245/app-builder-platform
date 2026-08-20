@@ -182,3 +182,4 @@
 - [ ] Reproduce and repair the reported end-to-end editor failure where template media, buttons, and navigation lists can be configured but do not produce a working saved application flow.
 - [x] Build an authenticated runnable project route that renders saved pages, image/video/audio media, buttons, and titled list navigation from project data rather than showing editor metadata only.
 - [x] Refresh the project gallery after every upload and open the new component’s configuration immediately so clients can select media and page links without navigating through inactive-looking controls.
+- [x] Enforce server-side ownership of every selected page destination so saved buttons and list navigation cannot point outside the current project.
