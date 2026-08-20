@@ -294,6 +294,21 @@ export const appBuilderRouter = router({
     }),
   }),
   editor: router({
+    updateAppIcon: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), assetId: z.number().int().positive().nullable() })).mutation(async ({ ctx, input }) => {
+      const project = await getOwnedProject(ctx.user.id, input.projectId);
+      if (!project) unauthenticatedProject();
+      const db = await getRequiredDb();
+      let appIconAssetId: number | null = null;
+      let appIconUrl = "";
+      if (input.assetId) {
+        const asset = (await db.select({ id: projectAssets.id, url: projectAssets.url, mimeType: projectAssets.mimeType }).from(projectAssets).where(and(eq(projectAssets.id, input.assetId), eq(projectAssets.projectId, input.projectId), eq(projectAssets.ownerId, ctx.user.id))).limit(1))[0];
+        if (!asset || !asset.mimeType.startsWith("image/")) throw new TRPCError({ code: "BAD_REQUEST", message: "Select an image asset owned by this project for the app icon" });
+        appIconAssetId = asset.id;
+        appIconUrl = asset.url;
+      }
+      await db.update(projects).set({ settings: { ...(project.settings ?? {}), appIconAssetId, appIconUrl }, updatedAt: new Date() }).where(eq(projects.id, input.projectId));
+      return { success: true, appIconAssetId, appIconUrl };
+    }),
     addPage: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), titleAr: z.string().min(1).max(120), titleEn: z.string().min(1).max(120), route: z.string().min(1).max(180) })).mutation(async ({ ctx, input }) => {
       if (!await getOwnedProject(ctx.user.id, input.projectId)) unauthenticatedProject();
       const db = await getRequiredDb();

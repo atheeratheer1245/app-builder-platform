@@ -209,3 +209,4 @@
 - [x] Add a reusable Background component to every template that selects one project image, video, or audio asset and renders it as the active screen background in editor and runtime previews.
 - [x] Make the Background component available in every template category and ensure it safely takes precedence over the optional page-level background setting for its page.
 - [x] Add a Gemini Flash production assistant that turns a user brief into bilingual page or component content suggestions, keeps model access server-side, and requires user review before saving.
+- [x] Add an app-icon setting for every template project, allow selection of an uploaded image asset with server-side ownership and MIME validation, and render it in editor and runtime headers.
