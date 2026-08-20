@@ -92,6 +92,14 @@ describe("protected project update", () => {
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
+  it("stores a validated solid page background for the matching project owner", async () => {
+    mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "books" });
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.editor.updatePage({ projectId: 42, pageId: 6, titleAr: "المكتبة", titleEn: "Library", route: "/library", configuration: { background: { type: "color", color: "#1e293b", assetId: null } } })).resolves.toEqual({ success: true });
+    expect(mocks.set).toHaveBeenCalledWith(expect.objectContaining({ configuration: { background: { type: "color", color: "#1e293b", assetId: null, assetUrl: "" } } }));
+  });
+
   it("creates a bounded bilingual Gemini Flash suggestion only for the matching project owner", async () => {
     mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "books" });
     mocks.invokeLLM.mockResolvedValueOnce({ choices: [{ message: { content: JSON.stringify({ titleAr: "اختيارات نهاية الأسبوع", titleEn: "Weekend Picks", descriptionAr: "كتب مختارة لقراءتك الهادئة.", descriptionEn: "Curated books for relaxed reading.", route: "Weekend Picks" }) } }] });
@@ -115,6 +123,13 @@ describe("protected project update", () => {
 
     await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "GameScene", labelAr: "مشهد", labelEn: "Scene" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(mocks.getRequiredDb).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unsupported game mode even when the component belongs to a game project", async () => {
+    mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "games" });
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.editor.addComponent({ projectId: 42, pageId: 6, componentType: "GameScene", labelAr: "", labelEn: "", properties: { gameMode: "unsupported_mode" } })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
   it("allows optional component labels but rejects incomplete navigation items", async () => {

@@ -74,6 +74,8 @@ button { cursor: pointer; }
 .exports-layout { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); min-width: 0; }
 .export-builder, .export-status { min-width: 0; }
 @media (max-width: 900px) { .exports-layout { grid-template-columns: 1fr; } }
+.tablet-frame { width: min(560px,92%); min-height: 390px; border-radius: 25px; }.tablet-frame .phone-notch { display: none; }.tablet-frame .phone-content { min-height: 310px; }.tablet-frame .phone-bottom { display: none; }
+@media (max-width: 740px) { .tablet-frame { width: min(420px,94%); min-height: 380px; } }
 .app-main, .app-content { width: 100%; max-width: 100%; min-width: 0; }
 .app-content { overflow-x: clip; }
 .workspace-access-state { display: flex; min-height: calc(100vh - 130px); flex-direction: column; align-items: center; justify-content: center; padding: 40px 18px; text-align: center; color: #78869b; }.workspace-access-state > svg { width: 24px; height: 24px; color: #5a50d9; }.access-icon { display: grid; width: 52px; height: 52px; place-items: center; border-radius: 17px; color: #5a50d9; background: #efefff; }.access-icon svg { width: 23px; height: 23px; }.workspace-access-state h1 { margin: 16px 0 7px; color: #344159; font-size: 22px; font-weight: 800; }.workspace-access-state p { max-width: 410px; margin: 0 0 18px; font-size: 13px; line-height: 1.9; }

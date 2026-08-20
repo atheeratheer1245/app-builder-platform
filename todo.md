@@ -198,3 +198,10 @@
 - [x] Refresh the project gallery after every upload and open the new component’s configuration immediately so clients can select media and page links without navigating through inactive-looking controls.
 - [x] Enforce server-side ownership of every selected page destination so saved buttons and list navigation cannot point outside the current project.
 - [ ] Reproduce and repair Google sign-in on the published website, verify the canonical authorization URL and callback, and record any remaining Google Auth Platform audience requirement.
+- [x] Remove generic gallery/source labels from rendered components when users have not entered a visible title, while keeping labels inside editor settings only.
+- [x] Make inserted video components autoplay muted and inline in editor and runtime previews when the browser permits playback.
+- [x] Add a selectable tablet device mode alongside the existing phone preview in the project editor.
+- [x] Add page-level background settings for solid color, uploaded image, uploaded video, and uploaded audio, with safe asset selection and runtime rendering.
+- [x] Remove the ready-made Form component from every template catalog, editor selector, and runtime handling without deleting already-saved project data.
+- [x] Add the eight requested game modes—platformer, endless runner, puzzle, quiz, memory cards, tower defense, simple shooter, racing, and light simulation—to game scene and related game-component settings.
+- [x] Render game-mode-specific setup and preview behavior for scene, animation, collectible, hazard, finish gate, touch controls, physics, score, and level blocks.

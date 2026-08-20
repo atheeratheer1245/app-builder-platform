@@ -12,7 +12,7 @@ import {
 } from "../../drizzle/schema";
 import { templateCategories } from "../../shared/appBuilderCatalog";
 import { getPaidExportPrice } from "../../shared/exportPricing";
-import { builderComponentTypes, getAllowedComponentTypes, getDefaultComponentProperties } from "../../shared/componentCatalog";
+import { builderComponentTypes, gameComponentTypes, gameModes, getAllowedComponentTypes, getDefaultComponentProperties } from "../../shared/componentCatalog";
 import { premiumExampleCatalog } from "../../shared/premiumExamples";
 import { getOwnedProject, getProjectWorkspace, getRequiredDb, ensureTemplateCatalog } from "../appBuilderDb";
 import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
@@ -44,6 +44,12 @@ const aiSuggestionResult = z.object({
   descriptionEn: z.string().trim().min(1).max(700),
   route: z.string().trim().min(1).max(120),
 });
+const pageBackgroundSchema = z.object({
+  type: z.enum(["none", "color", "image", "video", "audio"]).default("none"),
+  color: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).default("#ffffff"),
+  assetId: z.number().int().positive().nullable().default(null),
+});
+const pageConfigurationSchema = z.object({ background: pageBackgroundSchema.optional() }).default({});
 
 function generatedPackageName(projectName: string) {
   const fragment = projectName.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "").slice(0, 72) || "app";
@@ -60,6 +66,9 @@ function unauthenticatedProject(): never {
 }
 
 function validateComponentProperties(componentType: string, properties: Record<string, unknown>) {
+  if ((gameComponentTypes as readonly string[]).includes(componentType) && properties.gameMode !== undefined && !(gameModes as readonly string[]).includes(properties.gameMode as string)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Game mode is not supported" });
+  }
   if (componentType === "List") {
     const items = Array.isArray(properties.items) ? properties.items : [];
     for (const item of items) {
@@ -118,6 +127,17 @@ async function normalizeMediaProperties(input: { ownerId: number; projectId: num
   const asset = (await db.select({ id: projectAssets.id, url: projectAssets.url, mimeType: projectAssets.mimeType }).from(projectAssets).where(and(eq(projectAssets.id, assetId), eq(projectAssets.projectId, input.projectId), eq(projectAssets.ownerId, input.ownerId))).limit(1))[0];
   if (!asset || !asset.mimeType.startsWith(mimePrefix)) throw new TRPCError({ code: "BAD_REQUEST", message: "Selected attachment does not match the required media type" });
   return { ...input.properties, assetId: asset.id, assetUrl: asset.url };
+}
+
+async function normalizePageConfiguration(input: { ownerId: number; projectId: number; configuration: { background?: z.infer<typeof pageBackgroundSchema> } }) {
+  const background = input.configuration.background ?? { type: "none" as const, color: "#ffffff", assetId: null };
+  if (background.type === "none" || background.type === "color") return { background: { type: background.type, color: background.color, assetId: null, assetUrl: "" } };
+  if (!background.assetId) throw new TRPCError({ code: "BAD_REQUEST", message: "Select a project asset for the page background" });
+  const expectedPrefix = background.type === "image" ? "image/" : background.type === "video" ? "video/" : "audio/";
+  const db = await getRequiredDb();
+  const asset = (await db.select({ id: projectAssets.id, url: projectAssets.url, mimeType: projectAssets.mimeType }).from(projectAssets).where(and(eq(projectAssets.id, background.assetId), eq(projectAssets.projectId, input.projectId), eq(projectAssets.ownerId, input.ownerId))).limit(1))[0];
+  if (!asset || !asset.mimeType.startsWith(expectedPrefix)) throw new TRPCError({ code: "BAD_REQUEST", message: "Selected asset does not match the page background type" });
+  return { background: { type: background.type, color: background.color, assetId: asset.id, assetUrl: asset.url } };
 }
 
 export const appBuilderRouter = router({
@@ -262,10 +282,11 @@ export const appBuilderRouter = router({
       const result = await db.insert(projectPages).values({ ...input, sortOrder, configuration: {} });
       return { id: Number(result[0]?.insertId ?? 0) };
     }),
-    updatePage: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), pageId: z.number().int().positive(), titleAr: z.string().min(1).max(120), titleEn: z.string().min(1).max(120), route: z.string().min(1).max(180) })).mutation(async ({ ctx, input }) => {
+    updatePage: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), pageId: z.number().int().positive(), titleAr: z.string().min(1).max(120), titleEn: z.string().min(1).max(120), route: z.string().min(1).max(180), configuration: pageConfigurationSchema })).mutation(async ({ ctx, input }) => {
       if (!await getOwnedProject(ctx.user.id, input.projectId)) unauthenticatedProject();
       const db = await getRequiredDb();
-      await db.update(projectPages).set({ titleAr: input.titleAr, titleEn: input.titleEn, route: input.route, updatedAt: new Date() }).where(and(eq(projectPages.id, input.pageId), eq(projectPages.projectId, input.projectId)));
+      const configuration = await normalizePageConfiguration({ ownerId: ctx.user.id, projectId: input.projectId, configuration: input.configuration });
+      await db.update(projectPages).set({ titleAr: input.titleAr, titleEn: input.titleEn, route: input.route, configuration, updatedAt: new Date() }).where(and(eq(projectPages.id, input.pageId), eq(projectPages.projectId, input.projectId)));
       return { success: true };
     }),
     deletePage: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), pageId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getAllowedComponentTypes, getDefaultComponentProperties } from "../shared/componentCatalog";
+import { gameModes, getAllowedComponentTypes, getDefaultComponentProperties } from "../shared/componentCatalog";
 
 describe("builder component catalog", () => {
   it("provides functional defaults for every standard component in each template family", () => {
@@ -17,7 +17,8 @@ describe("builder component catalog", () => {
   });
 
   it("supplies usable platformer defaults for the core scene objects and touch controls", () => {
-    expect(getDefaultComponentProperties("GameScene", "games")).toMatchObject({ preset: "platformer", durationSeconds: 90 });
+    expect(gameModes).toEqual(["platformer", "endless_runner", "puzzle", "quiz", "memory_cards", "tower_defense", "simple_shooter", "racing", "light_simulation"]);
+    expect(getDefaultComponentProperties("GameScene", "games")).toMatchObject({ preset: "platformer", gameMode: "platformer", durationSeconds: 90 });
     expect(getDefaultComponentProperties("Platform", "games")).toMatchObject({ x: 8, y: 78, width: 84, height: 10 });
     expect(getDefaultComponentProperties("Collectible", "games")).toMatchObject({ amount: 3, value: 10 });
     expect(getDefaultComponentProperties("FinishGate", "games")).toMatchObject({ requiredScore: 30 });
@@ -45,11 +46,12 @@ describe("builder component catalog", () => {
     expect(getDefaultComponentProperties("PaymentPlatform", "books")).toMatchObject({ provider: "moyasar", mode: "product", currency: "SAR" });
   });
 
-  it("builds a template-aware booking form plus editable button, titled list, and audio defaults", () => {
-    expect(getDefaultComponentProperties("Form", "services")).toMatchObject({ submitLabelAr: "إرسال", fields: expect.arrayContaining([expect.objectContaining({ key: "appointment" })]) });
-    expect(getDefaultComponentProperties("Button", "ecommerce")).toMatchObject({ targetPageId: null, textAr: "متابعة" });
+  it("removes the ready-made form from new template pickers while retaining clean editable defaults", () => {
+    for (const category of ["ecommerce", "education", "games", "music", "podcasts", "movies", "services", "books"] as const) expect(getAllowedComponentTypes(category)).not.toContain("Form");
+    expect(getDefaultComponentProperties("Button", "ecommerce")).toMatchObject({ targetPageId: null, textAr: "", textEn: "" });
     expect(getDefaultComponentProperties("List", "education")).toMatchObject({ titleAr: "", titleEn: "", items: [] });
     expect(getAllowedComponentTypes("podcasts")).toContain("Audio");
-    expect(getDefaultComponentProperties("Audio", "podcasts")).toMatchObject({ assetId: null, assetUrl: "", captionAr: "عنوان المقطع الصوتي" });
+    expect(getDefaultComponentProperties("Video", "movies")).toMatchObject({ assetId: null, assetUrl: "", captionAr: "", autoplay: true });
+    expect(getDefaultComponentProperties("Audio", "podcasts")).toMatchObject({ assetId: null, assetUrl: "", captionAr: "" });
   });
 });
