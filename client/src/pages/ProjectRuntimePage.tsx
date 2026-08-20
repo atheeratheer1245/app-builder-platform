@@ -216,6 +216,7 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
       const nextLives = lives - damage;
       setLives(nextLives);
       if (nextLives <= 0) { setStatus("lost"); return; }
+      if (playerSettings.respawnEnabled === false) { setStatus("lost"); return; }
       setPlayerX(startingX);
       return;
     }
