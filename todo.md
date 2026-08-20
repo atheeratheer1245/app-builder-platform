@@ -179,3 +179,6 @@
 - [x] Make the functional Search Bar available with appropriate search behavior in e-commerce, music, podcasts, movies, and shows templates.
 - [x] Upgrade all seven template examples into professional, bilingual, multi-page application demos with category-appropriate content, component composition, and navigation.
 - [ ] Add regression tests and bilingual visual QA covering all configurable component types, asset selection, navigation, forms, and game blocks.
+- [ ] Reproduce and repair the reported end-to-end editor failure where template media, buttons, and navigation lists can be configured but do not produce a working saved application flow.
+- [x] Build an authenticated runnable project route that renders saved pages, image/video/audio media, buttons, and titled list navigation from project data rather than showing editor metadata only.
+- [x] Refresh the project gallery after every upload and open the new component’s configuration immediately so clients can select media and page links without navigating through inactive-looking controls.

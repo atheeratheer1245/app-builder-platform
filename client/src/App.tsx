@@ -4,6 +4,7 @@ import { LocaleProvider } from "@/contexts/LocaleContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Auth from "@/pages/Auth";
 import { CreateProjectPage, EditorPage } from "@/pages/BuilderPages";
+import ProjectRuntimePage from "@/pages/ProjectRuntimePage";
 import SettingsPage from "@/pages/SettingsPage";
 import Home from "@/pages/Home";
 import NotFound from "@/pages/NotFound";
@@ -24,6 +25,7 @@ function Router() {
     <Route path="/templates" component={TemplatesPage} />
     <Route path="/exports" component={ExportsPage} />
     <Route path="/editor/:id" component={EditorPage} />
+    <Route path="/run/:id" component={ProjectRuntimePage} />
     <Route path="/settings" component={SettingsPage} />
     <Route component={NotFound} />
   </Switch>;
