@@ -115,4 +115,20 @@ export const premiumExampleCatalog: PremiumExample[] = [
       { pageKey: "account", componentType: "Button", labelAr: "", labelEn: "", properties: button("حجز خدمة", "Book a service", "booking") },
     ],
   },
+  {
+    slug: "warraq-library", category: "books", nameAr: "مكتبة ورّاق", nameEn: "Warraq Library", descriptionAr: "تجربة قراءة منظمة لاكتشاف الكتب والتصنيفات والمفضلة ومتابعة القراءة من صفحة واحدة واضحة.", descriptionEn: "An organized reading experience for discovering books, categories, favorites, and reading progress through a clear flow.", accentColor: "#0F766E", iconName: "BookOpen",
+    pages: [{ key: "library", titleAr: "المكتبة", titleEn: "Library" }, { key: "categories", titleAr: "التصنيفات", titleEn: "Categories" }, { key: "details", titleAr: "تفاصيل الكتاب", titleEn: "Book details" }, { key: "reader", titleAr: "القارئ", titleEn: "Reader" }, { key: "favorites", titleAr: "المفضلة", titleEn: "Favorites" }, { key: "account", titleAr: "الحساب", titleEn: "Account" }],
+    components: [
+      { pageKey: "library", componentType: "SearchBar", labelAr: "", labelEn: "", properties: { placeholderAr: "ابحث عن كتاب أو مؤلف", placeholderEn: "Search books or authors", emptyAr: "لا توجد كتب مطابقة", emptyEn: "No matching books" } },
+      { pageKey: "library", componentType: "Card", labelAr: "", labelEn: "", properties: card("اختيار هذا الأسبوع", "This week's pick", "مجموعة قراءة منتقاة تجمع العناوين الهادئة والعملية مع مسار واضح لبدء القراءة.", "A considered reading selection that connects calm, practical titles with a clear path to start reading.", "details") },
+      { pageKey: "library", componentType: "List", labelAr: "", labelEn: "", properties: nav([["استكشف التصنيفات", "Explore categories", "categories"], ["تابع القراءة", "Continue reading", "reader"], ["كتبي المفضلة", "My favorites", "favorites"]]) },
+      { pageKey: "categories", componentType: "List", labelAr: "", labelEn: "", properties: nav([["فكر وأعمال", "Ideas & business", "details"], ["روايات", "Fiction", "details"], ["تطوير الذات", "Personal growth", "details"]]) },
+      { pageKey: "details", componentType: "Card", labelAr: "", labelEn: "", properties: card("خرائط الأفكار الواضحة", "Maps of clear ideas", "كتاب عملي يساعد القارئ على تنظيم الملاحظات وتحويلها إلى خطوات صغيرة قابلة للتنفيذ.", "A practical book for organizing notes and turning them into small, actionable steps.", "reader") },
+      { pageKey: "details", componentType: "Button", labelAr: "", labelEn: "", properties: button("ابدأ القراءة", "Start reading", "reader") },
+      { pageKey: "reader", componentType: "PDFDocument", labelAr: "", labelEn: "", properties: { assetId: null, assetUrl: "", titleAr: "نسخة القراءة", titleEn: "Reading edition", descriptionAr: "ارفع ملف PDF مرخّصًا ثم اختره هنا لعرضه داخل القارئ.", descriptionEn: "Upload a licensed PDF, then select it here to display it inside the reader.", startPage: 1 } },
+      { pageKey: "reader", componentType: "Button", labelAr: "", labelEn: "", properties: button("أضف إلى المفضلة", "Add to favorites", "favorites") },
+      { pageKey: "favorites", componentType: "Card", labelAr: "", labelEn: "", properties: card("قائمة قراءتك", "Your reading list", "مساحة منظمة لحفظ الكتب التي تريد العودة إليها ومتابعة تقدمك فيها.", "An organized space to save books you want to revisit and follow your progress.", "library") },
+      { pageKey: "account", componentType: "List", labelAr: "", labelEn: "", properties: nav([["المكتبة", "Library", "library"], ["المفضلة", "Favorites", "favorites"], ["إعدادات القراءة", "Reading settings", "reader"]]) },
+    ],
+  },
 ];

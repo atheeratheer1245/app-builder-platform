@@ -4,10 +4,10 @@ import { premiumExampleCatalog } from "../shared/premiumExamples";
 
 describe("premium app examples", () => {
   it("provides unique editable paid examples for the currently priced categories", () => {
-    expect(premiumExampleCatalog).toHaveLength(7);
+    expect(premiumExampleCatalog).toHaveLength(8);
     expect(premiumExampleCatalog.map(example => example.category).every(category => templateCategories.includes(category))).toBe(true);
-    expect(premiumExampleCatalog.some(example => example.category === "books")).toBe(false);
-    expect(new Set(premiumExampleCatalog.map(example => example.slug)).size).toBe(7);
+    expect(premiumExampleCatalog.some(example => example.category === "books")).toBe(true);
+    expect(new Set(premiumExampleCatalog.map(example => example.slug)).size).toBe(8);
   });
 
   it("gives each paid example a considered multi-screen structure and core components", () => {
@@ -22,11 +22,13 @@ describe("premium app examples", () => {
   });
 
   it("includes search in each searchable media or storefront example and products in the store", () => {
-    for (const category of ["ecommerce", "music", "podcasts", "movies"] as const) {
+    for (const category of ["ecommerce", "music", "podcasts", "movies", "books"] as const) {
       const example = premiumExampleCatalog.find(item => item.category === category);
       expect(example?.components.some(component => component.componentType === "SearchBar")).toBe(true);
     }
     const store = premiumExampleCatalog.find(item => item.category === "ecommerce");
     expect(store?.components.some(component => component.componentType === "Product")).toBe(true);
+    const books = premiumExampleCatalog.find(item => item.category === "books");
+    expect(books?.components.some(component => component.componentType === "PDFDocument")).toBe(true);
   });
 });
