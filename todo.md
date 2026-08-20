@@ -219,4 +219,5 @@
 - [x] Add per-screen layer ordering for game components, with explicit bring-forward/send-back controls, persistent order, and z-index-aware game preview rendering.
 - [x] Add per-element bring-forward and send-back controls that adjust the 0–100 layer value and visibly update both the editor preview and game runtime.
 - [x] Add image-to-video generation for the Image Animation game component that animates the principal subject, using a server-safe video-generation path and saving the generated result as a project asset after user review.
+- [x] Render an explicitly approved Veo video in the Image Animation editor preview and live game runtime, while retaining sprite-sheet fallback behavior.
 - [x] Make the dedicated Gemini Flash panel above the preview usable without opening an edit dialog, with target selection, server-side suggestion generation, and an explicit review-and-apply step.

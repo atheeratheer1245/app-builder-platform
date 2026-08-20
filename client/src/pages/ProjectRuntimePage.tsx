@@ -158,10 +158,30 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
     layer.style.position = "absolute";
     layer.style.inset = "0";
     layer.style.pointerEvents = "none";
-    animations.filter(animation => text(animation, "assetUrl")).forEach((animation, index) => {
+    animations.filter(animation => text(animation, "assetUrl") || text(animation, "videoAssetUrl")).forEach((animation, index) => {
       const frameCount = bounded(Math.round(numberValue(animation, "frameCount", 1)), 1, 32);
       const frame = animationTick % frameCount;
       const targetPlayer = text(animation, "target", "player") === "player";
+      const videoUrl = text(animation, "videoAssetUrl");
+      if (videoUrl) {
+        const video = document.createElement("video");
+        video.src = videoUrl;
+        video.autoplay = true;
+        video.muted = true;
+        video.loop = true;
+        video.playsInline = true;
+        video.setAttribute("aria-label", isArabic ? "فيديو حركة مولد" : "Generated motion video");
+        video.style.position = "absolute";
+        video.style.left = `${targetPlayer ? playerX : bounded(numberValue(animation, "x", 12), 0, 100)}%`;
+        video.style.top = `${targetPlayer ? playerY : bounded(numberValue(animation, "y", 20), 0, 100)}%`;
+        video.style.width = targetPlayer ? "3.5rem" : `${bounded(numberValue(animation, "width", 18), 2, 100)}%`;
+        video.style.height = targetPlayer ? "3.5rem" : `${bounded(numberValue(animation, "height", 18), 2, 100)}%`;
+        video.style.objectFit = "cover";
+        video.style.borderRadius = "0.5rem";
+        video.style.zIndex = String(bounded(Math.round(numberValue(animation, "layer", 40 + index)), 0, 100));
+        layer.appendChild(video);
+        return;
+      }
       const sprite = document.createElement("div");
       sprite.setAttribute("aria-hidden", "true");
       sprite.style.position = "absolute";
