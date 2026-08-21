@@ -16,10 +16,9 @@ import { builderComponentTypes, gameComponentTypes, gameModes, getAllowedCompone
 import { premiumExampleCatalog } from "../../shared/premiumExamples";
 import { getOwnedProject, getProjectWorkspace, getRequiredDb, ensureTemplateCatalog } from "../appBuilderDb";
 import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
-import { storageGetSignedUrl, storagePut } from "../storage";
+import { storagePut } from "../storage";
 import { createMoyasarInvoice, requestOrigin, verifyPaidExportInvoice } from "../moyasarPaid";
 import { invokeLLM } from "../_core/llm";
-import { generateVideoFromImage, VideoGenerationError } from "../geminiVideo";
 
 const categorySchema = z.enum(templateCategories);
 const exportInput = z.object({ projectId: z.number().int().positive(), format: z.enum(["apk", "aab", "ipa"]) });
@@ -473,40 +472,6 @@ export const appBuilderRouter = router({
       } catch (error) {
         console.error("[App Builder AI] Motion prompt refinement failed", error);
         return { motionPrompt: input.prompt };
-      }
-    }),
-    generateVideoFromImage: protectedProcedure.input(z.object({
-      projectId: z.number().int().positive(),
-      assetId: z.number().int().positive(),
-      prompt: z.string().trim().min(3).max(800),
-    })).mutation(async ({ ctx, input }) => {
-      const project = await getOwnedProject(ctx.user.id, input.projectId);
-      if (!project) unauthenticatedProject();
-      const db = await getRequiredDb();
-      const asset = (await db.select().from(projectAssets).where(and(
-        eq(projectAssets.id, input.assetId),
-        eq(projectAssets.projectId, input.projectId),
-        eq(projectAssets.ownerId, ctx.user.id),
-      )).limit(1))[0];
-      if (!asset || !asset.mimeType.startsWith("image/")) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Choose an image owned by this project" });
-      }
-      const source = await fetch(await storageGetSignedUrl(asset.storageKey));
-      if (!source.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Could not read the selected image" });
-      try {
-        const video = await generateVideoFromImage({
-          image: new Uint8Array(await source.arrayBuffer()), mimeType: asset.mimeType, prompt: input.prompt,
-        });
-        const upload = await storagePut(`app-builder/projects/${input.projectId}/veo-${Date.now()}.mp4`, Buffer.from(video), "video/mp4");
-        const insert = await db.insert(projectAssets).values({
-          projectId: input.projectId, ownerId: ctx.user.id, kind: "other", filename: `veo-${asset.filename.replace(/\.[^.]+$/, "")}.mp4`,
-          storageKey: upload.key, url: upload.url, mimeType: "video/mp4", sizeBytes: video.byteLength,
-        });
-        return { assetId: Number(insert[0]?.insertId ?? 0), url: upload.url, mimeType: "video/mp4" };
-      } catch (error) {
-        console.error("[App Builder AI] Veo generation failed", error);
-        const reason = error instanceof VideoGenerationError ? error.reason : "unavailable";
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `VIDEO_GENERATION_${reason.toUpperCase()}` });
       }
     }),
   }),

@@ -19,6 +19,6 @@ describe("game blueprint readiness", () => {
     const catalog = readFileSync(new URL("../shared/componentCatalog.ts", import.meta.url), "utf8");
     expect(builderComponentTypes).toContain("GameScene");
     expect(router).toContain('z.enum(["apk", "aab", "ipa"])');
-    expect(catalog).toContain('if (category === "games") return [...baseComponentTypes, ...gameComponentTypes]');
+    expect(catalog).toContain('if (category === "games") return Array.from(new Set([...baseComponentTypes, ...gameComponentTypes]))');
   });
 });

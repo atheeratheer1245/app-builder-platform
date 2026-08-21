@@ -58,6 +58,7 @@ describe("runnable project route", () => {
     expect(runtimeSource).toContain("setAnimationTick");
     expect(runtimeSource).toContain("backgroundPosition");
     expect(editorSource).toContain('if (type === "PDFDocument")');
-    expect(editorSource).toContain('if (type === "ImageAnimation")');
+    expect(editorSource).toContain("function MotionVideoFields");
+    expect(editorSource).toContain("<LocalMotionStudio");
   });
 });

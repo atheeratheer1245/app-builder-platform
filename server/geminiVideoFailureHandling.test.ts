@@ -10,11 +10,13 @@ describe("Veo image-to-video failure handling", () => {
     expect(new VideoGenerationError("input").message).toBe("VIDEO_GENERATION_INPUT");
   });
 
-  it("maps classified generator failures to a safe tRPC response rather than exposing provider details", () => {
+  it("keeps the application router free of external image-to-video generation after the local studio is enabled", () => {
     const source = readFileSync(resolve(process.cwd(), "server/routers/appBuilder.ts"), "utf8");
-    expect(source).toContain("error instanceof VideoGenerationError ? error.reason : \"unavailable\"");
-    expect(source).toContain("VIDEO_GENERATION_${reason.toUpperCase()}");
-    expect(source).not.toContain('message: "Video generation could not be completed"');
+    const editorSource = readFileSync(resolve(process.cwd(), "client/src/pages/BuilderPages.tsx"), "utf8");
+    expect(source).not.toContain("generatePhotoGptVideoFromImage");
+    expect(source).not.toContain("generateVideoFromImage:");
+    expect(editorSource).toContain("<LocalMotionStudio");
+    expect(editorSource).not.toContain("generateVideoFromImage.useMutation");
   });
 
   it("downloads the generated Veo file through the Gemini SDK and removes temporary storage", () => {

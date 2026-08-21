@@ -233,3 +233,9 @@
 - [x] Diagnose and repair the production failures of both Gemini Flash prompt refinement and Veo video generation, with precise bilingual error handling and a verified fallback path.
 - [ ] Run one successful production Veo image-to-video smoke test after the provider quota renews or higher video quota is enabled.
 - [x] Verify whether Microsoft Copilot exposes an official supported image-to-video API suitable for secure App Builder integration before replacing Veo.
+- [ ] Replace the Veo image-to-video provider with Azure AI Foundry Sora 2 through a server-only integration, asset ownership checks, polling, and bilingual error states.
+- [ ] Create an Azure OpenAI resource in a Sora 2-supported region and deploy Sora 2 only after confirming the Azure subscription and potential usage charges.
+- [ ] Replace the image-to-video provider with OpenAI Sora API through a server-only integration, ownership checks, polling, and bilingual provider errors.
+- [ ] Verify whether PhotoGPT AI offers an official image-to-video API suitable for a secure server-side App Builder integration.
+- [ ] Verify whether PixVerse AI offers an official image-to-video API suitable for a secure server-side App Builder integration.
+- [x] Build a first-party local image-motion studio that animates an owned project image, exports a playable video locally, and attaches it to Image Animation without any external video-provider key.

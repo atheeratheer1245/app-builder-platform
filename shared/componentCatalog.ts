@@ -6,7 +6,7 @@ export const booksComponentTypes = ["PDFDocument", "SearchBar"] as const;
 /** Legacy-only type retained to read old saved projects. It is never returned to the editor picker. */
 const legacyComponentTypes = ["Form"] as const;
 export const searchableComponentCategories = ["ecommerce", "music", "podcasts", "movies", "books"] as const;
-export const gameComponentTypes = ["GameScene", "Player", "Platform", "Collectible", "Hazard", "FinishGate", "TouchControls", "Physics", "Score", "Level", "Condition"] as const;
+export const gameComponentTypes = ["GameScene", "Player", "ImageAnimation", "Platform", "Collectible", "Hazard", "FinishGate", "TouchControls", "Physics", "Score", "Level", "Condition"] as const;
 export const builderComponentTypes = [...baseComponentTypes, ...ecommerceComponentTypes, ...booksComponentTypes, ...gameComponentTypes, ...legacyComponentTypes] as const;
 export const gameModes = ["platformer", "endless_runner", "puzzle", "quiz", "memory_cards", "tower_defense", "simple_shooter", "racing", "light_simulation"] as const;
 export type GameMode = (typeof gameModes)[number];
@@ -56,7 +56,7 @@ export function getAllowedComponentTypes(category: TemplateCategory): BuilderCom
   if (category === "ecommerce") return [...baseComponentTypes, ...ecommerceComponentTypes];
   if (category === "books") return [...baseComponentTypes, ...booksComponentTypes];
   if ((searchableComponentCategories as readonly string[]).includes(category)) return [...baseComponentTypes, "SearchBar"];
-  if (category === "games") return [...baseComponentTypes, ...gameComponentTypes];
+  if (category === "games") return Array.from(new Set([...baseComponentTypes, ...gameComponentTypes]));
   return [...baseComponentTypes];
 }
 
