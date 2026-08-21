@@ -34,10 +34,13 @@ describe("standalone Android App Builder", () => {
     expect(activity).toContain("View.LAYOUT_DIRECTION_RTL");
   });
 
-  it("shows a server quote, verifies payment, and downloads only a ready artifact", () => {
+  it("shows a server quote, refreshes each owned export status, and downloads only a ready artifact", () => {
     expect(activity).toContain("/api/mobile/exports/quote");
     expect(activity).toContain("/api/mobile/exports/paid-invoice");
     expect(activity).toContain("/api/mobile/exports/verify");
+    expect(activity).toContain("/api/mobile/exports/$exportJobId/download");
+    expect(activity).toContain("refreshExportStatus");
+    expect(activity).toContain("getJson");
     expect(activity).toContain("DownloadManager");
     expect(activity).toContain("artifactUrl.isNotBlank()");
   });

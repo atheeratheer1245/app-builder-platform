@@ -357,7 +357,7 @@ class MainActivity : ComponentActivity() {
             try {
                 val result = withContext(Dispatchers.IO) { postJson("$apiUrl/api/mobile/exports/free", payload, authenticated = true) }
                 notice(tr("تم وضع طلب $format المجاني في قائمة البناء.", "Free $format export is queued for build."))
-                showQueuedExport(project, format, result.getInt("exportJobId"))
+                showQueuedExport(project, format, result.getInt("exportJobId"), status = result.optString("status", "queued"))
             } catch (_: Exception) {
                 notice(tr("تعذر إرسال طلب التصدير المجاني الآن.", "The free export request could not be submitted now."))
             }
@@ -455,13 +455,42 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun showQueuedExport(project: JSONObject, format: String, exportJobId: Int, paid: Boolean = false) {
+    private fun exportStatusLabel(status: String) = when (status) {
+        "ready" -> tr("جاهز للتنزيل", "Ready to download")
+        "failed" -> tr("تعذر البناء", "Build failed")
+        "cancelled" -> tr("أُلغي الطلب", "Request cancelled")
+        "pending_payment" -> tr("بانتظار الدفع", "Awaiting payment")
+        "building" -> tr("جارٍ البناء", "Building")
+        else -> tr("في قائمة البناء", "Queued for build")
+    }
+
+    private fun showQueuedExport(project: JSONObject, format: String, exportJobId: Int, paid: Boolean = false, status: String = "queued") {
         val content = screen(tr("طلب التصدير قيد البناء", "Export request queued"), tr("تتم متابعة حالة $format من الخادم.", "$format status is tracked by the server."))
         val card = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(15), dp(16), dp(15)); background = rounded(Color.rgb(238, 242, 255), 17) }
         addHeading(card, if (paid) tr("تم تأكيد الدفع", "Payment verified") else tr("طلب مجاني مُرسل", "Free request submitted"), 20)
         addText(card, tr("رقم الطلب: $exportJobId. سيظهر زر التنزيل هنا فقط عند اكتمال ملف حقيقي.", "Request #$exportJobId. Download appears here only when a real file is ready."))
+        addText(card, "${tr("الحالة الحالية", "Current status")}: ${exportStatusLabel(status)}")
         content.addView(card, full(bottom = 10))
+        primary(tr("تحديث حالة البناء", "Refresh build status")) { refreshExportStatus(project, format, exportJobId, paid) }.also(content::addView)
         secondary(tr("العودة إلى مركز التصدير", "Back to export center")) { showExports(project) }.also(content::addView)
+    }
+
+    private fun refreshExportStatus(project: JSONObject, format: String, exportJobId: Int, paid: Boolean) {
+        if (!requireNativeSession()) return
+        notice(tr("جارٍ تحديث حالة البناء…", "Refreshing build status…"))
+        lifecycleScope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) { getJson("$apiUrl/api/mobile/exports/$exportJobId/download", authenticated = true) }
+                val artifactUrl = result.optString("artifactUrl")
+                if (result.optBoolean("available", false) && artifactUrl.isNotBlank()) {
+                    showReadyDownload(project, format, exportJobId, artifactUrl)
+                } else {
+                    showQueuedExport(project, format, exportJobId, paid, result.optString("status", "queued"))
+                }
+            } catch (_: Exception) {
+                notice(tr("تعذر تحديث حالة التصدير الآن.", "Export status could not be refreshed now."))
+            }
+        }
     }
 
     private fun showReadyDownload(project: JSONObject, format: String, exportJobId: Int, artifactUrl: String) {
@@ -562,6 +591,17 @@ class MainActivity : ComponentActivity() {
             if (authenticated) prefs.getString("session", "")?.takeIf { it.isNotBlank() }?.let { setRequestProperty("Authorization", "Bearer $it") }
         }
         c.outputStream.use { it.write(payload.toString().toByteArray()) }
+        val stream = if (c.responseCode in 200..299) c.inputStream else c.errorStream
+        val text = stream.bufferedReader().use { it.readText() }
+        if (c.responseCode !in 200..299) throw IllegalStateException(text)
+        return JSONObject(text)
+    }
+
+    private fun getJson(endpoint: String, authenticated: Boolean = false): JSONObject {
+        val c = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"; connectTimeout = 15_000; readTimeout = 15_000; setRequestProperty("Accept", "application/json")
+            if (authenticated) prefs.getString("session", "")?.takeIf { it.isNotBlank() }?.let { setRequestProperty("Authorization", "Bearer $it") }
+        }
         val stream = if (c.responseCode in 200..299) c.inputStream else c.errorStream
         val text = stream.bufferedReader().use { it.readText() }
         if (c.responseCode !in 200..299) throw IllegalStateException(text)

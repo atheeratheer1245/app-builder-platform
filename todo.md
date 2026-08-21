@@ -252,3 +252,4 @@
 - [x] Enforce per-owner and per-project artifact isolation so every customer can access only the APK or AAB generated for that customer’s own export job.
 - [x] Resolve the Codemagic client-build resource-name conflict so generated app labels do not duplicate the default Android string resource.
 - [x] Replace ready-artifact storage paths returned to clients with owner-authorized short-lived download URLs.
+- [x] Add a native Android export-files center that fetches each owned export job’s current status and offers its authorized APK or AAB download only when ready.
