@@ -230,3 +230,5 @@
 - [ ] Capture and repair the next live Veo failure after removing the unsupported audio setting, then verify the selected-image generation path again.
 - [x] Add a Gemini Flash-assisted motion-prompt action in Image Animation that safely refines the user's description before Veo video generation.
 - [x] Make Image Animation with Gemini Flash prompt refinement and Veo generation available, editable, and runnable in all eight template categories.
+- [x] Diagnose and repair the production failures of both Gemini Flash prompt refinement and Veo video generation, with precise bilingual error handling and a verified fallback path.
+- [ ] Run one successful production Veo image-to-video smoke test after the provider quota renews or higher video quota is enabled.

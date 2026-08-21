@@ -449,7 +449,7 @@ export const appBuilderRouter = router({
       try {
         const response = await invokeLLM({
           model: "gemini-3-flash-preview",
-          maxTokens: 260,
+          maxTokens: 400,
           messages: [
             { role: "system", content: "You improve concise image-to-video motion prompts for a mobile game. Keep the subject identity stable, describe only visible natural motion and subtle camera motion, avoid copyrighted characters or franchises, unsafe acts, sexual content, and text overlays. Return only JSON with a single motionPrompt field. Use the language requested by the user." },
             { role: "user", content: `Project category: ${project.category}. Requested language: ${input.language}. User motion idea: ${input.prompt}` },
@@ -464,12 +464,15 @@ export const appBuilderRouter = router({
           },
         });
         const content = response.choices[0]?.message.content;
-        const parsed = typeof content === "string" ? motionPromptResult.safeParse(JSON.parse(content)) : { success: false as const };
+        let parsed: ReturnType<typeof motionPromptResult.safeParse> | { success: false } = { success: false };
+        if (typeof content === "string") {
+          try { parsed = motionPromptResult.safeParse(JSON.parse(content)); } catch { parsed = { success: false }; }
+        }
         if (!parsed.success) throw new Error("Invalid motion prompt response");
         return parsed.data;
       } catch (error) {
         console.error("[App Builder AI] Motion prompt refinement failed", error);
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Motion prompt could not be improved" });
+        return { motionPrompt: input.prompt };
       }
     }),
     generateVideoFromImage: protectedProcedure.input(z.object({

@@ -131,7 +131,15 @@ describe("protected project update", () => {
     const caller = appBuilderRouter.createCaller(createOwnerContext());
 
     await expect(caller.ai.improveMotionPrompt({ projectId: 42, assetId: 9, prompt: "تتحرك المركبة", language: "ar" })).resolves.toEqual({ motionPrompt: "تتحرك المركبة للأمام بثبات مع اهتزاز كاميرا خفيف." });
-    expect(mocks.invokeLLM).toHaveBeenCalledWith(expect.objectContaining({ model: "gemini-3-flash-preview", maxTokens: 260 }));
+    expect(mocks.invokeLLM).toHaveBeenCalledWith(expect.objectContaining({ model: "gemini-3-flash-preview", maxTokens: 400 }));
+  });
+
+  it("keeps the user's motion prompt when Gemini Flash returns incomplete structured content", async () => {
+    mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "games" });
+    mocks.invokeLLM.mockResolvedValueOnce({ choices: [{ message: { content: '{"motionPrompt":"partial' } }] });
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.ai.improveMotionPrompt({ projectId: 42, assetId: 9, prompt: "تحرك المركبة", language: "ar" })).resolves.toEqual({ motionPrompt: "تحرك المركبة" });
   });
 
   it("rejects game-only blocks when a non-game project calls the editor API directly", async () => {

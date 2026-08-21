@@ -26,8 +26,8 @@ function geminiClient() {
 function failureReason(error: unknown): VideoGenerationFailure {
   const detail = error instanceof Error ? error.message : typeof error === "string" ? error : JSON.stringify(error ?? "");
   const value = detail.toLowerCase();
-  if (/permission|forbidden|unauth|api.?key|billing|not enabled|not available.*account/.test(value)) return "access";
   if (/quota|resource.?exhausted|rate.?limit|too many requests|\b429\b/.test(value)) return "quota";
+  if (/permission|forbidden|unauth|api.?key|billing|not enabled|not available.*account/.test(value)) return "access";
   if (/safety|policy|blocked|responsible ai/.test(value)) return "safety";
   if (/mime|image|invalid.?argument|unsupported.*format|\b400\b/.test(value)) return "input";
   if (/timeout|timed out|deadline/.test(value)) return "timeout";
@@ -44,10 +44,12 @@ export async function generateVideoFromImage(input: {
     const ai = geminiClient();
     let operation = await ai.models.generateVideos({
       model: VEO_MODEL,
-      prompt: input.prompt,
-      image: {
-        imageBytes: Buffer.from(input.image).toString("base64"),
-        mimeType: input.mimeType,
+      source: {
+        prompt: input.prompt,
+        image: {
+          imageBytes: Buffer.from(input.image).toString("base64"),
+          mimeType: input.mimeType,
+        },
       },
       config: { numberOfVideos: 1, aspectRatio: "9:16" },
     });
