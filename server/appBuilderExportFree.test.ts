@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => {
     getOwnedProject: vi.fn(),
     getProjectWorkspace: vi.fn(),
     getRequiredDb: vi.fn(async () => ({ insert })),
+    queueCloudBuildForExportJob: vi.fn(async () => ({ status: "queued" })),
+    refreshCloudExportsForOwner: vi.fn(async () => []),
     insert,
     values,
   };
@@ -19,6 +21,11 @@ vi.mock("./appBuilderDb", () => ({
   getOwnedProject: mocks.getOwnedProject,
   getProjectWorkspace: mocks.getProjectWorkspace,
   getRequiredDb: mocks.getRequiredDb,
+}));
+
+vi.mock("./exportBuildPipeline", () => ({
+  queueCloudBuildForExportJob: mocks.queueCloudBuildForExportJob,
+  refreshCloudExportsForOwner: mocks.refreshCloudExportsForOwner,
 }));
 
 import { appBuilderRouter } from "./routers/appBuilder";
@@ -54,6 +61,7 @@ describe("free protected export queue", () => {
     await expect(caller.exports.create({ projectId: 42, format: "apk" })).resolves.toEqual({ exportJobId: 55, status: "queued" });
 
     expect(mocks.insert).toHaveBeenCalledOnce();
+    expect(mocks.queueCloudBuildForExportJob).toHaveBeenCalledWith(7, 55);
     expect(mocks.values).toHaveBeenCalledWith(expect.objectContaining({
       projectId: 42,
       ownerId: 7,

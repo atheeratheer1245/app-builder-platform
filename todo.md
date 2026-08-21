@@ -246,3 +246,7 @@
 - [x] Upgrade Local Motion Studio to let users select multiple regions in an image, assign each region an independent motion effect, and export the combined animation as a project video.
 - [ ] Build a server-side export pipeline that executes real Android APK and AAB builds, records auditable job states, stores signed artifacts safely, and exposes an IPA path gated by Apple signing requirements.
 - [ ] Select and integrate a professional cloud-build provider that supports Android APK/AAB and Apple IPA through a server-only API, signed webhooks, artifact verification, and protected downloads.
+- [ ] Persist verified Codemagic Android APK and AAB artifacts in project storage, with database-linked export job states and protected client downloads.
+- [ ] Add a server-only Codemagic build client that triggers Android jobs, maps provider states to localized export states, and safely handles failures.
+- [ ] Add automated regression coverage for Codemagic request validation, artifact intake, authorization, and export status transitions.
+- [ ] Enforce per-owner and per-project artifact isolation so every customer can access only the APK or AAB generated for that customer’s own export job.

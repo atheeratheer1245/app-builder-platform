@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { exportJobs, payments } from "../drizzle/schema";
 import { getRequiredDb } from "./appBuilderDb";
 import { getPublicBaseUrl } from "./publicUrl";
+import { queueCloudBuildForExportJob } from "./exportBuildPipeline";
 
 const MOYASAR_API = "https://api.moyasar.com/v1";
 
@@ -103,7 +104,10 @@ export function registerMoyasarPaidRoutes(app: Express) {
       if (!invoiceId) return res.status(400).json({ error: "Missing invoice id" });
       const db = await getRequiredDb();
       const rows = await db.select().from(payments).where(and(eq(payments.provider, "moyasar"), eq(payments.providerChargeId, invoiceId))).limit(1);
-      if (rows[0]) await verifyPaidExportInvoice({ paymentId: rows[0].id });
+      if (rows[0]) {
+        const verification = await verifyPaidExportInvoice({ paymentId: rows[0].id });
+        if (verification.paid && verification.exportJobId) await queueCloudBuildForExportJob(rows[0].ownerId, verification.exportJobId);
+      }
       return res.status(204).end();
     } catch {
       return res.status(204).end();

@@ -173,6 +173,8 @@ export const exportJobs = mysqlTable(
     sizeUnits: int("sizeUnits").notNull().default(1),
     unitPriceHalalas: int("unitPriceHalalas").notNull(),
     totalPriceHalalas: int("totalPriceHalalas").notNull(),
+    buildProvider: varchar("buildProvider", { length: 64 }),
+    providerBuildId: varchar("providerBuildId", { length: 128 }),
     artifactKey: varchar("artifactKey", { length: 512 }),
     artifactUrl: text("artifactUrl"),
     failureReason: text("failureReason"),
@@ -184,6 +186,7 @@ export const exportJobs = mysqlTable(
     index("export_jobs_owner_idx").on(table.ownerId),
     index("export_jobs_project_idx").on(table.projectId),
     index("export_jobs_status_idx").on(table.status),
+    index("export_jobs_provider_build_idx").on(table.buildProvider, table.providerBuildId),
   ],
 );
 

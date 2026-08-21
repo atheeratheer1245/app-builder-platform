@@ -5,7 +5,7 @@
         android:allowBackup="false"
         android:icon="@drawable/app_builder_logo"
         android:roundIcon="@drawable/app_builder_logo"
-        android:label="App Builder"
+        android:label="@string/app_name"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
         <activity

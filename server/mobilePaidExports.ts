@@ -7,6 +7,7 @@ import { getPaidExportPrice } from "../shared/exportPricing";
 import { getRequiredDb } from "./appBuilderDb";
 import { getLocalAuthenticatedUser } from "./localAuth";
 import { createMoyasarInvoice, requestOrigin, verifyPaidExportInvoice } from "./moyasarPaid";
+import { queueCloudBuildForExportJob, refreshCloudExportForJob } from "./exportBuildPipeline";
 
 const exportFormatSchema = z.enum(["apk", "aab", "ipa"]);
 
@@ -86,7 +87,8 @@ async function createFreeExport(userId: number, input: MobileExportRequest) {
   });
   const exportJobId = Number(created[0]?.insertId ?? 0);
   if (!exportJobId) throw new Error("Unable to create free export request");
-  return { exportJobId, status: "queued" as const };
+  const job = await queueCloudBuildForExportJob(userId, exportJobId);
+  return { exportJobId, status: job?.status ?? "queued" };
 }
 
 async function createPaidExportInvoice(userId: number, input: MobileExportRequest, origin: string) {
@@ -128,7 +130,10 @@ async function createPaidExportInvoice(userId: number, input: MobileExportReques
     });
     const paymentId = Number(paymentResult[0]?.insertId ?? 0);
     if (!paymentId) throw new Error("Unable to record paid export invoice");
-    if (invoice.status === "paid") await verifyPaidExportInvoice({ paymentId, ownerId: userId });
+    if (invoice.status === "paid") {
+      const verification = await verifyPaidExportInvoice({ paymentId, ownerId: userId });
+      if (verification.paid && verification.exportJobId) await queueCloudBuildForExportJob(userId, verification.exportJobId);
+    }
     return { exportJobId, paymentId, checkoutUrl: invoice.url, quote };
   } catch (error) {
     await db.update(exportJobs).set({ status: "cancelled", failureReason: "Unable to create Moyasar invoice", updatedAt: new Date() }).where(eq(exportJobs.id, exportJobId));
@@ -141,8 +146,9 @@ async function paymentStatus(userId: number, paymentId: number) {
   const payment = (await db.select().from(payments).where(and(eq(payments.id, paymentId), eq(payments.ownerId, userId), eq(payments.provider, "moyasar"))).limit(1))[0];
   if (!payment) return null;
   const verification = await verifyPaidExportInvoice({ paymentId, ownerId: userId });
+  if (verification.paid && verification.exportJobId) await queueCloudBuildForExportJob(userId, verification.exportJobId);
   const job = payment.exportJobId
-    ? (await db.select().from(exportJobs).where(and(eq(exportJobs.id, payment.exportJobId), eq(exportJobs.ownerId, userId))).limit(1))[0]
+    ? await refreshCloudExportForJob(userId, payment.exportJobId)
     : null;
   return {
     paymentId,
@@ -210,7 +216,7 @@ export function registerMobilePaidExportRoutes(app: Express) {
     if (!user) return;
     if (!Number.isInteger(exportJobId) || exportJobId < 1) return res.status(400).json({ error: "invalid_export_job_id" });
     const db = await getRequiredDb();
-    const job = (await db.select().from(exportJobs).where(and(eq(exportJobs.id, exportJobId), eq(exportJobs.ownerId, user.id))).limit(1))[0];
+    const job = await refreshCloudExportForJob(user.id, exportJobId) ?? (await db.select().from(exportJobs).where(and(eq(exportJobs.id, exportJobId), eq(exportJobs.ownerId, user.id))).limit(1))[0];
     if (!job) return res.status(404).json({ error: "export_not_found" });
     res.set("Cache-Control", "no-store");
     return res.status(200).json({ available: job.status === "ready" && Boolean(job.artifactUrl), status: job.status, artifactUrl: job.status === "ready" ? job.artifactUrl : null });

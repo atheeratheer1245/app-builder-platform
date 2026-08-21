@@ -3,16 +3,24 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val generatedApplicationId = System.getenv("APP_BUILDER_APPLICATION_ID")
+    ?.takeIf { it.matches(Regex("[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*){2,}")) }
+    ?: "sa.appbuilder.companion"
+val generatedVersionName = System.getenv("APP_BUILDER_VERSION_NAME")
+    ?.takeIf { it.matches(Regex("[0-9A-Za-z._-]{1,32}")) }
+    ?: "1.2.0"
+val generatedVersionCode = System.getenv("APP_BUILDER_VERSION_CODE")?.toIntOrNull()?.coerceAtLeast(1) ?: 4
+
 android {
     namespace = "sa.appbuilder.companion"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "sa.appbuilder.companion"
+        applicationId = generatedApplicationId
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.2.0"
+        versionCode = generatedVersionCode
+        versionName = generatedVersionName
     }
 
     buildTypes {

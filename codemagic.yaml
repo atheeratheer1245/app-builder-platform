@@ -6,6 +6,15 @@ workflows:
     environment:
       java: 21
     scripts:
+      - name: Prepare this customer's native project configuration
+        script: |
+          cd android-companion
+          rm -f app/src/main/res/raw/app_builder_export_config.json app/src/main/res/values/app_builder_export_name.xml
+          if [ -n "${APP_BUILDER_EXPORT_CONFIG_URL:-}" ]; then
+            mkdir -p app/src/main/res/raw app/src/main/res/values
+            curl --fail --location --silent --show-error "$APP_BUILDER_EXPORT_CONFIG_URL" -o app/src/main/res/raw/app_builder_export_config.json
+            printf '%s' "$APP_BUILDER_APP_LABEL_XML_B64" | base64 --decode > app/src/main/res/values/app_builder_export_name.xml
+          fi
       - name: Build standalone Android artifacts
         script: |
           cd android-companion

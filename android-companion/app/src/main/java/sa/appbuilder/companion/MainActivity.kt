@@ -72,6 +72,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         window.statusBarColor = Color.WHITE
         window.navigationBarColor = Color.WHITE
+        loadExportedProjectConfiguration()?.let { configuration ->
+            showExportedProject(configuration)
+            return
+        }
         showDashboard()
     }
 
@@ -87,6 +91,51 @@ class MainActivity : ComponentActivity() {
     private fun templateTitle(t: Template) = if (isEnglish) t.titleEn else t.titleAr
     private fun templateDescription(t: Template) = if (isEnglish) t.descriptionEn else t.descriptionAr
     private fun templatePages(t: Template) = if (isEnglish) t.pagesEn else t.pagesAr
+
+    private fun loadExportedProjectConfiguration(): JSONObject? = try {
+        val rawId = resources.getIdentifier("app_builder_export_config", "raw", packageName)
+        if (rawId == 0) null else resources.openRawResource(rawId).bufferedReader().use { JSONObject(it.readText()) }
+    } catch (_: Exception) { null }
+
+    private fun showExportedProject(configuration: JSONObject) {
+        val name = configuration.optString(if (isEnglish) "nameEn" else "nameAr", configuration.optString("name", "App Builder"))
+        val pages = configuration.optJSONArray("pages") ?: JSONArray()
+        val content = screen(name, tr("تطبيقك المصمم خصيصًا جاهز للاستخدام.", "Your custom-built application is ready to use."))
+        val accent = try { Color.parseColor(configuration.optString("primaryColor", "#2563EB")) } catch (_: Exception) { Color.rgb(37, 99, 235) }
+        val hero = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(17), dp(18), dp(17)); background = rounded(accent, 20) }
+        addPreviewText(hero, name, 23, Color.WHITE, true)
+        addPreviewText(hero, tr("شاشات التطبيق", "Application screens"), 14, Color.WHITE, false)
+        content.addView(hero, full(bottom = 15))
+        if (pages.length() == 0) emptyState(content, tr("لا توجد شاشات منشورة", "No published screens"), tr("أضف شاشات من محرر App Builder ثم اطلب تصديرًا جديدًا.", "Add screens in App Builder, then request a new export."))
+        else for (index in 0 until pages.length()) {
+            val page = pages.getJSONObject(index)
+            val title = page.optString(if (isEnglish) "titleEn" else "titleAr", name)
+            val card = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; layoutDirection = direction(); setPadding(dp(15), dp(14), dp(15), dp(14)); background = rounded(Color.WHITE, 16, Color.rgb(226, 232, 240)); setOnClickListener { showExportedPage(configuration, index) } }
+            val number = TextView(this).apply { text = "${index + 1}"; gravity = Gravity.CENTER; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD); background = rounded(accent, 12) }
+            card.addView(number, LinearLayout.LayoutParams(dp(30), dp(30)).apply { marginEnd = dp(12) })
+            card.addView(TextView(this).apply { text = title; textSize = 17f; setTypeface(typeface, Typeface.BOLD); setTextColor(Color.rgb(15, 23, 42)) }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            content.addView(card, full(top = 5, bottom = 5))
+        }
+    }
+
+    private fun showExportedPage(configuration: JSONObject, pageIndex: Int) {
+        val pages = configuration.optJSONArray("pages") ?: return showExportedProject(configuration)
+        val page = pages.optJSONObject(pageIndex) ?: return showExportedProject(configuration)
+        val name = configuration.optString(if (isEnglish) "nameEn" else "nameAr", "App Builder")
+        val title = page.optString(if (isEnglish) "titleEn" else "titleAr", name)
+        val content = screen(title, name)
+        val components = page.optJSONArray("components") ?: JSONArray()
+        if (components.length() == 0) emptyState(content, tr("لا توجد عناصر في هذه الشاشة", "This screen has no components"), tr("حدّث التطبيق من App Builder لإضافة عناصر جديدة.", "Update the project in App Builder to add new components."))
+        else for (index in 0 until components.length()) {
+            val component = components.getJSONObject(index)
+            val label = component.optString(if (isEnglish) "labelEn" else "labelAr", component.optString("type", tr("عنصر", "Component")))
+            val row = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(15), dp(14), dp(15), dp(14)); background = rounded(Color.WHITE, 16, Color.rgb(226, 232, 240)) }
+            addHeading(row, label, 17)
+            addText(row, component.optString("type", tr("عنصر", "Component")).replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() })
+            content.addView(row, full(top = 5, bottom = 5))
+        }
+        secondary(tr("العودة إلى الشاشات", "Back to screens")) { showExportedProject(configuration) }.also(content::addView)
+    }
 
     private fun showDashboard() {
         val content = screen("App Builder", tr("منصة بناء تطبيقات مستقلة", "Standalone mobile app builder"))

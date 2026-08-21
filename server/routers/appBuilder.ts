@@ -20,6 +20,7 @@ import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { storagePut } from "../storage";
 import { createMoyasarInvoice, requestOrigin, verifyPaidExportInvoice } from "../moyasarPaid";
 import { invokeLLM } from "../_core/llm";
+import { queueCloudBuildForExportJob, refreshCloudExportsForOwner } from "../exportBuildPipeline";
 
 const categorySchema = z.enum(templateCategories);
 const exportInput = z.object({ projectId: z.number().int().positive(), format: z.enum(["apk", "aab", "ipa"]) });
@@ -558,7 +559,8 @@ export const appBuilderRouter = router({
       });
       const exportJobId = Number(result[0]?.insertId ?? 0);
       if (!exportJobId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Unable to create export request" });
-      return { exportJobId, status: "queued" as const };
+      const job = await queueCloudBuildForExportJob(ctx.user.id, exportJobId);
+      return { exportJobId, status: job?.status ?? "queued" };
     }),
     quotePaid: protectedProcedure.input(paidExportInput).query(async ({ ctx, input }) => {
       const project = await getOwnedProject(ctx.user.id, input.projectId);
@@ -608,7 +610,10 @@ export const appBuilderRouter = router({
         });
         const paymentId = Number(paymentResult[0]?.insertId ?? 0);
         if (!paymentId) throw new Error("Unable to record paid export invoice");
-        if (invoice.status === "paid") await verifyPaidExportInvoice({ paymentId, ownerId: ctx.user.id });
+        if (invoice.status === "paid") {
+          const verification = await verifyPaidExportInvoice({ paymentId, ownerId: ctx.user.id });
+          if (verification.paid && verification.exportJobId) await queueCloudBuildForExportJob(ctx.user.id, verification.exportJobId);
+        }
         return { exportJobId, paymentId, checkoutUrl: invoice.url, quote };
       } catch (cause) {
         await db.update(exportJobs).set({ status: "cancelled", failureReason: "Unable to create Moyasar invoice", updatedAt: new Date() }).where(eq(exportJobs.id, exportJobId));
@@ -617,9 +622,11 @@ export const appBuilderRouter = router({
     }),
     verifyPaidInvoice: protectedProcedure.input(z.object({ paymentId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const result = await verifyPaidExportInvoice({ paymentId: input.paymentId, ownerId: ctx.user.id });
+      if (result.paid && result.exportJobId) await queueCloudBuildForExportJob(ctx.user.id, result.exportJobId);
       if (!result.paid) return result;
       return result;
     }),
+    refresh: protectedProcedure.mutation(async ({ ctx }) => refreshCloudExportsForOwner(ctx.user.id)),
     download: protectedProcedure.input(z.number().int().positive()).query(async ({ ctx, input }) => {
       const db = await getRequiredDb();
       const rows = await db.select().from(exportJobs).where(and(eq(exportJobs.id, input), eq(exportJobs.ownerId, ctx.user.id))).limit(1);
