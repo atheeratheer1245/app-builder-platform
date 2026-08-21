@@ -223,7 +223,7 @@
 - [x] Add image-to-video generation for the Image Animation game component that animates the principal subject, using a server-safe video-generation path and saving the generated result as a project asset after user review.
 - [x] Render an explicitly approved Veo video in the Image Animation editor preview and live game runtime, while retaining sprite-sheet fallback behavior.
 - [x] Make the dedicated Gemini Flash panel above the preview usable without opening an edit dialog, with target selection, server-side suggestion generation, and an explicit review-and-apply step.
-- [ ] Audit every user-facing loading, error, export, and payment status; replace raw fallback strings with localized labels and add regression coverage.
+- [x] Audit every user-facing loading, error, export, and payment status; replace raw fallback strings with localized labels and add regression coverage.
 - [x] Add explicit game-blueprint validation for export readiness and all supported modes before declaring the comprehensive blueprint complete.
 - [x] Diagnose and repair the image-to-video generator failure in the Image Animation editor, including a user-actionable bilingual error and a verified retry path.
 - [x] Capture the live Veo failure code for the selected image, fix the specific failing stage, and surface a precise bilingual retry message.
