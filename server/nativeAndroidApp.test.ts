@@ -44,4 +44,15 @@ describe("standalone Android App Builder", () => {
     expect(activity).toContain("DownloadManager");
     expect(activity).toContain("artifactUrl.isNotBlank()");
   });
+
+  it("supports a production signing configuration from protected environment values", () => {
+    const gradle = readFileSync(resolve(process.cwd(), "android-companion/app/build.gradle.kts"), "utf8");
+    const codemagic = readFileSync(resolve(process.cwd(), "codemagic.yaml"), "utf8");
+    expect(gradle).toContain("APP_BUILDER_RELEASE_KEYSTORE_PATH");
+    expect(gradle).toContain("appBuilderRelease");
+    expect(codemagic).toContain("app_builder_android_signing");
+    expect(codemagic).toContain("assembleRelease bundleRelease");
+    expect(codemagic).toContain("app-release.apk");
+    expect(codemagic).toContain("app-release.aab");
+  });
 });

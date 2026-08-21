@@ -11,6 +11,10 @@ val generatedVersionName = System.getenv("APP_BUILDER_VERSION_NAME")
     ?: "1.2.0"
 val generatedVersionCode = System.getenv("APP_BUILDER_VERSION_CODE")?.toIntOrNull()?.coerceAtLeast(1) ?: 4
 val generatedAppName = System.getenv("APP_BUILDER_APP_NAME")?.trim()?.take(80)?.takeIf { it.isNotBlank() } ?: "App Builder"
+val releaseKeystorePath = System.getenv("APP_BUILDER_RELEASE_KEYSTORE_PATH")?.takeIf { it.isNotBlank() }
+val releaseStorePassword = System.getenv("APP_BUILDER_RELEASE_STORE_PASSWORD")?.takeIf { it.isNotBlank() }
+val releaseKeyAlias = System.getenv("APP_BUILDER_RELEASE_KEY_ALIAS")?.takeIf { it.isNotBlank() }
+val releaseKeyPassword = System.getenv("APP_BUILDER_RELEASE_KEY_PASSWORD")?.takeIf { it.isNotBlank() }
 
 android {
     namespace = "sa.appbuilder.companion"
@@ -25,10 +29,21 @@ android {
         resValue("string", "app_name", generatedAppName)
     }
 
+    signingConfigs {
+        if (releaseKeystorePath != null && releaseStorePassword != null && releaseKeyAlias != null && releaseKeyPassword != null) {
+            create("appBuilderRelease") {
+                storeFile = file(releaseKeystorePath)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("appBuilderRelease") ?: signingConfigs.getByName("debug")
         }
     }
 
