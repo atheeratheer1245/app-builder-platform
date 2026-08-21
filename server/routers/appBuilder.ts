@@ -13,6 +13,7 @@ import {
 import { templateCategories } from "../../shared/appBuilderCatalog";
 import { getPaidExportPrice } from "../../shared/exportPricing";
 import { builderComponentTypes, gameComponentTypes, gameModes, getAllowedComponentTypes, getDefaultComponentProperties } from "../../shared/componentCatalog";
+import { generatedGameModes, getGameGeneratorPreset } from "../../shared/gameGenerator";
 import { premiumExampleCatalog } from "../../shared/premiumExamples";
 import { getOwnedProject, getProjectWorkspace, getRequiredDb, ensureTemplateCatalog } from "../appBuilderDb";
 import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
@@ -51,6 +52,11 @@ const motionPromptInput = z.object({
   language: z.enum(["ar", "en", "both"]).default("both"),
 });
 const motionPromptResult = z.object({ motionPrompt: z.string().trim().min(3).max(800) });
+const gameGenerationInput = z.object({
+  projectId: z.number().int().positive(),
+  pageId: z.number().int().positive(),
+  mode: z.enum(generatedGameModes),
+});
 const pageBackgroundSchema = z.object({
   type: z.enum(["none", "color", "image", "video", "audio"]).default("none"),
   color: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).default("#ffffff"),
@@ -354,6 +360,42 @@ export const appBuilderRouter = router({
       const db = await getRequiredDb();
       await Promise.all(input.pageIds.map((pageId, sortOrder) => db.update(projectPages).set({ sortOrder, updatedAt: new Date() }).where(and(eq(projectPages.id, pageId), eq(projectPages.projectId, input.projectId)))));
       return { success: true };
+    }),
+    generateGame: protectedProcedure.input(gameGenerationInput).mutation(async ({ ctx, input }) => {
+      const project = await getOwnedProject(ctx.user.id, input.projectId);
+      if (!project) unauthenticatedProject();
+      if (project.category !== "games") throw new TRPCError({ code: "BAD_REQUEST", message: "Game generation is available only for game projects" });
+      const db = await getRequiredDb();
+      const page = (await db.select({ id: projectPages.id }).from(projectPages).where(and(eq(projectPages.id, input.pageId), eq(projectPages.projectId, input.projectId))).limit(1))[0];
+      if (!page) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a page from this game project" });
+
+      const existing = await db.select({ id: projectComponents.id, componentType: projectComponents.componentType, properties: projectComponents.properties }).from(projectComponents).where(and(eq(projectComponents.projectId, input.projectId), eq(projectComponents.pageId, input.pageId)));
+      const generatedIds = existing.filter(component => (gameComponentTypes as readonly string[]).includes(component.componentType) && (component.properties as Record<string, unknown> | null)?.generatedBy === "game-generator").map(component => component.id);
+      if (generatedIds.length) await Promise.all(generatedIds.map(id => db.delete(projectComponents).where(and(eq(projectComponents.id, id), eq(projectComponents.projectId, input.projectId)))));
+
+      const preset = getGameGeneratorPreset(input.mode);
+      const current = await db.select({ maxOrder: max(projectComponents.sortOrder) }).from(projectComponents).where(eq(projectComponents.pageId, input.pageId));
+      const generatedComponents = await Promise.all(preset.components.map(async (component, index) => {
+        const properties = await normalizeMediaProperties({
+          ownerId: ctx.user.id,
+          projectId: input.projectId,
+          componentType: component.componentType,
+          properties: { ...getDefaultComponentProperties(component.componentType, "games"), ...component.properties, gameMode: input.mode, generatorMode: input.mode, generatedBy: "game-generator" },
+        });
+        validateComponentProperties(component.componentType, properties);
+        await validateDestinationPages(input.projectId, component.componentType, properties);
+        return {
+          projectId: input.projectId,
+          pageId: input.pageId,
+          componentType: component.componentType,
+          labelAr: component.labelAr,
+          labelEn: component.labelEn,
+          properties,
+          sortOrder: (current[0]?.maxOrder ?? -1) + index + 1,
+        };
+      }));
+      await db.insert(projectComponents).values(generatedComponents);
+      return { pageId: input.pageId, mode: input.mode, componentCount: generatedComponents.length, titleAr: preset.titleAr, titleEn: preset.titleEn };
     }),
     addComponent: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), pageId: z.number().int().positive(), componentType: z.enum(builderComponentTypes), labelAr: z.string().trim().max(160).default(""), labelEn: z.string().trim().max(160).default(""), properties: z.record(z.string(), z.unknown()).default({}) })).mutation(async ({ ctx, input }) => {
       const project = await getOwnedProject(ctx.user.id, input.projectId);
