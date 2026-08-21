@@ -244,9 +244,9 @@
 - [x] Extend runtime component regression coverage to include Image Animation local-video adoption and the optional payment-platform component.
 - [x] Add an in-editor game generator that creates an editable scene, components, and default rules for eight supported game modes: platformer, endless runner, puzzle, quiz, memory cards, tower defense, simple shooter, and racing.
 - [x] Upgrade Local Motion Studio to let users select multiple regions in an image, assign each region an independent motion effect, and export the combined animation as a project video.
-- [ ] Build a server-side export pipeline that executes real Android APK and AAB builds, records auditable job states, stores signed artifacts safely, and exposes an IPA path gated by Apple signing requirements.
+- [x] Build a server-side export pipeline that executes real Android APK and AAB builds, records auditable job states, stores signed artifacts safely, and exposes an IPA path gated by Apple signing requirements.
 - [ ] Select and integrate a professional cloud-build provider that supports Android APK/AAB and Apple IPA through a server-only API, signed webhooks, artifact verification, and protected downloads.
-- [ ] Persist verified Codemagic Android APK and AAB artifacts in project storage, with database-linked export job states and protected client downloads.
-- [ ] Add a server-only Codemagic build client that triggers Android jobs, maps provider states to localized export states, and safely handles failures.
-- [ ] Add automated regression coverage for Codemagic request validation, artifact intake, authorization, and export status transitions.
-- [ ] Enforce per-owner and per-project artifact isolation so every customer can access only the APK or AAB generated for that customer’s own export job.
+- [x] Persist verified Codemagic Android APK and AAB artifacts in project storage, with database-linked export job states and protected client downloads.
+- [x] Add a server-only Codemagic build client that triggers Android jobs, maps provider states to localized export states, and safely handles failures.
+- [x] Add automated regression coverage for Codemagic request validation, artifact intake, authorization, and export status transitions.
+- [x] Enforce per-owner and per-project artifact isolation so every customer can access only the APK or AAB generated for that customer’s own export job.

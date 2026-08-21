@@ -24,6 +24,14 @@ export function resolveClientApplicationId(ownerId: number, projectId: number) {
   return `sa.appbuilder.client.u${ownerId}.p${projectId}`;
 }
 
+export function exportConfigurationStorageKey(ownerId: number, projectId: number, exportJobId: number) {
+  return `exports/config/${ownerId}/${projectId}/${exportJobId}.json`;
+}
+
+export function exportArtifactStorageKey(ownerId: number, projectId: number, exportJobId: number, safeFileName: string) {
+  return `exports/artifacts/${ownerId}/${projectId}/${exportJobId}/${safeFileName}`;
+}
+
 export function buildApplicationLabelXml(appName: string) {
   const escaped = cleanText(appName, 80).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;") || "App Builder";
   return `<?xml version="1.0" encoding="utf-8"?>\n<resources><string name="app_name">${escaped}</string></resources>\n`;
@@ -96,7 +104,7 @@ export async function queueCloudBuildForExportJob(ownerId: number, exportJobId: 
   if (Buffer.byteLength(serializedConfiguration, "utf8") > 120 * 1024) return markExportFailed(ownerId, exportJobId, "project_configuration_too_large");
 
   try {
-    const storedConfig = await storagePut(`exports/config/${ownerId}/${project.id}/${exportJobId}.json`, serializedConfiguration, "application/json");
+    const storedConfig = await storagePut(exportConfigurationStorageKey(ownerId, project.id, exportJobId), serializedConfiguration, "application/json");
     const configUrl = await storageGetSignedUrl(storedConfig.key);
     const appName = cleanText(project.name, 80) || "App Builder";
     const build = await startCodemagicAndroidBuild({
@@ -131,7 +139,7 @@ export async function refreshCloudExportForJob(ownerId: number, exportJobId: num
     if (!artifact) return markExportFailed(ownerId, exportJobId, "requested_artifact_missing");
     const downloaded = await downloadCodemagicArtifact(artifact.downloadUrl);
     const safeFileName = artifact.name.replace(/[^a-zA-Z0-9._-]/g, "-").slice(-160) || `app.${job.format}`;
-    const storedArtifact = await storagePut(`exports/artifacts/${ownerId}/${job.projectId}/${exportJobId}/${safeFileName}`, downloaded.bytes, downloaded.contentType);
+    const storedArtifact = await storagePut(exportArtifactStorageKey(ownerId, job.projectId, exportJobId, safeFileName), downloaded.bytes, downloaded.contentType);
     const db = await getRequiredDb();
     await db.update(exportJobs).set({ status: "ready", artifactKey: storedArtifact.key, artifactUrl: storedArtifact.url, failureReason: null, completedAt: new Date(), updatedAt: new Date() }).where(and(eq(exportJobs.id, exportJobId), eq(exportJobs.ownerId, ownerId)));
     return getOwnedExportJob(ownerId, exportJobId);

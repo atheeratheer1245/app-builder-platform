@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { buildApplicationLabelXml, buildNativeExportConfiguration, resolveClientApplicationId } from "./exportBuildPipeline";
+import { buildApplicationLabelXml, buildNativeExportConfiguration, exportArtifactStorageKey, exportConfigurationStorageKey, resolveClientApplicationId } from "./exportBuildPipeline";
 
 describe("client export configuration", () => {
   it("creates a unique Android application id for each owner project pair", () => {
     expect(resolveClientApplicationId(7, 13)).toBe("sa.appbuilder.client.u7.p13");
     expect(resolveClientApplicationId(8, 13)).not.toBe(resolveClientApplicationId(7, 13));
+    expect(exportConfigurationStorageKey(7, 13, 91)).toBe("exports/config/7/13/91.json");
+    expect(exportArtifactStorageKey(7, 13, 91, "client.apk")).toBe("exports/artifacts/7/13/91/client.apk");
+    expect(exportArtifactStorageKey(8, 13, 91, "client.apk")).not.toBe(exportArtifactStorageKey(7, 13, 91, "client.apk"));
   });
 
   it("keeps the generated app label XML escaped and project configuration scoped to the project pages", () => {
