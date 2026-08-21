@@ -19,7 +19,7 @@ import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { storageGetSignedUrl, storagePut } from "../storage";
 import { createMoyasarInvoice, requestOrigin, verifyPaidExportInvoice } from "../moyasarPaid";
 import { invokeLLM } from "../_core/llm";
-import { generateVideoFromImage } from "../geminiVideo";
+import { generateVideoFromImage, VideoGenerationError } from "../geminiVideo";
 
 const categorySchema = z.enum(templateCategories);
 const exportInput = z.object({ projectId: z.number().int().positive(), format: z.enum(["apk", "aab", "ipa"]) });
@@ -461,7 +461,8 @@ export const appBuilderRouter = router({
         return { assetId: Number(insert[0]?.insertId ?? 0), url: upload.url, mimeType: "video/mp4" };
       } catch (error) {
         console.error("[App Builder AI] Veo generation failed", error);
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Video generation could not be completed" });
+        const reason = error instanceof VideoGenerationError ? error.reason : "unavailable";
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `VIDEO_GENERATION_${reason.toUpperCase()}` });
       }
     }),
   }),

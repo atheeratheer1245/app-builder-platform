@@ -225,3 +225,4 @@
 - [x] Make the dedicated Gemini Flash panel above the preview usable without opening an edit dialog, with target selection, server-side suggestion generation, and an explicit review-and-apply step.
 - [ ] Audit every user-facing loading, error, export, and payment status; replace raw fallback strings with localized labels and add regression coverage.
 - [x] Add explicit game-blueprint validation for export readiness and all supported modes before declaring the comprehensive blueprint complete.
+- [x] Diagnose and repair the image-to-video generator failure in the Image Animation editor, including a user-actionable bilingual error and a verified retry path.
