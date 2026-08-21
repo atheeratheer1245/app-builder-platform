@@ -242,3 +242,5 @@
 - [x] Remove the unused PhotoGPT video layer and its isolated tests after replacing the active workflow with Local Motion Studio.
 - [x] Verify that the standalone Android companion builds a valid debug-signed release APK through Gradle Wrapper without any WebView dependency.
 - [x] Extend runtime component regression coverage to include Image Animation local-video adoption and the optional payment-platform component.
+- [ ] Add an in-editor game generator that creates an editable scene, components, and default rules for eight supported game modes: platformer, endless runner, puzzle, quiz, memory cards, tower defense, simple shooter, and racing.
+- [x] Upgrade Local Motion Studio to let users select multiple regions in an image, assign each region an independent motion effect, and export the combined animation as a project video.

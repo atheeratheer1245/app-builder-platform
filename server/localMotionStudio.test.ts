@@ -12,7 +12,17 @@ describe("Local Motion Studio", () => {
     expect(studioSource).toContain("canvas.captureStream(30)");
     expect(studioSource).toContain("new MediaRecorder(stream");
     expect(studioSource).toContain("video/webm");
-    expect(studioSource).toContain("external video-generation provider");
+    expect(studioSource).toContain("external video service");
+  });
+
+  it("lets the creator select visible image regions and animate each saved layer independently", () => {
+    expect(studioSource).toContain("type MotionLayer");
+    expect(studioSource).toContain("onPointerDown={beginSelection}");
+    expect(studioSource).toContain("onPointerMove={updateSelection}");
+    expect(studioSource).toContain("onPointerUp={finishSelection}");
+    expect(studioSource).toContain("Add motion layer");
+    expect(studioSource).toContain("layers.forEach(layer");
+    expect(studioSource).toContain("layer.effect");
   });
 
   it("attaches the locally exported motion video to Image Animation as a project asset", () => {
