@@ -244,3 +244,5 @@
 - [x] Extend runtime component regression coverage to include Image Animation local-video adoption and the optional payment-platform component.
 - [x] Add an in-editor game generator that creates an editable scene, components, and default rules for eight supported game modes: platformer, endless runner, puzzle, quiz, memory cards, tower defense, simple shooter, and racing.
 - [x] Upgrade Local Motion Studio to let users select multiple regions in an image, assign each region an independent motion effect, and export the combined animation as a project video.
+- [ ] Build a server-side export pipeline that executes real Android APK and AAB builds, records auditable job states, stores signed artifacts safely, and exposes an IPA path gated by Apple signing requirements.
+- [ ] Select and integrate a professional cloud-build provider that supports Android APK/AAB and Apple IPA through a server-only API, signed webhooks, artifact verification, and protected downloads.
