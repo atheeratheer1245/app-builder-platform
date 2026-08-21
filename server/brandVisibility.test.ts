@@ -10,4 +10,16 @@ describe("public brand surface", () => {
     expect(html).not.toContain("data-website-id");
     expect(html).not.toContain("Manus");
   });
+
+  it("keeps public landing and example views free of hosted-platform names and domains", () => {
+    const publicSources = [
+      "../client/src/pages/Home.tsx",
+      "../client/src/pages/PublicPages.tsx",
+    ].map(path => readFileSync(new URL(path, import.meta.url), "utf8"));
+
+    for (const source of publicSources) {
+      const visibleSurface = source.replaceAll("/manus-storage/", "/asset-storage/");
+      expect(visibleSurface).not.toMatch(/Manus|manus\.space|manus\.computer/i);
+    }
+  });
 });
