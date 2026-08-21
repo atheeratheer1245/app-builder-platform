@@ -22,5 +22,6 @@ describe("Veo image-to-video failure handling", () => {
     expect(source).toContain("await ai.files.download({ file: generatedVideo, downloadPath })");
     expect(source).toContain("await rm(downloadDirectory, { recursive: true, force: true })");
     expect(source).not.toContain('fetch(videoUri');
+    expect(source).not.toContain("generateAudio:");
   });
 });

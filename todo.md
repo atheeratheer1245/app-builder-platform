@@ -226,3 +226,4 @@
 - [ ] Audit every user-facing loading, error, export, and payment status; replace raw fallback strings with localized labels and add regression coverage.
 - [x] Add explicit game-blueprint validation for export readiness and all supported modes before declaring the comprehensive blueprint complete.
 - [x] Diagnose and repair the image-to-video generator failure in the Image Animation editor, including a user-actionable bilingual error and a verified retry path.
+- [x] Capture the live Veo failure code for the selected image, fix the specific failing stage, and surface a precise bilingual retry message.

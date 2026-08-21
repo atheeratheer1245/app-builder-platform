@@ -49,7 +49,7 @@ export async function generateVideoFromImage(input: {
         imageBytes: Buffer.from(input.image).toString("base64"),
         mimeType: input.mimeType,
       },
-      config: { numberOfVideos: 1, aspectRatio: "9:16", generateAudio: false },
+      config: { numberOfVideos: 1, aspectRatio: "9:16" },
     });
 
     for (let attempt = 0; !operation.done && attempt < MAX_POLLS; attempt += 1) {
