@@ -232,3 +232,4 @@
 - [x] Make Image Animation with Gemini Flash prompt refinement and Veo generation available, editable, and runnable in all eight template categories.
 - [x] Diagnose and repair the production failures of both Gemini Flash prompt refinement and Veo video generation, with precise bilingual error handling and a verified fallback path.
 - [ ] Run one successful production Veo image-to-video smoke test after the provider quota renews or higher video quota is enabled.
+- [x] Verify whether Microsoft Copilot exposes an official supported image-to-video API suitable for secure App Builder integration before replacing Veo.
