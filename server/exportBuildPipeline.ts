@@ -32,6 +32,26 @@ export function exportArtifactStorageKey(ownerId: number, projectId: number, exp
   return `exports/artifacts/${ownerId}/${projectId}/${exportJobId}/${safeFileName}`;
 }
 
+type ArtifactReadyJob = { status: string; artifactKey: string | null; artifactUrl: string | null };
+
+export function serializeExportJobForClient<T extends ArtifactReadyJob>(job: T, authorizedArtifactUrl: string | null) {
+  const { artifactKey: _artifactKey, artifactUrl: _artifactUrl, ...publicJob } = job;
+  return { ...publicJob, artifactUrl: authorizedArtifactUrl };
+}
+
+export async function getAuthorizedArtifactDownloadUrl(job: ArtifactReadyJob) {
+  if (job.status !== "ready" || !job.artifactKey) return null;
+  try {
+    return await storageGetSignedUrl(job.artifactKey);
+  } catch {
+    return null;
+  }
+}
+
+export async function serializeExportJobForOwner<T extends ArtifactReadyJob>(job: T) {
+  return serializeExportJobForClient(job, await getAuthorizedArtifactDownloadUrl(job));
+}
+
 export function buildNativeExportConfiguration(input: {
   exportJobId: number;
   project: Project;
@@ -147,5 +167,6 @@ export async function refreshCloudExportsForOwner(ownerId: number) {
   const db = await getRequiredDb();
   const activeJobs = await db.select().from(exportJobs).where(and(eq(exportJobs.ownerId, ownerId), inArray(exportJobs.status, ["queued", "building"]))).orderBy(desc(exportJobs.createdAt)).limit(12);
   for (const job of activeJobs) await refreshCloudExportForJob(ownerId, job.id);
-  return db.select().from(exportJobs).where(eq(exportJobs.ownerId, ownerId)).orderBy(desc(exportJobs.createdAt));
+  const jobs = await db.select().from(exportJobs).where(eq(exportJobs.ownerId, ownerId)).orderBy(desc(exportJobs.createdAt));
+  return Promise.all(jobs.map(job => serializeExportJobForOwner(job)));
 }

@@ -7,7 +7,7 @@ import { getPaidExportPrice } from "../shared/exportPricing";
 import { getRequiredDb } from "./appBuilderDb";
 import { getLocalAuthenticatedUser } from "./localAuth";
 import { createMoyasarInvoice, requestOrigin, verifyPaidExportInvoice } from "./moyasarPaid";
-import { queueCloudBuildForExportJob, refreshCloudExportForJob } from "./exportBuildPipeline";
+import { getAuthorizedArtifactDownloadUrl, queueCloudBuildForExportJob, refreshCloudExportForJob } from "./exportBuildPipeline";
 
 const exportFormatSchema = z.enum(["apk", "aab", "ipa"]);
 
@@ -157,7 +157,7 @@ async function paymentStatus(userId: number, paymentId: number) {
     reason: verification.paid ? null : verification.reason,
     invoiceStatus: verification.paid ? "paid" : verification.invoiceStatus ?? null,
     status: job?.status ?? "pending_payment",
-    artifactUrl: job?.status === "ready" && job.artifactUrl ? job.artifactUrl : null,
+    artifactUrl: job ? await getAuthorizedArtifactDownloadUrl(job) : null,
   };
 }
 
@@ -219,6 +219,7 @@ export function registerMobilePaidExportRoutes(app: Express) {
     const job = await refreshCloudExportForJob(user.id, exportJobId) ?? (await db.select().from(exportJobs).where(and(eq(exportJobs.id, exportJobId), eq(exportJobs.ownerId, user.id))).limit(1))[0];
     if (!job) return res.status(404).json({ error: "export_not_found" });
     res.set("Cache-Control", "no-store");
-    return res.status(200).json({ available: job.status === "ready" && Boolean(job.artifactUrl), status: job.status, artifactUrl: job.status === "ready" ? job.artifactUrl : null });
+    const artifactUrl = await getAuthorizedArtifactDownloadUrl(job);
+    return res.status(200).json({ available: Boolean(artifactUrl), status: job.status, artifactUrl });
   });
 }

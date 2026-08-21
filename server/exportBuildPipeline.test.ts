@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildNativeExportConfiguration, exportArtifactStorageKey, exportConfigurationStorageKey, resolveClientApplicationId } from "./exportBuildPipeline";
+import { buildNativeExportConfiguration, exportArtifactStorageKey, exportConfigurationStorageKey, resolveClientApplicationId, serializeExportJobForClient } from "./exportBuildPipeline";
 
 describe("client export configuration", () => {
   it("creates a unique Android application id for each owner project pair", () => {
@@ -8,6 +8,9 @@ describe("client export configuration", () => {
     expect(exportConfigurationStorageKey(7, 13, 91)).toBe("exports/config/7/13/91.json");
     expect(exportArtifactStorageKey(7, 13, 91, "client.apk")).toBe("exports/artifacts/7/13/91/client.apk");
     expect(exportArtifactStorageKey(8, 13, 91, "client.apk")).not.toBe(exportArtifactStorageKey(7, 13, 91, "client.apk"));
+    const publicJob = serializeExportJobForClient({ id: 91, status: "ready", artifactKey: "exports/artifacts/7/13/91/client.apk", artifactUrl: "/manus-storage/private-path" }, "https://signed.example/client.apk");
+    expect(publicJob).toMatchObject({ id: 91, artifactUrl: "https://signed.example/client.apk" });
+    expect(publicJob).not.toHaveProperty("artifactKey");
   });
 
   it("keeps project configuration scoped to the project pages", () => {

@@ -20,7 +20,7 @@ import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { storagePut } from "../storage";
 import { createMoyasarInvoice, requestOrigin, verifyPaidExportInvoice } from "../moyasarPaid";
 import { invokeLLM } from "../_core/llm";
-import { queueCloudBuildForExportJob, refreshCloudExportsForOwner } from "../exportBuildPipeline";
+import { getAuthorizedArtifactDownloadUrl, queueCloudBuildForExportJob, refreshCloudExportsForOwner, serializeExportJobForOwner } from "../exportBuildPipeline";
 
 const categorySchema = z.enum(templateCategories);
 const exportInput = z.object({ projectId: z.number().int().positive(), format: z.enum(["apk", "aab", "ipa"]) });
@@ -540,7 +540,8 @@ export const appBuilderRouter = router({
   exports: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       const db = await getRequiredDb();
-      return db.select().from(exportJobs).where(eq(exportJobs.ownerId, ctx.user.id)).orderBy(desc(exportJobs.createdAt));
+      const jobs = await db.select().from(exportJobs).where(eq(exportJobs.ownerId, ctx.user.id)).orderBy(desc(exportJobs.createdAt));
+      return Promise.all(jobs.map(job => serializeExportJobForOwner(job)));
     }),
     create: protectedProcedure.input(exportInput).mutation(async ({ ctx, input }) => {
       const project = await getOwnedProject(ctx.user.id, input.projectId);
@@ -632,10 +633,11 @@ export const appBuilderRouter = router({
       const rows = await db.select().from(exportJobs).where(and(eq(exportJobs.id, input), eq(exportJobs.ownerId, ctx.user.id))).limit(1);
       const job = rows[0];
       if (!job) unauthenticatedProject();
-      if (job.status !== "ready" || !job.artifactUrl) {
+      const artifactUrl = await getAuthorizedArtifactDownloadUrl(job);
+      if (!artifactUrl) {
         return { available: false as const, status: job.status, artifactUrl: null };
       }
-      return { available: true as const, status: job.status, artifactUrl: job.artifactUrl };
+      return { available: true as const, status: job.status, artifactUrl };
     }),
   }),
 });
