@@ -240,3 +240,4 @@
 - [ ] Verify whether PixVerse AI offers an official image-to-video API suitable for a secure server-side App Builder integration.
 - [x] Build a first-party local image-motion studio that animates an owned project image, exports a playable video locally, and attaches it to Image Animation without any external video-provider key.
 - [x] Remove the unused PhotoGPT video layer and its isolated tests after replacing the active workflow with Local Motion Studio.
+- [x] Verify that the standalone Android companion builds a valid debug-signed release APK through Gradle Wrapper without any WebView dependency.
