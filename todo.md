@@ -23,7 +23,7 @@
 - [x] [Cancelled by user] Replace Paylink payment creation, callback verification, billing copy, and environment configuration with Moyasar hosted checkout and webhook verification.
 - [x] [Cancelled by user] Request Moyasar test credentials after merchant onboarding, then validate the integration without creating a charge.
 - [x] Record the user's decision not to adopt Moyasar and retain Paylink as the selected payment provider.
-- [ ] Generate or provide Android keystore material and its SHA-1/SHA-256 fingerprints for Android/Google integration when cloud builds are activated.
+- [x] Generate or provide Android keystore material and its SHA-1/SHA-256 fingerprints for Android/Google integration when cloud builds are activated.
 - [x] Finish localization for editor component types, device labels, field placeholders, and all loading and error messages.
 - [ ] Complete localization of all loading, error, and raw export/payment status messages surfaced to users.
 - [x] Add the reset-token and new-password screen, then verify the complete password-reset submission flow after SMTP is configured.
@@ -253,4 +253,4 @@
 - [x] Resolve the Codemagic client-build resource-name conflict so generated app labels do not duplicate the default Android string resource.
 - [x] Replace ready-artifact storage paths returned to clients with owner-authorized short-lived download URLs.
 - [x] Add a native Android export-files center that fetches each owned export job’s current status and offers its authorized APK or AAB download only when ready.
-- [ ] Create an owner-approved Android release keystore outside version control, configure release signing without storing credentials in code, and record its SHA-1/SHA-256 fingerprints.
+- [x] Create an owner-approved Android release keystore outside version control, configure release signing without storing credentials in code, and record its SHA-1/SHA-256 fingerprints.
