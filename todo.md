@@ -250,3 +250,4 @@
 - [x] Add a server-only Codemagic build client that triggers Android jobs, maps provider states to localized export states, and safely handles failures.
 - [x] Add automated regression coverage for Codemagic request validation, artifact intake, authorization, and export status transitions.
 - [x] Enforce per-owner and per-project artifact isolation so every customer can access only the APK or AAB generated for that customer’s own export job.
+- [ ] Resolve the Codemagic client-build resource-name conflict so generated app labels do not duplicate the default Android string resource.

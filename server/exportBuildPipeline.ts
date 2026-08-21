@@ -32,11 +32,6 @@ export function exportArtifactStorageKey(ownerId: number, projectId: number, exp
   return `exports/artifacts/${ownerId}/${projectId}/${exportJobId}/${safeFileName}`;
 }
 
-export function buildApplicationLabelXml(appName: string) {
-  const escaped = cleanText(appName, 80).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;") || "App Builder";
-  return `<?xml version="1.0" encoding="utf-8"?>\n<resources><string name="app_name">${escaped}</string></resources>\n`;
-}
-
 export function buildNativeExportConfiguration(input: {
   exportJobId: number;
   project: Project;
@@ -111,7 +106,7 @@ export async function queueCloudBuildForExportJob(ownerId: number, exportJobId: 
       exportJobId,
       environment: {
         APP_BUILDER_EXPORT_CONFIG_URL: configUrl,
-        APP_BUILDER_APP_LABEL_XML_B64: Buffer.from(buildApplicationLabelXml(appName), "utf8").toString("base64"),
+        APP_BUILDER_APP_NAME: appName,
         APP_BUILDER_APPLICATION_ID: resolveClientApplicationId(ownerId, project.id),
         APP_BUILDER_VERSION_NAME: cleanText(project.versionName, 32) || "1.0.0",
         APP_BUILDER_VERSION_CODE: String(Math.max(1, exportJobId)),

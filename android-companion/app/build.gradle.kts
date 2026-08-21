@@ -10,6 +10,7 @@ val generatedVersionName = System.getenv("APP_BUILDER_VERSION_NAME")
     ?.takeIf { it.matches(Regex("[0-9A-Za-z._-]{1,32}")) }
     ?: "1.2.0"
 val generatedVersionCode = System.getenv("APP_BUILDER_VERSION_CODE")?.toIntOrNull()?.coerceAtLeast(1) ?: 4
+val generatedAppName = System.getenv("APP_BUILDER_APP_NAME")?.trim()?.take(80)?.takeIf { it.isNotBlank() } ?: "App Builder"
 
 android {
     namespace = "sa.appbuilder.companion"
@@ -21,6 +22,7 @@ android {
         targetSdk = 35
         versionCode = generatedVersionCode
         versionName = generatedVersionName
+        resValue("string", "app_name", generatedAppName)
     }
 
     buildTypes {
