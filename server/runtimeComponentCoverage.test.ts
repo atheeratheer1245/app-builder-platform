@@ -8,10 +8,12 @@ const editorSource = readFileSync(resolve(projectRoot, "client/src/pages/Builder
 
 describe("configured component runtime coverage", () => {
   it("keeps editor configuration and runtime rendering paths for interactive standard components", () => {
-    for (const componentType of ["Image", "Video", "Audio", "PDFDocument", "Button", "List", "Product", "Card", "Background", "SearchBar"] as const) {
+    for (const componentType of ["Image", "Video", "Audio", "PDFDocument", "Button", "List", "Product", "Card", "Background", "SearchBar", "PaymentPlatform"] as const) {
       expect(editorSource).toContain(`type === "${componentType}"`);
       expect(runtimeSource).toContain(`component.componentType === "${componentType}"`);
     }
+    expect(editorSource).toContain('String(type) === "ImageAnimation"');
+    expect(runtimeSource).toContain('component.componentType === "ImageAnimation"');
   });
 
   it("keeps saved navigation and media selection connected to the runnable screen", () => {
@@ -20,5 +22,12 @@ describe("configured component runtime coverage", () => {
     expect(runtimeSource).toContain("onNavigate(target)");
     expect(runtimeSource).toContain('text(props, "assetUrl")');
     expect(runtimeSource).toContain("hasComponentBackground");
+  });
+
+  it("keeps the generated local-motion video path connected from Image Animation to the runtime", () => {
+    expect(editorSource).toContain("LocalMotionStudio");
+    expect(editorSource).toContain("generatedVideoAssetId");
+    expect(runtimeSource).toContain('text(props, "videoAssetUrl", text(props, "generatedVideoUrl"))');
+    expect(runtimeSource).toContain('isArabic ? "فيديو حركة مولّد" : "Generated motion video"');
   });
 });
