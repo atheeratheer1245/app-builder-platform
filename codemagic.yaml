@@ -14,9 +14,3 @@ workflows:
     artifacts:
       - android-companion/app/build/outputs/apk/debug/app-debug.apk
       - android-companion/app/build/outputs/bundle/debug/app-debug.aab
-    publishing:
-      email:
-        recipients: []
-        notify:
-          success: false
-          failure: false
