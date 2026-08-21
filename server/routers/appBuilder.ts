@@ -45,6 +45,13 @@ const aiSuggestionResult = z.object({
   descriptionEn: z.string().trim().min(1).max(700),
   route: z.string().trim().min(1).max(120),
 });
+const motionPromptInput = z.object({
+  projectId: z.number().int().positive(),
+  assetId: z.number().int().positive(),
+  prompt: z.string().trim().min(3).max(800),
+  language: z.enum(["ar", "en", "both"]).default("both"),
+});
+const motionPromptResult = z.object({ motionPrompt: z.string().trim().min(3).max(800) });
 const pageBackgroundSchema = z.object({
   type: z.enum(["none", "color", "image", "video", "audio"]).default("none"),
   color: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).default("#ffffff"),
@@ -429,6 +436,40 @@ export const appBuilderRouter = router({
       } catch (error) {
         console.error("[App Builder AI] Suggestion failed", error);
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "AI suggestion could not be generated" });
+      }
+    }),
+    improveMotionPrompt: protectedProcedure.input(motionPromptInput).mutation(async ({ ctx, input }) => {
+      const project = await getOwnedProject(ctx.user.id, input.projectId);
+      if (!project) unauthenticatedProject();
+      const db = await getRequiredDb();
+      const asset = (await db.select({ id: projectAssets.id }).from(projectAssets).where(and(
+        eq(projectAssets.id, input.assetId), eq(projectAssets.projectId, input.projectId), eq(projectAssets.ownerId, ctx.user.id),
+      )).limit(1))[0];
+      if (!asset) throw new TRPCError({ code: "BAD_REQUEST", message: "Select an image asset owned by this project" });
+      try {
+        const response = await invokeLLM({
+          model: "gemini-3-flash-preview",
+          maxTokens: 260,
+          messages: [
+            { role: "system", content: "You improve concise image-to-video motion prompts for a mobile game. Keep the subject identity stable, describe only visible natural motion and subtle camera motion, avoid copyrighted characters or franchises, unsafe acts, sexual content, and text overlays. Return only JSON with a single motionPrompt field. Use the language requested by the user." },
+            { role: "user", content: `Project category: ${project.category}. Requested language: ${input.language}. User motion idea: ${input.prompt}` },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "motion_prompt_suggestion",
+              strict: true,
+              schema: { type: "object", properties: { motionPrompt: { type: "string" } }, required: ["motionPrompt"], additionalProperties: false },
+            },
+          },
+        });
+        const content = response.choices[0]?.message.content;
+        const parsed = typeof content === "string" ? motionPromptResult.safeParse(JSON.parse(content)) : { success: false as const };
+        if (!parsed.success) throw new Error("Invalid motion prompt response");
+        return parsed.data;
+      } catch (error) {
+        console.error("[App Builder AI] Motion prompt refinement failed", error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Motion prompt could not be improved" });
       }
     }),
     generateVideoFromImage: protectedProcedure.input(z.object({

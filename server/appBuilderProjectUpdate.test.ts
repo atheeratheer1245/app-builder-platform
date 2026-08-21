@@ -125,6 +125,15 @@ describe("protected project update", () => {
     expect(mocks.invokeLLM).not.toHaveBeenCalled();
   });
 
+  it("refines an owned animation prompt through Gemini Flash before Veo generation", async () => {
+    mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "games" });
+    mocks.invokeLLM.mockResolvedValueOnce({ choices: [{ message: { content: JSON.stringify({ motionPrompt: "تتحرك المركبة للأمام بثبات مع اهتزاز كاميرا خفيف." }) } }] });
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.ai.improveMotionPrompt({ projectId: 42, assetId: 9, prompt: "تتحرك المركبة", language: "ar" })).resolves.toEqual({ motionPrompt: "تتحرك المركبة للأمام بثبات مع اهتزاز كاميرا خفيف." });
+    expect(mocks.invokeLLM).toHaveBeenCalledWith(expect.objectContaining({ model: "gemini-3-flash-preview", maxTokens: 260 }));
+  });
+
   it("rejects game-only blocks when a non-game project calls the editor API directly", async () => {
     mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7, category: "ecommerce" });
     const caller = appBuilderRouter.createCaller(createOwnerContext());
