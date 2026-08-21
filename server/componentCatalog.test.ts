@@ -16,6 +16,13 @@ describe("builder component catalog", () => {
     expect(getAllowedComponentTypes("ecommerce")).not.toContain("Platform");
   });
 
+  it("makes Image Animation available in every template category with a safe motion-video default", () => {
+    for (const category of ["ecommerce", "education", "games", "music", "podcasts", "movies", "services", "books"] as const) {
+      expect(getAllowedComponentTypes(category)).toContain("ImageAnimation");
+      expect(getDefaultComponentProperties("ImageAnimation", category)).toMatchObject({ assetId: null, assetUrl: "", frameCount: 1, fps: 8 });
+    }
+  });
+
   it("supplies usable platformer defaults for the core scene objects and touch controls", () => {
     expect(gameModes).toEqual(["platformer", "endless_runner", "puzzle", "quiz", "memory_cards", "tower_defense", "simple_shooter", "racing", "light_simulation"]);
     expect(getDefaultComponentProperties("GameScene", "games")).toMatchObject({ preset: "platformer", gameMode: "platformer", durationSeconds: 90, progressionMode: "linear", showHud: true, musicEnabled: true, soundEffectsEnabled: true, checkpointEnabled: true, persistenceEnabled: false, layer: 1 });

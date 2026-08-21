@@ -1,12 +1,12 @@
 import type { TemplateCategory } from "./appBuilderCatalog";
 
-export const baseComponentTypes = ["Card", "Button", "List", "Image", "Video", "Audio", "Background", "PaymentPlatform"] as const;
+export const baseComponentTypes = ["Card", "Button", "List", "Image", "Video", "Audio", "Background", "ImageAnimation", "PaymentPlatform"] as const;
 export const ecommerceComponentTypes = ["Product", "SearchBar"] as const;
 export const booksComponentTypes = ["PDFDocument", "SearchBar"] as const;
 /** Legacy-only type retained to read old saved projects. It is never returned to the editor picker. */
 const legacyComponentTypes = ["Form"] as const;
 export const searchableComponentCategories = ["ecommerce", "music", "podcasts", "movies", "books"] as const;
-export const gameComponentTypes = ["GameScene", "Player", "ImageAnimation", "Platform", "Collectible", "Hazard", "FinishGate", "TouchControls", "Physics", "Score", "Level", "Condition"] as const;
+export const gameComponentTypes = ["GameScene", "Player", "Platform", "Collectible", "Hazard", "FinishGate", "TouchControls", "Physics", "Score", "Level", "Condition"] as const;
 export const builderComponentTypes = [...baseComponentTypes, ...ecommerceComponentTypes, ...booksComponentTypes, ...gameComponentTypes, ...legacyComponentTypes] as const;
 export const gameModes = ["platformer", "endless_runner", "puzzle", "quiz", "memory_cards", "tower_defense", "simple_shooter", "racing", "light_simulation"] as const;
 export type GameMode = (typeof gameModes)[number];

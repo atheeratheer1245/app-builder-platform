@@ -229,3 +229,4 @@
 - [x] Capture the live Veo failure code for the selected image, fix the specific failing stage, and surface a precise bilingual retry message.
 - [ ] Capture and repair the next live Veo failure after removing the unsupported audio setting, then verify the selected-image generation path again.
 - [x] Add a Gemini Flash-assisted motion-prompt action in Image Animation that safely refines the user's description before Veo video generation.
+- [x] Make Image Animation with Gemini Flash prompt refinement and Veo generation available, editable, and runnable in all eight template categories.
