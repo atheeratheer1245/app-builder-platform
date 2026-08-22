@@ -486,6 +486,26 @@ export const appBuilderRouter = router({
     }),
   }),
   ai: router({
+    perfumeAdvisor: protectedProcedure.input(z.object({ family: z.enum(["oud", "floral", "citrus", "amber"]), moment: z.enum(["day", "evening", "occasion"]), mood: z.enum(["calm", "confident", "bright"]) })).mutation(async ({ input }) => {
+      try {
+        const response = await invokeLLM({
+          model: "gpt-5-mini",
+          maxTokens: 320,
+          messages: [
+            { role: "system", content: "You are the concise bilingual scent adviser for the fictional Reef Perfumes showcase. Choose only from these fictional showcase products: Dujā Oud (aged oud, saffron, amber), Rose Cloud (Taif rose, white musk, vanilla), Bergamot Tide (bergamot, neroli, light woods), Amber Trace (golden amber, tonka, sandalwood). Do not claim customer reviews, ratings, popularity, medical benefits, or real-world availability. Return only the required JSON. Keep the Arabic Modern Standard Arabic and the English natural." },
+            { role: "user", content: `Preference family: ${input.family}; moment: ${input.moment}; mood: ${input.mood}.` },
+          ],
+          response_format: { type: "json_schema", json_schema: { name: "reef_perfumes_adviser", strict: true, schema: { type: "object", properties: { matchNameAr: { type: "string" }, matchNameEn: { type: "string" }, reasonAr: { type: "string" }, reasonEn: { type: "string" }, notesAr: { type: "string" }, notesEn: { type: "string" } }, required: ["matchNameAr", "matchNameEn", "reasonAr", "reasonEn", "notesAr", "notesEn"], additionalProperties: false } } },
+        });
+        const content = response.choices[0]?.message.content;
+        const result = z.object({ matchNameAr: z.string().min(1).max(80), matchNameEn: z.string().min(1).max(80), reasonAr: z.string().min(1).max(260), reasonEn: z.string().min(1).max(260), notesAr: z.string().min(1).max(160), notesEn: z.string().min(1).max(160) }).safeParse(typeof content === "string" ? JSON.parse(content) : null);
+        if (!result.success) throw new Error("Invalid perfume adviser response");
+        return result.data;
+      } catch (error) {
+        console.error("[Reef Perfumes] Adviser failed", error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Perfume adviser could not be generated" });
+      }
+    }),
     suggest: protectedProcedure.input(aiSuggestionInput).mutation(async ({ ctx, input }) => {
       const project = await getOwnedProject(ctx.user.id, input.projectId);
       if (!project) unauthenticatedProject();

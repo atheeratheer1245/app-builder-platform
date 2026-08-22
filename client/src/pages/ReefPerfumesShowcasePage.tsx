@@ -1,0 +1,70 @@
+import { BrandMark } from "@/components/BrandMark";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { useLocale } from "@/contexts/LocaleContext";
+import { trpc } from "@/lib/trpc";
+import { ArrowLeft, ArrowRight, Bot, Boxes, Check, CirclePlay, CreditCard, Headphones, Layers3, MapPin, PackageCheck, Search, ShoppingBag, Sparkles, Truck, WandSparkles } from "lucide-react";
+import { useState } from "react";
+import { Link } from "wouter";
+import "./reef-perfumes-showcase.css";
+
+const products = [
+  { id: "oud", image: "/manus-storage/reef-oud-perfume_5696045b.jpg", nameAr: "دُجى العود", nameEn: "Dujā Oud", notesAr: "عود معتّق، زعفران، عنبر", notesEn: "Aged oud, saffron, amber", price: 245, family: "oud" },
+  { id: "rose", image: "/manus-storage/reef-rose-perfume_5dffe8f4.jpg", nameAr: "ورد السَّحاب", nameEn: "Rose Cloud", notesAr: "ورد طائفي، مسك أبيض، فانيلا", notesEn: "Taif rose, white musk, vanilla", price: 210, family: "floral" },
+  { id: "citrus", image: "/manus-storage/reef-citrus-perfume_3b6dd6f5.jpg", nameAr: "موج البرغموت", nameEn: "Bergamot Tide", notesAr: "برغموت، نيرولي، أخشاب خفيفة", notesEn: "Bergamot, neroli, light woods", price: 185, family: "citrus" },
+  { id: "amber", image: "/manus-storage/reef-amber-perfume_42ad73b0.jpg", nameAr: "أثر العنبر", nameEn: "Amber Trace", notesAr: "عنبر ذهبي، تونكا، خشب الصندل", notesEn: "Golden amber, tonka, sandalwood", price: 230, family: "amber" },
+] as const;
+
+const families = ["oud", "floral", "citrus", "amber"] as const;
+const moments = ["day", "evening", "occasion"] as const;
+const moods = ["calm", "confident", "bright"] as const;
+
+const labels = {
+  oud: { ar: "عود", en: "Oud" }, floral: { ar: "زهري", en: "Floral" }, citrus: { ar: "حمضيات", en: "Citrus" }, amber: { ar: "عنبر", en: "Amber" },
+  day: { ar: "النهار", en: "Daytime" }, evening: { ar: "المساء", en: "Evening" }, occasion: { ar: "مناسبة", en: "Special occasion" },
+  calm: { ar: "هادئ", en: "Calm" }, confident: { ar: "واثق", en: "Confident" }, bright: { ar: "منتعش", en: "Bright" },
+} as const;
+
+export function ReefPerfumesShowcasePage() {
+  const { copy, isArabic } = useLocale();
+  const { isAuthenticated, loading } = useAuth();
+  const Arrow = isArabic ? ArrowLeft : ArrowRight;
+  const [query, setQuery] = useState("");
+  const [family, setFamily] = useState<(typeof families)[number]>("oud");
+  const [moment, setMoment] = useState<(typeof moments)[number]>("evening");
+  const [mood, setMood] = useState<(typeof moods)[number]>("confident");
+  const [cart, setCart] = useState<string[]>([]);
+  const [notice, setNotice] = useState("");
+  const [aiResult, setAiResult] = useState<{ matchNameAr: string; matchNameEn: string; reasonAr: string; reasonEn: string; notesAr: string; notesEn: string } | null>(null);
+  const scentFinder = trpc.appBuilder.ai.perfumeAdvisor.useMutation({
+    onSuccess: result => setAiResult(result),
+    onError: () => setNotice(copy("تعذر تشغيل مستشار العطور الآن. جرّب مرة أخرى.", "The scent finder could not run right now. Please try again.")),
+  });
+  const visibleProducts = products.filter(product => `${product.nameAr} ${product.nameEn} ${product.notesAr} ${product.notesEn}`.toLowerCase().includes(query.toLowerCase()));
+  const addToCart = (id: string) => { setCart(current => current.includes(id) ? current : [...current, id]); setNotice(copy("أضيف المنتج إلى سلة العرض.", "Product added to the demo cart.")); };
+  const runFinder = () => {
+    if (!isAuthenticated) { setNotice(copy("سجّل الدخول لتشغيل مستشار العطور بالذكاء الاصطناعي. واجهة النموذج تبقى متاحة للاستكشاف.", "Sign in to run the AI scent finder. The showcase interface remains available to explore.")); return; }
+    setNotice("");
+    scentFinder.mutate({ family, moment, mood });
+  };
+  const pick = <T extends keyof typeof labels>(value: T) => labels[value][isArabic ? "ar" : "en"];
+  const activeRecommendation = aiResult ?? { matchNameAr: "دُجى العود", matchNameEn: "Dujā Oud", reasonAr: "توصية توضيحية قبل تشغيل المستشار: طابع عودي دافئ يلائم المساء والحضور الواثق.", reasonEn: "Illustrative recommendation before running the adviser: a warm oud profile for evening confidence.", notesAr: "عود معتّق · زعفران · عنبر", notesEn: "Aged oud · saffron · amber" };
+
+  return <div className="reef-showcase" dir={isArabic ? "rtl" : "ltr"}>
+    <header className="reef-nav"><Link href="/"><BrandMark /></Link><nav><Link href="/templates">{copy("القوالب", "Templates")}</Link><a href="#catalog">{copy("المنتجات", "Products")}</a><a href="#scent-finder">{copy("مستشار العطور", "Scent finder")}</a></nav><div className="reef-nav-actions"><LanguageToggle /><Link href={isAuthenticated ? "/templates" : "/auth"}><Button variant="outline">{isAuthenticated ? copy("ابدأ بالقالب", "Use template") : copy("تسجيل الدخول", "Sign in")}</Button></Link></div></header>
+    <main>
+      <section className="reef-hero"><div className="reef-hero-copy"><p className="reef-eyebrow"><Sparkles />{copy("نموذج استكشافي لقالب المتجر الإلكتروني", "ECOMMERCE TEMPLATE EXPLORATION")}</p><h1>{copy("عطور الريف", "Reef Perfumes")}</h1><p>{copy("متجر عطور توضيحي يُظهر كيف يمكن أن تجمع بين الكتالوج والبحث والسلة والدفع وتتبع الطلبات ومستشار ذكي ضمن قالب واحد قابل للتخصيص.", "An illustrative fragrance store showing how one template can combine a catalog, search, cart, checkout, order tracking, and an intelligent adviser.")}</p><div className="reef-hero-actions"><a href="#catalog"><Button className="reef-primary">{copy("استكشف المنتجات", "Explore products")}<Arrow /></Button></a><a href="#scent-finder" className="reef-secondary"><WandSparkles />{copy("جرّب مستشار العطور", "Try scent finder")}</a></div><div className="reef-capability-row"><span><Search />{copy("بحث", "Search")}</span><span><ShoppingBag />{copy("سلة", "Cart")}</span><span><CreditCard />{copy("دفع", "Payment")}</span><span><Bot />{copy("ذكاء اصطناعي", "AI")}</span></div></div><div className="reef-hero-visual"><div className="reef-orbit reef-orbit-one" /><div className="reef-orbit reef-orbit-two" /><img src={products[0].image} alt="" className="reef-hero-bottle" /><div className="reef-hero-card"><span>{copy("تجربة الشراء", "PURCHASE FLOW")}</span><strong>{copy("اكتشف · أضف · ادفع", "Discover · Add · Pay")}</strong><small>{copy("كلها عناصر قابلة للتحرير", "All editable components")}</small></div></div></section>
+
+      <section className="reef-section reef-build-map"><div className="reef-section-heading"><p className="reef-eyebrow"><Layers3 />{copy("ما الذي يشرحه النموذج؟", "WHAT THIS SHOWCASE EXPLAINS")}</p><h2>{copy("عناصر المتجر تعمل في تجربة واحدة", "Store components working in one experience")}</h2><p>{copy("هذا نموذج تعليمي لمحتوى قابل للتعديل، وليس متجرًا فعليًا أو صفحة بيع حقيقية.", "This is an editable content showcase, not a live store or real sales page.")}</p></div><div className="reef-feature-grid"><article><Boxes /><h3>{copy("الكتالوج والتصنيفات", "Catalog & categories")}</h3><p>{copy("بطاقات منتجات وصور وأسعار وملاحظات عطرية قابلة للتغيير.", "Product cards, images, prices, and fragrance notes you can edit.")}</p></article><article><CirclePlay /><h3>{copy("الوسائط والحركة", "Media & motion")}</h3><p>{copy("صورة رئيسية وحركة مرئية ومكان مخصص لفيديو أو صوت قصة العطر.", "Hero media, visual motion, and space for a video or audio scent story.")}</p></article><article><CreditCard /><h3>{copy("السلة والدفع", "Cart & payment")}</h3><p>{copy("سلة عرض وخطوة دفع وتفاصيل نجاح الطلب يمكن ربطها بمزود الدفع.", "Demo cart, checkout step, and success details ready for a payment provider.")}</p></article><article><Bot /><h3>{copy("اقتراح ذكي", "Smart recommendation")}</h3><p>{copy("مستشار يختار اقتراحًا أصليًا حسب التفضيلات دون ادعاء إثباتات عملاء مصطنعة.", "An adviser that makes an original pick from preferences, without presenting fabricated customer proof.")}</p></article></div><div className="reef-component-list">{["Background", "Card", "Button", "List", "Image", "Video", "Audio", "ImageAnimation", "PaymentPlatform", "Product", "SearchBar"].map(component => <span key={component}><Check />{component}</span>)}</div></section>
+
+      <section id="catalog" className="reef-section reef-catalog"><div className="reef-catalog-toolbar"><div><p className="reef-eyebrow"><PackageCheck />{copy("كتالوج تجريبي", "DEMO CATALOG")}</p><h2>{copy("اختَر العطر الذي يناسب مزاجك", "Choose a scent for your mood")}</h2></div><label className="reef-search"><Search /><input value={query} onChange={event => setQuery(event.target.value)} placeholder={copy("ابحث باسم العطر أو ملاحظاته", "Search a scent or its notes")} /></label><button className="reef-cart-pill" type="button" onClick={() => setNotice(cart.length ? copy(`السلة تحتوي ${cart.length} منتج/منتجات في هذا النموذج.`, `The demo cart contains ${cart.length} item(s).`) : copy("سلة العرض فارغة حاليًا.", "The demo cart is empty."))}><ShoppingBag /><span>{cart.length}</span>{copy("سلة العرض", "Demo cart")}</button></div><div className="reef-product-grid">{visibleProducts.map(product => <article className="reef-product-card" key={product.id}><div className="reef-product-image"><img src={product.image} alt={isArabic ? product.nameAr : product.nameEn} /><span>{pick(product.family)}</span></div><div className="reef-product-copy"><div><h3>{isArabic ? product.nameAr : product.nameEn}</h3><p>{isArabic ? product.notesAr : product.notesEn}</p></div><strong>{product.price} {copy("ريال", "SAR")}</strong></div><button type="button" onClick={() => addToCart(product.id)} disabled={cart.includes(product.id)}>{cart.includes(product.id) ? <><Check />{copy("في السلة", "In cart")}</> : <><ShoppingBag />{copy("أضف للسلة", "Add to cart")}</>}</button></article>)}</div>{!visibleProducts.length && <div className="reef-empty"><Search /><p>{copy("لا توجد منتجات مطابقة للبحث.", "No products match your search.")}</p></div>}</section>
+
+      <section id="scent-finder" className="reef-section reef-ai-section"><div className="reef-ai-copy"><p className="reef-eyebrow"><Bot />{copy("مستشار عطور بالذكاء الاصطناعي", "AI SCENT FINDER")}</p><h2>{copy("حوّل التفضيل إلى اقتراح مفهوم", "Turn preferences into a clear suggestion")}</h2><p>{copy("اختر الطابع والوقت والمزاج. عند تسجيل الدخول، يولّد المستشار اقتراحًا أصليًا ثنائي اللغة من كتالوج النموذج.", "Choose a family, moment, and mood. When signed in, the adviser generates an original bilingual recommendation from the showcase catalog.")}</p><div className="reef-choice-groups"><fieldset><legend>{copy("الطابع", "Family")}</legend><div>{families.map(value => <button type="button" className={family === value ? "active" : ""} onClick={() => setFamily(value)} key={value}>{pick(value)}</button>)}</div></fieldset><fieldset><legend>{copy("الوقت", "Moment")}</legend><div>{moments.map(value => <button type="button" className={moment === value ? "active" : ""} onClick={() => setMoment(value)} key={value}>{pick(value)}</button>)}</div></fieldset><fieldset><legend>{copy("المزاج", "Mood")}</legend><div>{moods.map(value => <button type="button" className={mood === value ? "active" : ""} onClick={() => setMood(value)} key={value}>{pick(value)}</button>)}</div></fieldset></div><Button className="reef-primary" disabled={loading || scentFinder.isPending} onClick={runFinder}>{scentFinder.isPending ? <Sparkles className="reef-spin" /> : <WandSparkles />}{isAuthenticated ? copy("اطلب اقتراحًا ذكيًا", "Get an AI suggestion") : copy("سجّل الدخول لتشغيل المستشار", "Sign in to run the adviser")}</Button></div><aside className="reef-ai-result"><div className="reef-ai-result-head"><span><Bot /></span><p>{copy("اقتراح المستشار", "ADVISER PICK")}</p></div><h3>{isArabic ? activeRecommendation.matchNameAr : activeRecommendation.matchNameEn}</h3><p>{isArabic ? activeRecommendation.reasonAr : activeRecommendation.reasonEn}</p><div><Sparkles /><span>{isArabic ? activeRecommendation.notesAr : activeRecommendation.notesEn}</span></div></aside></section>
+
+      <section className="reef-section reef-checkout"><div className="reef-checkout-copy"><p className="reef-eyebrow"><CreditCard />{copy("الدفع وتتبع الطلب", "CHECKOUT & TRACKING")}</p><h2>{copy("من السلة إلى حالة الطلب", "From cart to order status")}</h2><p>{copy("توضح هذه الخطوة مكان منصة الدفع وتأكيد الطلب وشريط تتبع الشحن داخل القالب. لا تُعالج أي عملية دفع في هذا النموذج.", "This step shows where a payment platform, confirmation, and delivery tracking appear in the template. No payment is processed in this showcase.")}</p><div className="reef-order-steps"><span><Check />{copy("مراجعة السلة", "Review cart")}</span><span><CreditCard />{copy("الدفع الآمن", "Secure payment")}</span><span><PackageCheck />{copy("تأكيد الطلب", "Order confirmed")}</span><span><Truck />{copy("متابعة الشحن", "Track delivery")}</span></div></div><div className="reef-payment-card"><div><span>{copy("إجمالي سلة العرض", "DEMO CART TOTAL")}</span><strong>{cart.length ? `${cart.reduce((total, id) => total + (products.find(product => product.id === id)?.price ?? 0), 0)} ${copy("ريال", "SAR")}` : `0 ${copy("ريال", "SAR")}`}</strong></div><button type="button" onClick={() => setNotice(copy("هذه خطوة توضيحية؛ يمكن ربطها بمنصة الدفع داخل مشروعك الحقيقي.", "This is an illustrative step; you can connect a payment platform in your real project."))}><CreditCard />{copy("الدفع في مشروعك", "Payment in your project")}</button><small><MapPin />{copy("عنوان التسليم وخيارات الشحن قابلة للتخصيص", "Delivery address and shipping options are customizable")}</small></div></section>
+      {notice && <div className="reef-notice" role="status">{notice}</div>}
+    </main>
+    <footer className="reef-footer"><div><BrandMark /><p>{copy("نموذج عطور الريف لتوضيح إمكانات قالب المتجر الإلكتروني.", "Reef Perfumes is an ecommerce-template capability showcase.")}</p></div><div><Headphones /><span>{copy("أضف مقطعًا صوتيًا أو فيديو لقصّة كل عطر من المحرر.", "Add an audio clip or video for every scent story from the editor.")}</span></div></footer>
+  </div>;
+}
