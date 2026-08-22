@@ -1,65 +1,58 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { generatedGameModes, getGameGeneratorPreset } from "../shared/gameGenerator";
+import { getDescribedGameProject } from "../shared/gameGenerator";
 
 const routerSource = readFileSync(new URL("./routers/appBuilder.ts", import.meta.url), "utf8");
 const builderSource = readFileSync(new URL("../client/src/pages/BuilderPages.tsx", import.meta.url), "utf8");
 
-describe("game generator", () => {
-  it("provides eight editable mode blueprints with a complete game scene and core blocks", () => {
-    expect(generatedGameModes).toEqual([
-      "platformer", "endless_runner", "puzzle", "quiz", "memory_cards", "tower_defense", "simple_shooter", "racing",
-    ]);
-    for (const mode of generatedGameModes) {
-      const preset = getGameGeneratorPreset(mode);
-      expect(preset.components).toHaveLength(11);
-      expect(preset.components.map(component => component.componentType)).toEqual(expect.arrayContaining([
-        "GameScene", "Player", "Platform", "Collectible", "Hazard", "FinishGate", "TouchControls", "Physics", "Score", "Level", "Condition",
-      ]));
-      expect(preset.components.every(component => component.properties.gameMode === mode)).toBe(true);
-      expect(preset.rulesAr.length).toBeGreaterThan(8);
-      expect(preset.rulesEn.length).toBeGreaterThan(8);
-    }
+describe("description-led game generator", () => {
+  it("builds an editable five-screen game journey with onboarding, levels, a boss, and completion", () => {
+    const project = getDescribedGameProject({ brief: "لعبة مغامرة في الصحراء تجمع فيها الماء وتتجنب الصخور وتواجه وحشًا أخيرًا." });
+    expect(project.pages.map(page => page.key)).toEqual(["game-start", "game-tutorial", "game-level-one", "game-level-two", "game-victory"]);
+    expect(project.pages.flatMap(page => page.components).map(component => component.componentType)).toEqual(expect.arrayContaining([
+      "GameScene", "Player", "Platform", "Collectible", "Hazard", "FinishGate", "TouchControls", "Physics", "Score", "Level", "Condition", "Button", "Card",
+    ]));
+    const boss = project.pages.find(page => page.key === "game-level-two")?.components.find(component => component.componentType === "Hazard");
+    expect(boss?.properties).toMatchObject({ role: "boss", generatorStyle: "description-led" });
+    const firstLevelCondition = project.pages.find(page => page.key === "game-level-one")?.components.find(component => component.componentType === "Condition");
+    expect(firstLevelCondition?.properties).toMatchObject({ successPageKey: "game-level-two" });
   });
 
-  it("keeps generation owner-protected, game-only, and limited to generated components on the selected page", () => {
+  it("uses owner-selected image, video, and audio as editable media and creates motion-ready hero, enemy, and stage elements", () => {
+    const project = getDescribedGameProject({
+      brief: "مغامرة بحرية", image: { id: 11, url: "/hero.png", filename: "hero.png" }, video: { id: 12, url: "/sea.mp4", filename: "sea.mp4" }, audio: { id: 13, url: "/music.mp3", filename: "music.mp3" },
+    });
+    const firstLevel = project.pages.find(page => page.key === "game-level-one");
+    const player = firstLevel?.components.find(component => component.componentType === "Player");
+    const background = firstLevel?.components.find(component => component.componentType === "Background");
+    const audio = firstLevel?.components.find(component => component.componentType === "Audio");
+    const animations = firstLevel?.components.filter(component => component.componentType === "ImageAnimation") ?? [];
+    expect(player?.properties).toMatchObject({ imageAssetId: 11, imageAssetUrl: "/hero.png", videoAssetId: 12, videoAssetUrl: "/sea.mp4", audioAssetId: 13, audioAssetUrl: "/music.mp3" });
+    expect(background?.properties).toMatchObject({ mediaType: "video", assetId: 12, assetUrl: "/sea.mp4" });
+    expect(audio?.properties).toMatchObject({ assetId: 13, assetUrl: "/music.mp3", autoplay: true, loop: true });
+    expect(animations.map(component => component.properties.target)).toEqual(expect.arrayContaining(["player", "enemy", "stage"]));
+  });
+
+  it("keeps generation owner-protected, game-only, and preserves manual project components while refreshing generated content", () => {
     expect(routerSource).toContain("generateGame: protectedProcedure");
     expect(routerSource).toContain('project.category !== "games"');
     expect(routerSource).toContain("generatedBy === \"game-generator\"");
     expect(routerSource).toContain("getOwnedGameGeneratorAsset");
-    expect(routerSource).toContain("assetId: input.imageAssetId");
-    expect(routerSource).toContain("assetId: input.videoAssetId");
-    expect(routerSource).toContain("assetId: input.audioAssetId");
-    expect(routerSource).toContain("getGameGeneratorPreset(input.mode, { brief: input.brief, image, video, audio })");
-    expect(routerSource).toContain("pageId: input.pageId");
+    expect(routerSource).toContain("getDescribedGameProject({ brief: input.brief, image, video, audio })");
+    expect(routerSource).toContain("sourcePageKey === page.key");
+    expect(routerSource).toContain("targetPageKey");
+    expect(routerSource).toContain("successPageKey");
   });
 
-  it("turns an owner-selected brief, image, video, and audio into editable game media components", () => {
-    const preset = getGameGeneratorPreset("platformer", {
-      brief: "لعبة مغامرة في الصحراء تجمع فيها الماء وتتجنب الصخور.",
-      image: { id: 11, url: "/image.png", filename: "hero.png" },
-      video: { id: 12, url: "/scene.mp4", filename: "desert.mp4" },
-      audio: { id: 13, url: "/music.mp3", filename: "music.mp3" },
-    });
-    const scene = preset.components.find(component => component.componentType === "GameScene");
-    const player = preset.components.find(component => component.componentType === "Player");
-    const background = preset.components.find(component => component.componentType === "Background");
-    const audio = preset.components.find(component => component.componentType === "Audio");
-    expect(preset.components).toHaveLength(13);
-    expect(scene?.properties).toMatchObject({ generatorBrief: "لعبة مغامرة في الصحراء تجمع فيها الماء وتتجنب الصخور.", imageAssetId: 11, videoAssetId: 12, audioAssetId: 13 });
-    expect(player?.properties).toMatchObject({ imageAssetId: 11, imageAssetUrl: "/image.png", videoAssetId: 12, videoAssetUrl: "/scene.mp4", audioAssetId: 13, audioAssetUrl: "/music.mp3" });
-    expect(background?.properties).toMatchObject({ mediaType: "video", assetId: 12, assetUrl: "/scene.mp4" });
-    expect(audio?.properties).toMatchObject({ assetId: 13, assetUrl: "/music.mp3", autoplay: true, loop: true });
-  });
-
-  it("exposes the game-mode picker and generation action only from the game editor", () => {
+  it("shows a description-first complete-game creator without a visible mode picker", () => {
     expect(builderSource).toContain("GameGeneratorPanel");
-    expect(builderSource).toContain("generatedGameModes.map");
+    expect(builderSource).toContain("منشئ لعبة كاملة");
+    expect(builderSource).toContain("إنشاء لعبة كاملة");
     expect(builderSource).toContain("workspace.data.project.category === \"games\"");
     expect(builderSource).toContain("trpc.appBuilder.editor.generateGame.useMutation");
-    expect(builderSource).toContain("فكرة اللعبة وتعليماتها");
     expect(builderSource).toContain("gameGeneratorImageAssetId");
     expect(builderSource).toContain("gameGeneratorVideoAssetId");
     expect(builderSource).toContain("gameGeneratorAudioAssetId");
+    expect(builderSource).not.toContain("generatedGameModes.map");
   });
 });

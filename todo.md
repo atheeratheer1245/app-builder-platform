@@ -151,6 +151,7 @@
 - [ ] Save the confirmed Web OAuth client configuration and allow its redirect-URI change to propagate before repeating the live authorization request.
 - [ ] Verify that Google OAuth always derives the active published origin, preserves a one-time state nonce, and redirects back to the same App Builder domain after sign-in.
 - [x] Repair audio-file upload validation and make owned audio assets selectable from every template editor and playable in its runtime.
+- [x] Replace the visible fixed game-mode picker with a description-led multi-screen game generator that creates editable menus, tutorials, levels, completion flows, enemies, bosses, pickups, and animation-ready visual components from owned project media.
 - [x] Replace the Android WebView shell with a standalone native App Builder experience that mirrors core website flows without embedding the website.
 - [x] Remove WebView and all browser-opening behavior from the Android application; present only native screens and the native Google account chooser when needed.
 - [x] Add the user-provided App Builder icon to the standalone Android app and generate all required Android launcher icon variants.

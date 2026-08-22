@@ -281,3 +281,96 @@ export function getGameGeneratorPreset(mode: GeneratedGameMode, input: GameGener
   if (!input.brief?.trim() && !input.image && !input.video && !input.audio) return base;
   return { ...base, components: baseComponents(mode, tuning[mode], input) };
 }
+
+export type GeneratedGamePage = {
+  key: string;
+  titleAr: string;
+  titleEn: string;
+  route: string;
+  components: GeneratedGameComponent[];
+};
+
+export type DescribedGameProject = {
+  titleAr: string;
+  titleEn: string;
+  summaryAr: string;
+  summaryEn: string;
+  pages: GeneratedGamePage[];
+};
+
+function descriptionTitle(brief: string, language: "ar" | "en") {
+  const cleaned = compactBrief(brief);
+  if (!cleaned) return language === "ar" ? "مغامرة جديدة" : "New adventure";
+  const words = cleaned.split(" ").slice(0, 7).join(" ");
+  return language === "ar" ? `مغامرة: ${words}` : `Adventure: ${words}`;
+}
+
+function copyComponents(components: GeneratedGameComponent[]) {
+  return components.map(component => ({ ...component, properties: JSON.parse(JSON.stringify(component.properties)) as Record<string, unknown> }));
+}
+
+function levelComponents(input: GameGeneratorInput, levelNumber: number, levelTitleAr: string, levelTitleEn: string, nextPageKey: string): GeneratedGameComponent[] {
+  const components = copyComponents(getGameGeneratorPreset("platformer", input).components);
+  const levelTarget = 40 + levelNumber * 20;
+  for (const component of components) {
+    component.properties = {
+      ...component.properties,
+      generatorVersion: 3,
+      generatorStyle: "description-led",
+      generatorBrief: compactBrief(input.brief),
+    };
+    if (component.componentType === "GameScene") component.properties = { ...component.properties, sceneNameAr: levelTitleAr, sceneNameEn: levelTitleEn, gameMode: "custom", preset: "custom" };
+    if (component.componentType === "Level") component.properties = { ...component.properties, levelNumber, targetScore: levelTarget, objective: "complete_story_level" };
+    if (component.componentType === "Score") component.properties = { ...component.properties, pointsPerCollectible: 10 + levelNumber * 5 };
+    if (component.componentType === "Condition") component.properties = { ...component.properties, successPageKey: nextPageKey, targetValue: levelTarget, condition: "reach_goal" };
+    if (component.componentType === "FinishGate") component.properties = { ...component.properties, requiredScore: levelTarget, objective: "complete_level" };
+    if (component.componentType === "Hazard") {
+      component.labelAr = levelNumber === 1 ? "وحش المرحلة" : "زعيم المرحلة";
+      component.labelEn = levelNumber === 1 ? "Level creature" : "Level boss";
+      component.properties = { ...component.properties, role: levelNumber === 1 ? "enemy" : "boss", nameAr: component.labelAr, nameEn: component.labelEn, assetId: input.image?.id ?? null, assetUrl: input.image?.url ?? "", amount: levelNumber + 1 };
+    }
+  }
+  if (input.image) {
+    components.push(
+      { componentType: "ImageAnimation", labelAr: "حركة البطل", labelEn: "Hero animation", properties: { generatedBy: "game-generator", generatorVersion: 3, assetId: input.image.id, assetUrl: input.image.url, target: "player", motionPrompt: "حركة بطل متقدمة ومستمرة", frameCount: 1, fps: 10, x: 12, y: 58, width: 16, height: 20, loop: true, layer: 40 } },
+      { componentType: "ImageAnimation", labelAr: levelNumber === 1 ? "حركة الوحش" : "حركة الزعيم", labelEn: levelNumber === 1 ? "Creature animation" : "Boss animation", properties: { generatedBy: "game-generator", generatorVersion: 3, assetId: input.image.id, assetUrl: input.image.url, target: "enemy", motionPrompt: levelNumber === 1 ? "حركة وحش متربص" : "حركة زعيم قوية", frameCount: 1, fps: 8, x: 66, y: 52, width: 18, height: 22, loop: true, layer: 45 } },
+      { componentType: "ImageAnimation", labelAr: "حركة المرحلة", labelEn: "Stage animation", properties: { generatedBy: "game-generator", generatorVersion: 3, assetId: input.image.id, assetUrl: input.image.url, target: "stage", motionPrompt: "حركة بيئية هادئة للمشهد", frameCount: 1, fps: 6, x: 38, y: 20, width: 26, height: 18, loop: true, layer: 5 } },
+    );
+  }
+  return components;
+}
+
+/** Builds an editable game journey from a natural-language brief; no visible genre picker is required. */
+export function getDescribedGameProject(input: GameGeneratorInput = {}): DescribedGameProject {
+  const titleAr = descriptionTitle(input.brief ?? "", "ar");
+  const titleEn = descriptionTitle(input.brief ?? "", "en");
+  const sharedMedia = multimediaComponents("platformer", input).map(component => ({ ...component, properties: { ...component.properties, generatorVersion: 3, generatorStyle: "description-led" } }));
+  const startComponents: GeneratedGameComponent[] = [
+    ...sharedMedia,
+    { componentType: "Card", labelAr: "قصة اللعبة", labelEn: "Game story", properties: { generatedBy: "game-generator", generatorVersion: 3, titleAr, titleEn, descriptionAr: compactBrief(input.brief) || "ابدأ مغامرتك، واجتز المراحل، وتغلب على الخصوم.", descriptionEn: compactBrief(input.brief) || "Begin your adventure, clear levels, and defeat opponents.", actionPageKey: "game-tutorial" } },
+    { componentType: "Button", labelAr: "ابدأ اللعبة", labelEn: "Start game", properties: { generatedBy: "game-generator", generatorVersion: 3, textAr: "ابدأ اللعبة", textEn: "Start game", targetPageKey: "game-tutorial", variant: "primary" } },
+  ];
+  const tutorialComponents: GeneratedGameComponent[] = [
+    ...sharedMedia,
+    { componentType: "Card", labelAr: "كيفية اللعب", labelEn: "How to play", properties: { generatedBy: "game-generator", generatorVersion: 3, titleAr: "كيف تلعب", titleEn: "How to play", descriptionAr: "تحرك واجمع المكافآت وتجنب الوحوش ثم أكمل هدف المرحلة. جميع العناصر والقواعد قابلة للتحرير.", descriptionEn: "Move, collect rewards, avoid creatures, then complete the level goal. Every rule and element is editable." } },
+    { componentType: "Button", labelAr: "دخول المرحلة الأولى", labelEn: "Enter level one", properties: { generatedBy: "game-generator", generatorVersion: 3, textAr: "دخول المرحلة الأولى", textEn: "Enter level one", targetPageKey: "game-level-one", variant: "primary" } },
+  ];
+  const victoryComponents: GeneratedGameComponent[] = [
+    ...sharedMedia,
+    { componentType: "Card", labelAr: "اكتملت المغامرة", labelEn: "Adventure complete", properties: { generatedBy: "game-generator", generatorVersion: 3, titleAr: "أحسنت! اكتملت المغامرة", titleEn: "Great work! Adventure complete", descriptionAr: "حرر هذه الشاشة لإضافة القصة التالية أو نقاط إضافية أو رابط إعادة اللعب.", descriptionEn: "Edit this screen to add the next story, bonus points, or a replay link." } },
+    { componentType: "Button", labelAr: "أعد اللعب", labelEn: "Play again", properties: { generatedBy: "game-generator", generatorVersion: 3, textAr: "أعد اللعب", textEn: "Play again", targetPageKey: "game-start", variant: "primary" } },
+  ];
+  return {
+    titleAr,
+    titleEn,
+    summaryAr: "لعبة متعددة الشاشات تشمل البداية والتعليم والمرحلتين والإنهاء، مع بطل ووحوش ورسوم حركة قابلة للتحرير.",
+    summaryEn: "A multi-screen game with start, tutorial, two levels, completion, hero, creatures, and editable motion-ready visuals.",
+    pages: [
+      { key: "game-start", titleAr: "بدء اللعبة", titleEn: "Start game", route: "/game-start", components: startComponents },
+      { key: "game-tutorial", titleAr: "كيفية اللعب", titleEn: "How to play", route: "/how-to-play", components: tutorialComponents },
+      { key: "game-level-one", titleAr: "المرحلة الأولى", titleEn: "Level one", route: "/level-one", components: levelComponents(input, 1, "المرحلة الأولى", "Level one", "game-level-two") },
+      { key: "game-level-two", titleAr: "مواجهة الزعيم", titleEn: "Boss encounter", route: "/boss-encounter", components: levelComponents(input, 2, "مواجهة الزعيم", "Boss encounter", "game-victory") },
+      { key: "game-victory", titleAr: "نهاية المغامرة", titleEn: "Adventure complete", route: "/adventure-complete", components: victoryComponents },
+    ],
+  };
+}

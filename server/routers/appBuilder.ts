@@ -13,7 +13,7 @@ import {
 import { templateCategories } from "../../shared/appBuilderCatalog";
 import { getPaidExportPrice } from "../../shared/exportPricing";
 import { builderComponentTypes, gameComponentTypes, gameModes, getAllowedComponentTypes, getDefaultComponentProperties } from "../../shared/componentCatalog";
-import { generatedGameModes, getGameGeneratorPreset } from "../../shared/gameGenerator";
+import { getDescribedGameProject } from "../../shared/gameGenerator";
 import { premiumExampleCatalog } from "../../shared/premiumExamples";
 import { isSupportedProjectAssetMimeType, normalizeProjectAssetMimeType } from "../../shared/projectAssetMime";
 import { getOwnedProject, getProjectWorkspace, getRequiredDb, ensureTemplateCatalog } from "../appBuilderDb";
@@ -56,9 +56,7 @@ const motionPromptInput = z.object({
 const motionPromptResult = z.object({ motionPrompt: z.string().trim().min(3).max(800) });
 const gameGenerationInput = z.object({
   projectId: z.number().int().positive(),
-  pageId: z.number().int().positive(),
-  mode: z.enum(generatedGameModes),
-  brief: z.string().trim().max(1200).default(""),
+  brief: z.string().trim().min(3).max(1200),
   imageAssetId: z.number().int().positive().nullable().default(null),
   videoAssetId: z.number().int().positive().nullable().default(null),
   audioAssetId: z.number().int().positive().nullable().default(null),
@@ -88,7 +86,7 @@ function validateComponentProperties(componentType: string, properties: Record<s
   if (componentType === "Background" && !["image", "video", "audio"].includes(typeof properties.mediaType === "string" ? properties.mediaType : "image")) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Background media type is not supported" });
   }
-  if ((gameComponentTypes as readonly string[]).includes(componentType) && properties.gameMode !== undefined && !(gameModes as readonly string[]).includes(properties.gameMode as string)) {
+  if ((gameComponentTypes as readonly string[]).includes(componentType) && properties.gameMode !== undefined && properties.gameMode !== "custom" && !(gameModes as readonly string[]).includes(properties.gameMode as string)) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Game mode is not supported" });
   }
   if ((gameComponentTypes as readonly string[]).includes(componentType) && properties.layer !== undefined && (!Number.isInteger(properties.layer) || (properties.layer as number) < 0 || (properties.layer as number) > 100)) {
@@ -384,11 +382,8 @@ export const appBuilderRouter = router({
       if (!project) unauthenticatedProject();
       if (project.category !== "games") throw new TRPCError({ code: "BAD_REQUEST", message: "Game generation is available only for game projects" });
       const db = await getRequiredDb();
-      const page = (await db.select({ id: projectPages.id }).from(projectPages).where(and(eq(projectPages.id, input.pageId), eq(projectPages.projectId, input.projectId))).limit(1))[0];
-      if (!page) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a page from this game project" });
-
-      const existing = await db.select({ id: projectComponents.id, componentType: projectComponents.componentType, properties: projectComponents.properties }).from(projectComponents).where(and(eq(projectComponents.projectId, input.projectId), eq(projectComponents.pageId, input.pageId)));
-      const generatedIds = existing.filter(component => (gameComponentTypes as readonly string[]).includes(component.componentType) && (component.properties as Record<string, unknown> | null)?.generatedBy === "game-generator").map(component => component.id);
+      const existing = await db.select({ id: projectComponents.id, componentType: projectComponents.componentType, properties: projectComponents.properties }).from(projectComponents).where(eq(projectComponents.projectId, input.projectId));
+      const generatedIds = existing.filter(component => (component.properties as Record<string, unknown> | null)?.generatedBy === "game-generator").map(component => component.id);
       if (generatedIds.length) await Promise.all(generatedIds.map(id => db.delete(projectComponents).where(and(eq(projectComponents.id, id), eq(projectComponents.projectId, input.projectId)))));
 
       const [image, video, audio] = await Promise.all([
@@ -396,29 +391,41 @@ export const appBuilderRouter = router({
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.videoAssetId, mimePrefix: "video/", label: "video" }),
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.audioAssetId, mimePrefix: "audio/", label: "audio" }),
       ]);
-      const preset = getGameGeneratorPreset(input.mode, { brief: input.brief, image, video, audio });
-      const current = await db.select({ maxOrder: max(projectComponents.sortOrder) }).from(projectComponents).where(eq(projectComponents.pageId, input.pageId));
-      const generatedComponents = await Promise.all(preset.components.map(async (component, index) => {
-        const properties = await normalizeMediaProperties({
-          ownerId: ctx.user.id,
-          projectId: input.projectId,
-          componentType: component.componentType,
-          properties: { ...getDefaultComponentProperties(component.componentType, "games"), ...component.properties, gameMode: input.mode, generatorMode: input.mode, generatedBy: "game-generator" },
-        });
-        validateComponentProperties(component.componentType, properties);
-        await validateDestinationPages(input.projectId, component.componentType, properties);
-        return {
-          projectId: input.projectId,
-          pageId: input.pageId,
-          componentType: component.componentType,
-          labelAr: component.labelAr,
-          labelEn: component.labelEn,
-          properties,
-          sortOrder: (current[0]?.maxOrder ?? -1) + index + 1,
-        };
-      }));
+      const blueprint = getDescribedGameProject({ brief: input.brief, image, video, audio });
+      const projectPagesRows = await db.select({ id: projectPages.id, sourcePageKey: projectPages.sourcePageKey, sortOrder: projectPages.sortOrder }).from(projectPages).where(eq(projectPages.projectId, input.projectId));
+      const pageIds = new Map<string, number>();
+      for (let index = 0; index < blueprint.pages.length; index += 1) {
+        const page = blueprint.pages[index];
+        const existingPage = projectPagesRows.find(row => row.sourcePageKey === page.key);
+        if (existingPage) {
+          await db.update(projectPages).set({ titleAr: page.titleAr, titleEn: page.titleEn, route: page.route, sortOrder: index, configuration: { source: "game-generator", generatorVersion: 3, generatorBrief: input.brief }, updatedAt: new Date() }).where(and(eq(projectPages.id, existingPage.id), eq(projectPages.projectId, input.projectId)));
+          pageIds.set(page.key, existingPage.id);
+        } else {
+          const inserted = await db.insert(projectPages).values({ projectId: input.projectId, sourcePageKey: page.key, titleAr: page.titleAr, titleEn: page.titleEn, route: page.route, sortOrder: index, configuration: { source: "game-generator", generatorVersion: 3, generatorBrief: input.brief } });
+          const pageId = Number(inserted[0]?.insertId ?? 0);
+          if (!pageId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Game page creation failed" });
+          pageIds.set(page.key, pageId);
+        }
+      }
+      const generatedComponents = [] as Array<{ projectId: number; pageId: number; componentType: string; labelAr: string; labelEn: string; properties: Record<string, unknown>; sortOrder: number }>;
+      for (const page of blueprint.pages) {
+        const pageId = pageIds.get(page.key);
+        if (!pageId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Generated game page is unavailable" });
+        const current = await db.select({ maxOrder: max(projectComponents.sortOrder) }).from(projectComponents).where(eq(projectComponents.pageId, pageId));
+        for (let index = 0; index < page.components.length; index += 1) {
+          const component = page.components[index];
+          const rawProperties = JSON.parse(JSON.stringify(component.properties)) as Record<string, unknown>;
+          if (typeof rawProperties.targetPageKey === "string") { rawProperties.targetPageId = pageIds.get(rawProperties.targetPageKey) ?? null; delete rawProperties.targetPageKey; }
+          if (typeof rawProperties.actionPageKey === "string") { rawProperties.actionPageId = pageIds.get(rawProperties.actionPageKey) ?? null; delete rawProperties.actionPageKey; }
+          if (typeof rawProperties.successPageKey === "string") { rawProperties.successPageId = pageIds.get(rawProperties.successPageKey) ?? null; delete rawProperties.successPageKey; }
+          const properties = await normalizeMediaProperties({ ownerId: ctx.user.id, projectId: input.projectId, componentType: component.componentType, properties: { ...getDefaultComponentProperties(component.componentType, "games"), ...rawProperties, generatedBy: "game-generator", generatorVersion: 3 } });
+          validateComponentProperties(component.componentType, properties);
+          await validateDestinationPages(input.projectId, component.componentType, properties);
+          generatedComponents.push({ projectId: input.projectId, pageId, componentType: component.componentType, labelAr: component.labelAr, labelEn: component.labelEn, properties, sortOrder: (current[0]?.maxOrder ?? -1) + index + 1 });
+        }
+      }
       await db.insert(projectComponents).values(generatedComponents);
-      return { pageId: input.pageId, mode: input.mode, componentCount: generatedComponents.length, titleAr: preset.titleAr, titleEn: preset.titleEn, multimedia: { image: Boolean(image), video: Boolean(video), audio: Boolean(audio), brief: Boolean(input.brief.trim()) } };
+      return { pageCount: blueprint.pages.length, componentCount: generatedComponents.length, titleAr: blueprint.titleAr, titleEn: blueprint.titleEn, multimedia: { image: Boolean(image), video: Boolean(video), audio: Boolean(audio), brief: true } };
     }),
     addComponent: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), pageId: z.number().int().positive(), componentType: z.enum(builderComponentTypes), labelAr: z.string().trim().max(160).default(""), labelEn: z.string().trim().max(160).default(""), properties: z.record(z.string(), z.unknown()).default({}) })).mutation(async ({ ctx, input }) => {
       const project = await getOwnedProject(ctx.user.id, input.projectId);
