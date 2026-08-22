@@ -15,6 +15,7 @@ import { getPaidExportPrice } from "../../shared/exportPricing";
 import { builderComponentTypes, gameComponentTypes, gameModes, getAllowedComponentTypes, getDefaultComponentProperties } from "../../shared/componentCatalog";
 import { generatedGameModes, getGameGeneratorPreset } from "../../shared/gameGenerator";
 import { premiumExampleCatalog } from "../../shared/premiumExamples";
+import { isSupportedProjectAssetMimeType, normalizeProjectAssetMimeType } from "../../shared/projectAssetMime";
 import { getOwnedProject, getProjectWorkspace, getRequiredDb, ensureTemplateCatalog } from "../appBuilderDb";
 import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { storagePut } from "../storage";
@@ -547,14 +548,16 @@ export const appBuilderRouter = router({
     }),
     upload: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), filename: z.string().min(1).max(255), mimeType: z.string().min(1).max(120), kind: z.enum(["icon", "image", "font", "document", "other"]), dataBase64: z.string().min(1) })).mutation(async ({ ctx, input }) => {
       if (!await getOwnedProject(ctx.user.id, input.projectId)) unauthenticatedProject();
+      const mimeType = normalizeProjectAssetMimeType(input.filename, input.mimeType);
+      if (!isSupportedProjectAssetMimeType(mimeType)) throw new TRPCError({ code: "BAD_REQUEST", message: "Unsupported asset type. Upload an image, video, audio, PDF, or font file." });
       const bytes = Buffer.from(input.dataBase64, "base64");
-      const supportsExpandedMedia = input.mimeType.startsWith("video/") || input.mimeType.startsWith("audio/") || input.mimeType === "application/pdf";
+      const supportsExpandedMedia = mimeType.startsWith("video/") || mimeType.startsWith("audio/") || mimeType === "application/pdf";
       const byteLimit = supportsExpandedMedia ? 25 * 1024 * 1024 : 5 * 1024 * 1024;
       if (!bytes.length || bytes.length > byteLimit) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: supportsExpandedMedia ? "Audio, video, and PDF assets must be no larger than 25 MB" : "Asset must be no larger than 5 MB" });
       const safeName = input.filename.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const { key, url } = await storagePut(`app-builder/${ctx.user.id}/${input.projectId}/${Date.now()}-${safeName}`, bytes, input.mimeType);
+      const { key, url } = await storagePut(`app-builder/${ctx.user.id}/${input.projectId}/${Date.now()}-${safeName}`, bytes, mimeType);
       const db = await getRequiredDb();
-      const result = await db.insert(projectAssets).values({ projectId: input.projectId, ownerId: ctx.user.id, kind: input.kind, filename: input.filename, storageKey: key, url, mimeType: input.mimeType, sizeBytes: bytes.length });
+      const result = await db.insert(projectAssets).values({ projectId: input.projectId, ownerId: ctx.user.id, kind: input.kind, filename: input.filename, storageKey: key, url, mimeType, sizeBytes: bytes.length });
       return { id: Number(result[0]?.insertId ?? 0), url };
     }),
   }),
