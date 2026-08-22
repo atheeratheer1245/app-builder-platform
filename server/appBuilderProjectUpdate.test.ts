@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => {
   const where = vi.fn(async () => undefined);
   const set = vi.fn(() => ({ where }));
   const update = vi.fn(() => ({ set }));
+  const remove = vi.fn(() => ({ where }));
   const select = vi.fn((fields: Record<string, unknown>) => {
     const hasOnlyPageId = Object.keys(fields).length === 1 && "id" in fields;
     const rows = hasOnlyPageId ? [{ id: 9 }] : [];
@@ -14,9 +15,10 @@ const mocks = vi.hoisted(() => {
   const insert = vi.fn(() => ({ values: insertValues }));
   return {
     getOwnedProject: vi.fn(),
-    getRequiredDb: vi.fn(async () => ({ update, select, insert })),
+    getRequiredDb: vi.fn(async () => ({ update, select, insert, delete: remove })),
     ensureTemplateCatalog: vi.fn(async () => []),
     update,
+    remove,
     set,
     where,
     select,
@@ -90,6 +92,15 @@ describe("protected project update", () => {
 
     await expect(caller.projects.update({ projectId: 99, data: { name: "Blocked update" } })).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("allows the matching owner to remove a project", async () => {
+    mocks.getOwnedProject.mockResolvedValueOnce({ id: 42, ownerId: 7 });
+    const caller = appBuilderRouter.createCaller(createOwnerContext());
+
+    await expect(caller.projects.remove(42)).resolves.toEqual({ success: true });
+    expect(mocks.remove).toHaveBeenCalledOnce();
+    expect(mocks.where).toHaveBeenCalled();
   });
 
   it("stores a cleared app-icon setting only for the matching project owner", async () => {
