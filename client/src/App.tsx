@@ -9,7 +9,7 @@ import SettingsPage from "@/pages/SettingsPage";
 import Home from "@/pages/Home";
 import { LegalPage } from "@/pages/LegalPages";
 import NotFound from "@/pages/NotFound";
-import { GuidePage, PremiumExamplePreviewPage } from "@/pages/PublicPages";
+import { GuidePage } from "@/pages/PublicPages";
 import { DashboardPage, ExportsPage, ProjectsPage, TemplatesPage } from "@/pages/WorkspacePages";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -21,7 +21,6 @@ function Router() {
     <Route path="/guide" component={GuidePage} />
     <Route path="/terms">{() => <LegalPage kind="terms" />}</Route>
     <Route path="/privacy">{() => <LegalPage kind="privacy" />}</Route>
-    <Route path="/examples/:slug" component={PremiumExamplePreviewPage} />
     <Route path="/app" component={DashboardPage} />
     <Route path="/projects" component={ProjectsPage} />
     <Route path="/create" component={CreateProjectPage} />

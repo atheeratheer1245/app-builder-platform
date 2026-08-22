@@ -1,7 +1,6 @@
 import { BrandMark } from "@/components/BrandMark";
 import { ExportPlansPanel } from "@/components/ExportPlansPanel";
 import { LanguageToggle } from "@/components/LanguageToggle";
-import { PremiumExamplesPanel } from "@/components/PremiumExamplesPanel";
 import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
 import { useLocale } from "@/contexts/LocaleContext";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,6 @@ export default function Home() {
         <div className="hero-visual"><div className="visual-grid" /><div className="hero-glow glow-top" /><div className="hero-glow glow-bottom" /><div className="app-orbit orbit-a" /><div className="app-orbit orbit-b" /><div className="hero-logo-disc"><img src={LOGO_URL} alt="App Builder" /></div><div className="floating-panel project-panel"><span className="panel-label">01</span><strong>{copy("مشروعك القادم", "Your next project")}</strong><p>{copy("اختر قالبًا وابدأ التخصيص", "Choose a template and start tailoring")}</p><div className="mini-progress"><i /></div></div><div className="floating-panel export-panel"><div className="export-indicator"><CheckCircle2 /></div><div><strong>APK / AAB / IPA</strong><p>{copy("مسار تصدير واحد", "One export flow")}</p></div></div></div>
       </section>
       <section id="how-it-works" className="feature-section container"><div className="section-heading"><p className="section-kicker">{copy("كل ما تحتاجه", "Everything you need")}</p><h2>{copy("أدوات واضحة لبداية أسرع.", "Clear tools for a faster start.")}</h2></div><div className="feature-grid">{features.map(([Icon, title, description]) => <article className="feature-card" key={String(title)}><div className="feature-icon"><Icon className="h-5 w-5" /></div><h3>{title}</h3><p>{description}</p></article>)}</div></section>
-      <div className="container"><PremiumExamplesPanel isArabic={isArabic} /></div>
       <div className="container"><ExportPlansPanel isArabic={isArabic} /></div>
     </main>
     <footer className="container flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 py-8 text-sm text-slate-500"><span>{copy("استخدم المنصة بمسؤولية واحترم الحقوق والتراخيص.", "Use the platform responsibly and respect rights and licenses.")}</span><div className="flex items-center gap-4 font-semibold text-slate-600"><Link href="/terms">{copy("سياسة الاستخدام", "Terms of Use")}</Link><Link href="/privacy">{copy("سياسة الخصوصية", "Privacy Policy")}</Link></div></footer>
