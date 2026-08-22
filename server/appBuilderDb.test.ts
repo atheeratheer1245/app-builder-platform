@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => {
@@ -22,5 +23,13 @@ describe("project ownership lookup", () => {
     expect(mocks.select).toHaveBeenCalledOnce();
     expect(mocks.where).toHaveBeenCalledOnce();
     expect(mocks.limit).toHaveBeenCalledWith(1);
+  });
+
+  it("synchronizes newly introduced catalog templates instead of stopping when legacy templates exist", () => {
+    const source = readFileSync(new URL("./appBuilderDb.ts", import.meta.url), "utf8");
+
+    expect(source).toContain("const currentSlugs = new Set(current.map(template => template.slug))");
+    expect(source).toContain("const missingTemplates = templateCatalog.filter(template => !currentSlugs.has(template.slug))");
+    expect(source).toContain("if (missingTemplates.length)");
   });
 });

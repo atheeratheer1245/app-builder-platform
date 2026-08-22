@@ -18,16 +18,19 @@ export async function getRequiredDb() {
 
 export async function ensureTemplateCatalog() {
   const db = await getRequiredDb();
-  const current = await db.select({ id: templates.id }).from(templates).limit(1);
-  if (current.length > 0) return db.select().from(templates).where(eq(templates.isActive, 1));
+  const current = await db.select({ slug: templates.slug }).from(templates);
+  const currentSlugs = new Set(current.map(template => template.slug));
+  const missingTemplates = templateCatalog.filter(template => !currentSlugs.has(template.slug));
 
-  await db.insert(templates).values(
-    templateCatalog.map(template => ({
+  if (missingTemplates.length) {
+    await db.insert(templates).values(
+      missingTemplates.map(template => ({
       ...template,
       components: template.components,
       suggestedStructure: template.suggestedStructure,
-    })),
-  );
+      })),
+    );
+  }
   return db.select().from(templates).where(eq(templates.isActive, 1));
 }
 
