@@ -116,7 +116,7 @@ const baseComponents = (mode: GeneratedGameMode, tuning: ModeTuning, input: Game
     },
   },
   ...multimediaComponents(mode, input),
-  { componentType: "Player", labelAr: tuning.playerLabelAr, labelEn: tuning.playerLabelEn, properties: { gameMode: mode, generatedBy: "game-generator", imageAssetId: input.image?.id ?? null, imageAssetUrl: input.image?.url ?? "", videoAssetId: input.video?.id ?? null, videoAssetUrl: input.video?.url ?? "", ...tuning.player } },
+  { componentType: "Player", labelAr: tuning.playerLabelAr, labelEn: tuning.playerLabelEn, properties: { gameMode: mode, generatedBy: "game-generator", imageAssetId: input.image?.id ?? null, imageAssetUrl: input.image?.url ?? "", videoAssetId: input.video?.id ?? null, videoAssetUrl: input.video?.url ?? "", audioAssetId: input.audio?.id ?? null, audioAssetUrl: input.audio?.url ?? "", ...tuning.player } },
   { componentType: "Platform", labelAr: "ساحة اللعب", labelEn: "Play field", properties: { gameMode: mode, generatedBy: "game-generator", ...tuning.board } },
   { componentType: "Collectible", labelAr: "الهدف أو المكافأة", labelEn: "Goal or reward", properties: { gameMode: mode, generatedBy: "game-generator", ...tuning.collectible } },
   { componentType: "Hazard", labelAr: "التحدي أو الخصم", labelEn: "Challenge or opponent", properties: { gameMode: mode, generatedBy: "game-generator", ...tuning.hazard } },

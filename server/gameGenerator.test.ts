@@ -47,7 +47,7 @@ describe("game generator", () => {
     const audio = preset.components.find(component => component.componentType === "Audio");
     expect(preset.components).toHaveLength(13);
     expect(scene?.properties).toMatchObject({ generatorBrief: "لعبة مغامرة في الصحراء تجمع فيها الماء وتتجنب الصخور.", imageAssetId: 11, videoAssetId: 12, audioAssetId: 13 });
-    expect(player?.properties).toMatchObject({ imageAssetId: 11, imageAssetUrl: "/image.png", videoAssetId: 12, videoAssetUrl: "/scene.mp4" });
+    expect(player?.properties).toMatchObject({ imageAssetId: 11, imageAssetUrl: "/image.png", videoAssetId: 12, videoAssetUrl: "/scene.mp4", audioAssetId: 13, audioAssetUrl: "/music.mp3" });
     expect(background?.properties).toMatchObject({ mediaType: "video", assetId: 12, assetUrl: "/scene.mp4" });
     expect(audio?.properties).toMatchObject({ assetId: 13, assetUrl: "/music.mp3", autoplay: true, loop: true });
   });
