@@ -274,3 +274,4 @@
 - [x] Display a bilingual pricing list on the templates page showing every core template's approved SAR price per 10 MB.
 - [x] Calculate paid-export prices proportionally per MB from each template's approved 10-MB price, with matching quote, invoice, and bilingual UI copy.
 - [x] Create a bilingual «عطور الريف / Reef Perfumes» exploration example for the e-commerce template, showing products, categories, search, cart, checkout flow, order tracking, and an AI scent-finder without fabricated ratings or reviews.
+- [x] Create a bilingual «تعلّم الإنجليزية / Learn English» exploration example for the education template, showing level paths, reading, pronunciation, spelling, vocabulary, listening, progress, and adaptive practice without guaranteed learning-outcome claims.

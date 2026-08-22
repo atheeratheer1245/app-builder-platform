@@ -11,6 +11,7 @@ import { LegalPage } from "@/pages/LegalPages";
 import NotFound from "@/pages/NotFound";
 import { GuidePage } from "@/pages/PublicPages";
 import { ReefPerfumesShowcasePage } from "@/pages/ReefPerfumesShowcasePage";
+import { LearnEnglishShowcasePage } from "@/pages/LearnEnglishShowcasePage";
 import { DashboardPage, ExportsPage, ProjectsPage, TemplatesPage } from "@/pages/WorkspacePages";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -21,6 +22,7 @@ function Router() {
     <Route path="/auth" component={Auth} />
     <Route path="/guide" component={GuidePage} />
     <Route path="/showcase/reef-perfumes" component={ReefPerfumesShowcasePage} />
+    <Route path="/showcase/learn-english" component={LearnEnglishShowcasePage} />
     <Route path="/terms">{() => <LegalPage kind="terms" />}</Route>
     <Route path="/privacy">{() => <LegalPage kind="privacy" />}</Route>
     <Route path="/app" component={DashboardPage} />
