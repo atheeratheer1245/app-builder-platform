@@ -13,7 +13,7 @@ describe("Learn English education showcase", () => {
   });
 
   it("demonstrates education-template components and interactive language skills", () => {
-    ["BookOpenCheck", "Mic2", "SpellCheck2", "Volume2", "SpeechSynthesisUtterance", "PaymentPlatform", "A1", "C2", "Background", "ImageAnimation"].forEach(token => expect(showcase).toContain(token));
+    ["BookOpenCheck", "Mic2", "SpellCheck2", "Volume2", "SpeechSynthesisUtterance", "PaymentPlatform", "A1", "C2", "Background", "ImageAnimation", "curriculumTracks", "Grammar & structure", "Writing & spelling", "Conversation & situations", "Review & assessment", "QUICK GRAMMAR CHECK"].forEach(token => expect(showcase).toContain(token));
     expect(showcase).toContain("dictationAnswer");
     expect(showcase).not.toMatch(/guaranteed (?:result|fluency)|testimonial|customer review/iu);
   });
