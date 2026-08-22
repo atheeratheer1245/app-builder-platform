@@ -15,6 +15,7 @@ import { getPaidExportPrice } from "../../shared/exportPricing";
 import { builderComponentTypes, gameComponentTypes, gameModes, getAllowedComponentTypes, getDefaultComponentProperties } from "../../shared/componentCatalog";
 import { getDescribedGameProject } from "../../shared/gameGenerator";
 import { planGameNarrative } from "../gameNarrativePlanner";
+import { generateMissingGameVisuals } from "../gameVisualGenerator";
 import { premiumExampleCatalog } from "../../shared/premiumExamples";
 import { isSupportedProjectAssetMimeType, normalizeProjectAssetMimeType } from "../../shared/projectAssetMime";
 import { getOwnedProject, getProjectWorkspace, getRequiredDb, ensureTemplateCatalog } from "../appBuilderDb";
@@ -63,6 +64,7 @@ const gameGenerationInput = z.object({
   enemyImageAssetId: z.number().int().positive().nullable().default(null),
   bossImageAssetId: z.number().int().positive().nullable().default(null),
   stageImageAssetId: z.number().int().positive().nullable().default(null),
+  autoGenerateImages: z.boolean().default(true),
   videoAssetId: z.number().int().positive().nullable().default(null),
   audioAssetId: z.number().int().positive().nullable().default(null),
 });
@@ -397,7 +399,8 @@ export const appBuilderRouter = router({
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.audioAssetId, mimePrefix: "audio/", label: "audio" }),
       ]);
       const narrative = await planGameNarrative(input.brief);
-      const blueprint = getDescribedGameProject({ brief: input.brief, image, playerImage, enemyImage, bossImage, stageImage, video, audio, narrative });
+      const visuals = await generateMissingGameVisuals({ ownerId: ctx.user.id, projectId: input.projectId, brief: input.brief, narrative, enabled: input.autoGenerateImages, playerImage: playerImage ?? image, enemyImage, bossImage, stageImage });
+      const blueprint = getDescribedGameProject({ brief: input.brief, image: visuals.playerImage ?? image, playerImage: visuals.playerImage, enemyImage: visuals.enemyImage, bossImage: visuals.bossImage, stageImage: visuals.stageImage, video, audio, narrative });
       const existing = await db.select({ id: projectComponents.id, componentType: projectComponents.componentType, properties: projectComponents.properties }).from(projectComponents).where(eq(projectComponents.projectId, input.projectId));
       const generatedIds = existing.filter(component => (component.properties as Record<string, unknown> | null)?.generatedBy === "game-generator").map(component => component.id);
       if (generatedIds.length) await Promise.all(generatedIds.map(id => db.delete(projectComponents).where(and(eq(projectComponents.id, id), eq(projectComponents.projectId, input.projectId)))));
@@ -434,7 +437,7 @@ export const appBuilderRouter = router({
         }
       }
       await db.insert(projectComponents).values(generatedComponents);
-      return { pageCount: blueprint.pages.length, componentCount: generatedComponents.length, titleAr: blueprint.titleAr, titleEn: blueprint.titleEn, multimedia: { image: Boolean(image), video: Boolean(video), audio: Boolean(audio), brief: true } };
+      return { pageCount: blueprint.pages.length, componentCount: generatedComponents.length, titleAr: blueprint.titleAr, titleEn: blueprint.titleEn, generatedImageCount: visuals.generatedImageCount, generatedImageFailureCount: visuals.generatedImageFailureCount, multimedia: { image: Boolean(visuals.playerImage || visuals.enemyImage || visuals.bossImage || visuals.stageImage), video: Boolean(video), audio: Boolean(audio), brief: true } };
     }),
     addComponent: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), pageId: z.number().int().positive(), componentType: z.enum(builderComponentTypes), labelAr: z.string().trim().max(160).default(""), labelEn: z.string().trim().max(160).default(""), properties: z.record(z.string(), z.unknown()).default({}) })).mutation(async ({ ctx, input }) => {
       const project = await getOwnedProject(ctx.user.id, input.projectId);

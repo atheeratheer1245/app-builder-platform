@@ -156,6 +156,7 @@
 - [x] Route generated custom game scenes through the playable platform runtime instead of falling back to the puzzle runtime.
 - [x] Repair the game-generator request path and report actionable errors without discarding the user’s brief or manually added components.
 - [x] Let game creators select owned gallery images separately for the player, enemy, boss, and stage, then create editable motion-ready image-animation components for each chosen visual.
+- [x] Generate original project-owned player, enemy, boss, and stage images from the game description when the creator does not select gallery images, then attach them as editable game-animation assets.
 - [x] Replace the Android WebView shell with a standalone native App Builder experience that mirrors core website flows without embedding the website.
 - [x] Remove WebView and all browser-opening behavior from the Android application; present only native screens and the native Google account chooser when needed.
 - [x] Add the user-provided App Builder icon to the standalone Android app and generate all required Android launcher icon variants.

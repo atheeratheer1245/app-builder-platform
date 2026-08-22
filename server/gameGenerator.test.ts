@@ -75,7 +75,9 @@ describe("description-led game generator", () => {
     expect(routerSource).toContain("generatedBy === \"game-generator\"");
     expect(routerSource).toContain("getOwnedGameGeneratorAsset");
     expect(routerSource).toContain("planGameNarrative(input.brief)");
-    expect(routerSource).toContain("getDescribedGameProject({ brief: input.brief, image, playerImage, enemyImage, bossImage, stageImage, video, audio, narrative })");
+    expect(routerSource).toContain("generateMissingGameVisuals");
+    expect(routerSource).toContain("image: visuals.playerImage ?? image");
+    expect(routerSource).toContain("generatedImageCount: visuals.generatedImageCount");
     expect(routerSource).toContain("sourcePageKey === page.key");
     expect(routerSource).toContain("targetPageKey");
     expect(routerSource).toContain("successPageKey");
@@ -91,6 +93,8 @@ describe("description-led game generator", () => {
     expect(builderSource).toContain("gameGeneratorEnemyImageAssetId");
     expect(builderSource).toContain("gameGeneratorBossImageAssetId");
     expect(builderSource).toContain("gameGeneratorStageImageAssetId");
+    expect(builderSource).toContain("gameGeneratorAutoGenerateImages");
+    expect(builderSource).toContain("Generate missing images automatically");
     expect(builderSource).toContain("Direct image motion");
     expect(builderSource).toContain("In-game image motion");
     expect(builderSource).toContain("gameGeneratorVideoAssetId");
