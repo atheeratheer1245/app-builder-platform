@@ -156,11 +156,11 @@
 - [x] Add practical bilingual language switching and Arabic RTL/English LTR layouts across the standalone Android experience.
 - [ ] Validate the standalone Android experience visually on device or emulator and rebuild a polished signed APK.
 - [ ] Refine the standalone Android visual hierarchy and add a polished, interactive preview screen for every template before project creation.
-- [ ] Add a native export-files center that shows APK, AAB, and IPA availability, build status, and download actions only when a real artifact is available.
-- [ ] Add the approved per-10-MB paid export pricing to the Android app, including template category, file size, format, free path, and paid path presentation.
-- [ ] Integrate Moyasar checkout and server-side payment verification for paid exports only, preserving no-charge free exports and unlocking a file only after a verified payment plus a real build artifact.
-- [ ] Implement Android paid-export checkout through a server-created Moyasar invoice opened only in the device’s external browser, then verify payment status after the user returns to the native app.
-- [ ] Show a native paid-export quote, pending-payment status, verified state, and download action only when the export has a real artifact URL.
+- [x] Add a native export-files center that shows APK, AAB, and IPA availability, build status, and download actions only when a real artifact is available.
+- [x] Add the approved per-10-MB paid export pricing to the Android app, including template category, file size, format, free path, and paid path presentation.
+- [x] Integrate Moyasar checkout and server-side payment verification for paid exports only, preserving no-charge free exports and unlocking a file only after a verified payment plus a real build artifact.
+- [x] Implement Android paid-export checkout through a server-created Moyasar invoice opened only in the device’s external browser, then verify payment status after the user returns to the native app.
+- [x] Show a native paid-export quote, pending-payment status, verified state, and download action only when the export has a real artifact URL.
 - [ ] Receive and validate the owner-provided `pk_live_...` and `sk_live_...` Moyasar keys through secure fields before switching any paid-export flow from test to live mode.
 - [ ] Restore `pk_test_...` and `sk_test_...` credentials for the current integration and show a clear test-mode state; keep live checkout disabled until account activation succeeds.
 - [ ] Deliver the current published website URL and the latest standalone Android APK download after verified test-mode build and checks.

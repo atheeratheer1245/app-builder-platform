@@ -45,6 +45,18 @@ describe("standalone Android App Builder", () => {
     expect(activity).toContain("artifactUrl.isNotBlank()");
   });
 
+  it("offers all Android and Apple export formats with a free path, a server quote, hosted payment, and a ready-only download", () => {
+    expect(activity).toContain('listOf("APK", "AAB", "IPA")');
+    expect(activity).toContain("Request free $format export");
+    expect(activity).toContain("View quote & paid $format export");
+    expect(activity).toContain('quote.optInt("sizeUnits")');
+    expect(activity).toContain("10 MB units");
+    expect(activity).toContain("Continue to Moyasar invoice");
+    expect(activity).toContain("Payment awaiting verification");
+    expect(activity).toContain("Payment is verified and a real file is ready to download.");
+    expect(activity).toContain("available\", false");
+  });
+
   it("supports a production signing configuration from protected environment values", () => {
     const gradle = readFileSync(resolve(process.cwd(), "android-companion/app/build.gradle.kts"), "utf8");
     const codemagic = readFileSync(resolve(process.cwd(), "codemagic.yaml"), "utf8");
