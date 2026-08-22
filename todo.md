@@ -254,3 +254,4 @@
 - [x] Replace ready-artifact storage paths returned to clients with owner-authorized short-lived download URLs.
 - [x] Add a native Android export-files center that fetches each owned export job’s current status and offers its authorized APK or AAB download only when ready.
 - [x] Create an owner-approved Android release keystore outside version control, configure release signing without storing credentials in code, and record its SHA-1/SHA-256 fingerprints.
+- [x] Extend the eight-mode game generator with an editable text brief and owner-validated project image, video, and audio selections that become playable game assets.

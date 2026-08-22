@@ -57,6 +57,10 @@ const gameGenerationInput = z.object({
   projectId: z.number().int().positive(),
   pageId: z.number().int().positive(),
   mode: z.enum(generatedGameModes),
+  brief: z.string().trim().max(1200).default(""),
+  imageAssetId: z.number().int().positive().nullable().default(null),
+  videoAssetId: z.number().int().positive().nullable().default(null),
+  audioAssetId: z.number().int().positive().nullable().default(null),
 });
 const pageBackgroundSchema = z.object({
   type: z.enum(["none", "color", "image", "video", "audio"]).default("none"),
@@ -184,6 +188,18 @@ async function normalizePageConfiguration(input: { ownerId: number; projectId: n
   const asset = (await db.select({ id: projectAssets.id, url: projectAssets.url, mimeType: projectAssets.mimeType }).from(projectAssets).where(and(eq(projectAssets.id, background.assetId), eq(projectAssets.projectId, input.projectId), eq(projectAssets.ownerId, input.ownerId))).limit(1))[0];
   if (!asset || !asset.mimeType.startsWith(expectedPrefix)) throw new TRPCError({ code: "BAD_REQUEST", message: "Selected asset does not match the page background type" });
   return { background: { type: background.type, color: background.color, assetId: asset.id, assetUrl: asset.url } };
+}
+
+async function getOwnedGameGeneratorAsset(input: { ownerId: number; projectId: number; assetId: number | null; mimePrefix: string; label: string }) {
+  if (!input.assetId) return null;
+  const db = await getRequiredDb();
+  const asset = (await db.select({ id: projectAssets.id, url: projectAssets.url, filename: projectAssets.filename, mimeType: projectAssets.mimeType }).from(projectAssets).where(and(
+    eq(projectAssets.id, input.assetId), eq(projectAssets.projectId, input.projectId), eq(projectAssets.ownerId, input.ownerId),
+  )).limit(1))[0];
+  if (!asset || !asset.mimeType.startsWith(input.mimePrefix)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: `Select an owned ${input.label} asset from this project gallery` });
+  }
+  return { id: asset.id, url: asset.url, filename: asset.filename };
 }
 
 export const appBuilderRouter = router({
@@ -374,7 +390,12 @@ export const appBuilderRouter = router({
       const generatedIds = existing.filter(component => (gameComponentTypes as readonly string[]).includes(component.componentType) && (component.properties as Record<string, unknown> | null)?.generatedBy === "game-generator").map(component => component.id);
       if (generatedIds.length) await Promise.all(generatedIds.map(id => db.delete(projectComponents).where(and(eq(projectComponents.id, id), eq(projectComponents.projectId, input.projectId)))));
 
-      const preset = getGameGeneratorPreset(input.mode);
+      const [image, video, audio] = await Promise.all([
+        getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.imageAssetId, mimePrefix: "image/", label: "image" }),
+        getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.videoAssetId, mimePrefix: "video/", label: "video" }),
+        getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.audioAssetId, mimePrefix: "audio/", label: "audio" }),
+      ]);
+      const preset = getGameGeneratorPreset(input.mode, { brief: input.brief, image, video, audio });
       const current = await db.select({ maxOrder: max(projectComponents.sortOrder) }).from(projectComponents).where(eq(projectComponents.pageId, input.pageId));
       const generatedComponents = await Promise.all(preset.components.map(async (component, index) => {
         const properties = await normalizeMediaProperties({
@@ -396,7 +417,7 @@ export const appBuilderRouter = router({
         };
       }));
       await db.insert(projectComponents).values(generatedComponents);
-      return { pageId: input.pageId, mode: input.mode, componentCount: generatedComponents.length, titleAr: preset.titleAr, titleEn: preset.titleEn };
+      return { pageId: input.pageId, mode: input.mode, componentCount: generatedComponents.length, titleAr: preset.titleAr, titleEn: preset.titleEn, multimedia: { image: Boolean(image), video: Boolean(video), audio: Boolean(audio), brief: Boolean(input.brief.trim()) } };
     }),
     addComponent: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), pageId: z.number().int().positive(), componentType: z.enum(builderComponentTypes), labelAr: z.string().trim().max(160).default(""), labelEn: z.string().trim().max(160).default(""), properties: z.record(z.string(), z.unknown()).default({}) })).mutation(async ({ ctx, input }) => {
       const project = await getOwnedProject(ctx.user.id, input.projectId);

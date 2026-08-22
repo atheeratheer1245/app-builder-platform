@@ -20,6 +20,19 @@ export type GeneratedGameComponent = {
   properties: Record<string, unknown>;
 };
 
+export type GameGeneratorAsset = {
+  id: number;
+  url: string;
+  filename: string;
+};
+
+export type GameGeneratorInput = {
+  brief?: string;
+  image?: GameGeneratorAsset | null;
+  video?: GameGeneratorAsset | null;
+  audio?: GameGeneratorAsset | null;
+};
+
 export type GameGeneratorPreset = {
   mode: GeneratedGameMode;
   titleAr: string;
@@ -52,7 +65,37 @@ type ModeTuning = {
   condition: Record<string, unknown>;
 };
 
-const baseComponents = (mode: GeneratedGameMode, tuning: ModeTuning): GeneratedGameComponent[] => [
+function compactBrief(value: string | undefined) {
+  return value?.trim().replace(/\s+/g, " ").slice(0, 1200) ?? "";
+}
+
+function multimediaComponents(mode: GeneratedGameMode, input: GameGeneratorInput): GeneratedGameComponent[] {
+  const brief = compactBrief(input.brief);
+  const background = input.video
+    ? { mediaType: "video", assetId: input.video.id, assetUrl: input.video.url, sourceFilename: input.video.filename }
+    : input.image
+      ? { mediaType: "image", assetId: input.image.id, assetUrl: input.image.url, sourceFilename: input.image.filename }
+      : input.audio
+        ? { mediaType: "audio", assetId: input.audio.id, assetUrl: input.audio.url, sourceFilename: input.audio.filename }
+        : null;
+  const components: GeneratedGameComponent[] = [];
+  if (background) components.push({ componentType: "Background", labelAr: "خلفية اللعبة", labelEn: "Game background", properties: { gameMode: mode, generatedBy: "game-generator", generatorBrief: brief, layer: 0, overlayOpacity: 0.38, ...background } });
+  if (input.audio) components.push({ componentType: "Audio", labelAr: "صوت اللعبة", labelEn: "Game audio", properties: { gameMode: mode, generatedBy: "game-generator", assetId: input.audio.id, assetUrl: input.audio.url, captionAr: "الموسيقى أو المؤثرات التي أضفتها للعبة", captionEn: "Music or sound effects added to this game", autoplay: true, loop: true, layer: 95 } });
+  return components;
+}
+
+const baseComponents = (mode: GeneratedGameMode, tuning: ModeTuning, input: GameGeneratorInput = {}): GeneratedGameComponent[] => {
+  const brief = compactBrief(input.brief);
+  const media = {
+    generatorBrief: brief,
+    imageAssetId: input.image?.id ?? null,
+    imageAssetUrl: input.image?.url ?? "",
+    videoAssetId: input.video?.id ?? null,
+    videoAssetUrl: input.video?.url ?? "",
+    audioAssetId: input.audio?.id ?? null,
+    audioAssetUrl: input.audio?.url ?? "",
+  };
+  return [
   {
     componentType: "GameScene",
     labelAr: tuning.titleAr,
@@ -60,7 +103,7 @@ const baseComponents = (mode: GeneratedGameMode, tuning: ModeTuning): GeneratedG
     properties: {
       gameMode: mode,
       preset: mode,
-      generatorVersion: 1,
+      generatorVersion: 2,
       generatedBy: "game-generator",
       sceneNameAr: tuning.titleAr,
       sceneNameEn: tuning.titleEn,
@@ -68,10 +111,12 @@ const baseComponents = (mode: GeneratedGameMode, tuning: ModeTuning): GeneratedG
       generatorSummaryEn: tuning.summaryEn,
       rulesAr: tuning.rulesAr,
       rulesEn: tuning.rulesEn,
+      ...media,
       ...tuning.board,
     },
   },
-  { componentType: "Player", labelAr: tuning.playerLabelAr, labelEn: tuning.playerLabelEn, properties: { gameMode: mode, generatedBy: "game-generator", ...tuning.player } },
+  ...multimediaComponents(mode, input),
+  { componentType: "Player", labelAr: tuning.playerLabelAr, labelEn: tuning.playerLabelEn, properties: { gameMode: mode, generatedBy: "game-generator", imageAssetId: input.image?.id ?? null, imageAssetUrl: input.image?.url ?? "", videoAssetId: input.video?.id ?? null, videoAssetUrl: input.video?.url ?? "", ...tuning.player } },
   { componentType: "Platform", labelAr: "ساحة اللعب", labelEn: "Play field", properties: { gameMode: mode, generatedBy: "game-generator", ...tuning.board } },
   { componentType: "Collectible", labelAr: "الهدف أو المكافأة", labelEn: "Goal or reward", properties: { gameMode: mode, generatedBy: "game-generator", ...tuning.collectible } },
   { componentType: "Hazard", labelAr: "التحدي أو الخصم", labelEn: "Challenge or opponent", properties: { gameMode: mode, generatedBy: "game-generator", ...tuning.hazard } },
@@ -82,6 +127,7 @@ const baseComponents = (mode: GeneratedGameMode, tuning: ModeTuning): GeneratedG
   { componentType: "Level", labelAr: "المستوى الأول", labelEn: "Level one", properties: { gameMode: mode, generatedBy: "game-generator", ...tuning.level } },
   { componentType: "Condition", labelAr: "فوز أو خسارة", labelEn: "Win or lose", properties: { gameMode: mode, generatedBy: "game-generator", ...tuning.condition } },
 ];
+};
 
 const tuning: Record<GeneratedGameMode, ModeTuning> = {
   platformer: {
@@ -230,6 +276,8 @@ export const gameGeneratorPresets: Record<GeneratedGameMode, GameGeneratorPreset
   }),
 ) as Record<GeneratedGameMode, GameGeneratorPreset>;
 
-export function getGameGeneratorPreset(mode: GeneratedGameMode) {
-  return gameGeneratorPresets[mode];
+export function getGameGeneratorPreset(mode: GeneratedGameMode, input: GameGeneratorInput = {}) {
+  const base = gameGeneratorPresets[mode];
+  if (!input.brief?.trim() && !input.image && !input.video && !input.audio) return base;
+  return { ...base, components: baseComponents(mode, tuning[mode], input) };
 }
