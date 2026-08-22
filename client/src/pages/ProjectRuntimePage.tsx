@@ -164,6 +164,8 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
       const frameCount = bounded(Math.round(numberValue(animation, "frameCount", 1)), 1, 32);
       const frame = animationTick % frameCount;
       const targetPlayer = text(animation, "target", "player") === "player";
+      const motionStyle = text(animation, "motionStyle", "bob");
+      const motionTransform = motionStyle === "pulse" ? `scale(${animationTick % 2 === 0 ? 1.04 : 0.96})` : motionStyle === "shake" ? `translateX(${animationTick % 2 === 0 ? -3 : 3}px)` : motionStyle === "drift" ? `translate(${animationTick % 2 === 0 ? -3 : 3}px, ${animationTick % 2 === 0 ? -2 : 2}px)` : `translateY(${animationTick % 2 === 0 ? -3 : 3}px)`;
       const videoUrl = text(animation, "videoAssetUrl");
       if (videoUrl) {
         const video = document.createElement("video");
@@ -180,6 +182,8 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
         video.style.height = targetPlayer ? "3.5rem" : `${bounded(numberValue(animation, "height", 18), 2, 100)}%`;
         video.style.objectFit = "cover";
         video.style.borderRadius = "0.5rem";
+        video.style.transform = motionTransform;
+        video.style.transition = "transform 120ms linear";
         video.style.zIndex = String(bounded(Math.round(numberValue(animation, "layer", 40 + index)), 0, 100));
         layer.appendChild(video);
         return;
@@ -196,7 +200,7 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
       sprite.style.backgroundSize = `${frameCount * 100}% 100%`;
       sprite.style.backgroundPosition = `${frameCount === 1 ? 0 : (frame / (frameCount - 1)) * 100}% 50%`;
       sprite.style.filter = "drop-shadow(0 4px 4px rgb(15 23 42 / 0.24))";
-      sprite.style.transform = `translateY(${animationTick % 2 === 0 ? -3 : 3}px)`;
+      sprite.style.transform = motionTransform;
       sprite.style.transition = "transform 120ms linear";
       sprite.style.zIndex = String(bounded(Math.round(numberValue(animation, "layer", 40 + index)), 0, 100));
       layer.appendChild(sprite);

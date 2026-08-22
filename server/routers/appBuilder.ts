@@ -59,6 +59,10 @@ const gameGenerationInput = z.object({
   projectId: z.number().int().positive(),
   brief: z.string().trim().min(3).max(1200),
   imageAssetId: z.number().int().positive().nullable().default(null),
+  playerImageAssetId: z.number().int().positive().nullable().default(null),
+  enemyImageAssetId: z.number().int().positive().nullable().default(null),
+  bossImageAssetId: z.number().int().positive().nullable().default(null),
+  stageImageAssetId: z.number().int().positive().nullable().default(null),
   videoAssetId: z.number().int().positive().nullable().default(null),
   audioAssetId: z.number().int().positive().nullable().default(null),
 });
@@ -383,17 +387,20 @@ export const appBuilderRouter = router({
       if (!project) unauthenticatedProject();
       if (project.category !== "games") throw new TRPCError({ code: "BAD_REQUEST", message: "Game generation is available only for game projects" });
       const db = await getRequiredDb();
-      const existing = await db.select({ id: projectComponents.id, componentType: projectComponents.componentType, properties: projectComponents.properties }).from(projectComponents).where(eq(projectComponents.projectId, input.projectId));
-      const generatedIds = existing.filter(component => (component.properties as Record<string, unknown> | null)?.generatedBy === "game-generator").map(component => component.id);
-      if (generatedIds.length) await Promise.all(generatedIds.map(id => db.delete(projectComponents).where(and(eq(projectComponents.id, id), eq(projectComponents.projectId, input.projectId)))));
-
-      const [image, video, audio] = await Promise.all([
+      const [image, playerImage, enemyImage, bossImage, stageImage, video, audio] = await Promise.all([
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.imageAssetId, mimePrefix: "image/", label: "image" }),
+        getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.playerImageAssetId, mimePrefix: "image/", label: "player image" }),
+        getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.enemyImageAssetId, mimePrefix: "image/", label: "enemy image" }),
+        getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.bossImageAssetId, mimePrefix: "image/", label: "boss image" }),
+        getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.stageImageAssetId, mimePrefix: "image/", label: "stage image" }),
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.videoAssetId, mimePrefix: "video/", label: "video" }),
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.audioAssetId, mimePrefix: "audio/", label: "audio" }),
       ]);
       const narrative = await planGameNarrative(input.brief);
-      const blueprint = getDescribedGameProject({ brief: input.brief, image, video, audio, narrative });
+      const blueprint = getDescribedGameProject({ brief: input.brief, image, playerImage, enemyImage, bossImage, stageImage, video, audio, narrative });
+      const existing = await db.select({ id: projectComponents.id, componentType: projectComponents.componentType, properties: projectComponents.properties }).from(projectComponents).where(eq(projectComponents.projectId, input.projectId));
+      const generatedIds = existing.filter(component => (component.properties as Record<string, unknown> | null)?.generatedBy === "game-generator").map(component => component.id);
+      if (generatedIds.length) await Promise.all(generatedIds.map(id => db.delete(projectComponents).where(and(eq(projectComponents.id, id), eq(projectComponents.projectId, input.projectId)))));
       const projectPagesRows = await db.select({ id: projectPages.id, sourcePageKey: projectPages.sourcePageKey, sortOrder: projectPages.sortOrder }).from(projectPages).where(eq(projectPages.projectId, input.projectId));
       const pageIds = new Map<string, number>();
       for (let index = 0; index < blueprint.pages.length; index += 1) {

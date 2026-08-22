@@ -33,6 +33,23 @@ describe("description-led game generator", () => {
     expect(animations.map(component => component.properties.target)).toEqual(expect.arrayContaining(["player", "enemy", "stage"]));
   });
 
+  it("assigns separate owned gallery images to the player, enemy, boss, and animated stage", () => {
+    const project = getDescribedGameProject({
+      brief: "مغامرة في مدينة سحرية",
+      playerImage: { id: 21, url: "/player.png", filename: "player.png" },
+      enemyImage: { id: 22, url: "/enemy.png", filename: "enemy.png" },
+      bossImage: { id: 23, url: "/boss.png", filename: "boss.png" },
+      stageImage: { id: 24, url: "/stage.png", filename: "stage.png" },
+    });
+    const firstLevel = project.pages.find(page => page.key === "game-level-one");
+    const bossLevel = project.pages.find(page => page.key === "game-level-two");
+    expect(firstLevel?.components.find(component => component.componentType === "Player")?.properties).toMatchObject({ imageAssetId: 21, imageAssetUrl: "/player.png" });
+    expect(firstLevel?.components.find(component => component.componentType === "Hazard")?.properties).toMatchObject({ assetId: 22, assetUrl: "/enemy.png", role: "enemy" });
+    expect(bossLevel?.components.find(component => component.componentType === "Hazard")?.properties).toMatchObject({ assetId: 23, assetUrl: "/boss.png", role: "boss" });
+    const stageAnimation = bossLevel?.components.find(component => component.componentType === "ImageAnimation" && component.properties.target === "stage");
+    expect(stageAnimation?.properties).toMatchObject({ assetId: 24, assetUrl: "/stage.png", motionStyle: "drift" });
+  });
+
   it("applies a narrative plan to the editable game title, levels, hero, enemy, and boss", () => {
     const project = getDescribedGameProject({
       brief: "مغامرة جبلية",
@@ -58,7 +75,7 @@ describe("description-led game generator", () => {
     expect(routerSource).toContain("generatedBy === \"game-generator\"");
     expect(routerSource).toContain("getOwnedGameGeneratorAsset");
     expect(routerSource).toContain("planGameNarrative(input.brief)");
-    expect(routerSource).toContain("getDescribedGameProject({ brief: input.brief, image, video, audio, narrative })");
+    expect(routerSource).toContain("getDescribedGameProject({ brief: input.brief, image, playerImage, enemyImage, bossImage, stageImage, video, audio, narrative })");
     expect(routerSource).toContain("sourcePageKey === page.key");
     expect(routerSource).toContain("targetPageKey");
     expect(routerSource).toContain("successPageKey");
@@ -70,7 +87,12 @@ describe("description-led game generator", () => {
     expect(builderSource).toContain("إنشاء لعبة كاملة");
     expect(builderSource).toContain("workspace.data.project.category === \"games\"");
     expect(builderSource).toContain("trpc.appBuilder.editor.generateGame.useMutation");
-    expect(builderSource).toContain("gameGeneratorImageAssetId");
+    expect(builderSource).toContain("gameGeneratorPlayerImageAssetId");
+    expect(builderSource).toContain("gameGeneratorEnemyImageAssetId");
+    expect(builderSource).toContain("gameGeneratorBossImageAssetId");
+    expect(builderSource).toContain("gameGeneratorStageImageAssetId");
+    expect(builderSource).toContain("Direct image motion");
+    expect(builderSource).toContain("In-game image motion");
     expect(builderSource).toContain("gameGeneratorVideoAssetId");
     expect(builderSource).toContain("gameGeneratorAudioAssetId");
     expect(builderSource).not.toContain("generatedGameModes.map");
