@@ -271,3 +271,4 @@
 - [x] Create an owner-approved Android release keystore outside version control, configure release signing without storing credentials in code, and record its SHA-1/SHA-256 fingerprints.
 - [x] Extend the eight-mode game generator with an editable text brief and owner-validated project image, video, and audio selections that become playable game assets.
 - [x] Ensure the generated game-audio asset plays inside the dedicated runtime for all eight game modes when a video or image is used as the scene background.
+- [x] Display a bilingual pricing list on the templates page showing every core template's approved SAR price per 10 MB.
