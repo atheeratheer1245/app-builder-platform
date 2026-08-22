@@ -10,6 +10,7 @@ import { Link, useRoute } from "wouter";
 
 function asRecord(value: unknown): Record<string, unknown> { return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 function text(properties: Record<string, unknown>, key: string, fallback = "") { const value = properties[key]; return typeof value === "string" && value.trim() ? value : fallback; }
+function textList(properties: Record<string, unknown>, key: string) { return Array.isArray(properties[key]) ? properties[key].filter((value): value is string => typeof value === "string" && Boolean(value.trim())) : []; }
 function items(properties: Record<string, unknown>) { return Array.isArray(properties.items) ? properties.items.map(asRecord) : []; }
 function numberValue(properties: Record<string, unknown>, key: string, fallback: number) { const value = properties[key]; return typeof value === "number" && Number.isFinite(value) ? value : fallback; }
 function bounded(value: number, min: number, max: number) { return Math.min(max, Math.max(min, value)); }
@@ -37,6 +38,8 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
   const animations = useMemo(() => components.filter(component => component.componentType === "ImageAnimation").map(component => asRecord(component.properties)), [components]);
   const maxAnimationFps = Math.max(1, ...animations.map(animation => bounded(Math.round(numberValue(animation, "fps", 8)), 1, 30)));
   const [animationTick, setAnimationTick] = useState(0);
+  const backgroundUrls = textList(backgroundSettings, "backgroundAssetUrls");
+  const activeBackgroundUrl = backgroundUrls.length ? backgroundUrls[Math.floor(animationTick / Math.max(1, maxAnimationFps * 3)) % backgroundUrls.length] : backgroundUrl;
   const duration = Math.max(10, numberValue(scene, "durationSeconds", 90));
   const showHud = scene.showHud !== false;
   const musicEnabled = scene.musicEnabled !== false;
@@ -88,14 +91,14 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
     backgroundLayer.style.inset = "0";
     backgroundLayer.style.zIndex = "0";
     backgroundLayer.style.pointerEvents = "none";
-    if (backgroundType === "image" && backgroundUrl) {
-      backgroundLayer.style.backgroundImage = `linear-gradient(rgb(255 255 255 / ${backgroundOverlay}), rgb(255 255 255 / ${backgroundOverlay})), url(${backgroundUrl})`;
+    if (backgroundType === "image" && activeBackgroundUrl) {
+      backgroundLayer.style.backgroundImage = `linear-gradient(rgb(255 255 255 / ${backgroundOverlay}), rgb(255 255 255 / ${backgroundOverlay})), url(${activeBackgroundUrl})`;
       backgroundLayer.style.backgroundSize = "cover";
       backgroundLayer.style.backgroundPosition = "center";
     }
-    if (backgroundType === "video" && backgroundUrl) {
+    if (backgroundType === "video" && activeBackgroundUrl) {
       const video = document.createElement("video");
-      video.src = backgroundUrl;
+      video.src = activeBackgroundUrl;
       video.autoplay = true;
       video.muted = true;
       video.loop = true;
@@ -106,9 +109,9 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
       backgroundLayer.appendChild(video);
       backgroundLayer.style.background = `rgb(255 255 255 / ${backgroundOverlay})`;
     }
-    if (backgroundType === "audio" && backgroundUrl && musicEnabled) {
+    if (backgroundType === "audio" && activeBackgroundUrl && musicEnabled) {
       const audio = document.createElement("audio");
-      audio.src = backgroundUrl;
+      audio.src = activeBackgroundUrl;
       audio.autoplay = true;
       audio.loop = true;
       audio.style.display = "none";
@@ -151,7 +154,7 @@ function PlatformerRuntime({ components, pages, onNavigate, isArabic }: { compon
     if (backgroundUrl) board.prepend(backgroundLayer);
     if (playerVideoUrl || playerImageUrl || playerAudioUrl) board.appendChild(playerLayer);
     return () => { backgroundLayer.remove(); playerLayer.remove(); };
-  }, [backgroundType, backgroundUrl, backgroundOverlay, musicEnabled, playerImageUrl, playerVideoUrl, playerAudioUrl, playerZIndex, playerX, playerY]);
+  }, [backgroundType, activeBackgroundUrl, backgroundOverlay, musicEnabled, playerImageUrl, playerVideoUrl, playerAudioUrl, playerZIndex, playerX, playerY]);
 
   useEffect(() => {
     const board = document.querySelector<HTMLElement>('[role="application"]');

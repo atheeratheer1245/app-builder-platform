@@ -66,4 +66,10 @@ describe("runnable project route", () => {
     expect(editorSource).toContain("function MotionVideoFields");
     expect(editorSource).toContain("<LocalMotionStudio");
   });
+
+  it("cycles through multiple generated game backgrounds while retaining the editable image-animation layers", () => {
+    expect(runtimeSource).toContain('textList(backgroundSettings, "backgroundAssetUrls")');
+    expect(runtimeSource).toContain("activeBackgroundUrl");
+    expect(runtimeSource).toContain("Math.floor(animationTick");
+  });
 });

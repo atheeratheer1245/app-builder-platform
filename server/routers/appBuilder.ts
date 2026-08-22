@@ -61,9 +61,14 @@ const gameGenerationInput = z.object({
   brief: z.string().trim().min(3).max(1200),
   imageAssetId: z.number().int().positive().nullable().default(null),
   playerImageAssetId: z.number().int().positive().nullable().default(null),
+  playerImageAssetIds: z.array(z.number().int().positive()).max(8).default([]),
   enemyImageAssetId: z.number().int().positive().nullable().default(null),
+  enemyImageAssetIds: z.array(z.number().int().positive()).max(8).default([]),
   bossImageAssetId: z.number().int().positive().nullable().default(null),
+  bossImageAssetIds: z.array(z.number().int().positive()).max(8).default([]),
   stageImageAssetId: z.number().int().positive().nullable().default(null),
+  stageImageAssetIds: z.array(z.number().int().positive()).max(8).default([]),
+  backgroundImageAssetIds: z.array(z.number().int().positive()).max(8).default([]),
   autoGenerateImages: z.boolean().default(true),
   videoAssetId: z.number().int().positive().nullable().default(null),
   audioAssetId: z.number().int().positive().nullable().default(null),
@@ -389,18 +394,21 @@ export const appBuilderRouter = router({
       if (!project) unauthenticatedProject();
       if (project.category !== "games") throw new TRPCError({ code: "BAD_REQUEST", message: "Game generation is available only for game projects" });
       const db = await getRequiredDb();
-      const [image, playerImage, enemyImage, bossImage, stageImage, video, audio] = await Promise.all([
+      const ownedImages = async (assetIds: number[], label: string) => Promise.all(assetIds.filter((assetId, index, values) => values.indexOf(assetId) === index).map(assetId => getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId, mimePrefix: "image/", label }))).then(assets => assets.filter((asset): asset is NonNullable<typeof asset> => Boolean(asset)));
+      const [image, playerImage, enemyImage, bossImage, stageImage, playerImages, enemyImages, bossImages, stageImages, backgroundImages, video, audio] = await Promise.all([
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.imageAssetId, mimePrefix: "image/", label: "image" }),
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.playerImageAssetId, mimePrefix: "image/", label: "player image" }),
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.enemyImageAssetId, mimePrefix: "image/", label: "enemy image" }),
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.bossImageAssetId, mimePrefix: "image/", label: "boss image" }),
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.stageImageAssetId, mimePrefix: "image/", label: "stage image" }),
+        ownedImages(input.playerImageAssetIds, "character image"), ownedImages(input.enemyImageAssetIds, "creature image"), ownedImages(input.bossImageAssetIds, "boss image"), ownedImages(input.stageImageAssetIds, "stage image"), ownedImages(input.backgroundImageAssetIds, "background image"),
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.videoAssetId, mimePrefix: "video/", label: "video" }),
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.audioAssetId, mimePrefix: "audio/", label: "audio" }),
       ]);
       const narrative = await planGameNarrative(input.brief);
-      const visuals = await generateMissingGameVisuals({ ownerId: ctx.user.id, projectId: input.projectId, brief: input.brief, narrative, enabled: input.autoGenerateImages, playerImage: playerImage ?? image, enemyImage, bossImage, stageImage });
-      const blueprint = getDescribedGameProject({ brief: input.brief, image: visuals.playerImage ?? image, playerImage: visuals.playerImage, enemyImage: visuals.enemyImage, bossImage: visuals.bossImage, stageImage: visuals.stageImage, video, audio, narrative });
+      const visuals = await generateMissingGameVisuals({ ownerId: ctx.user.id, projectId: input.projectId, brief: input.brief, narrative, enabled: input.autoGenerateImages, playerImage: playerImages[0] ?? playerImage ?? image, enemyImage: enemyImages[0] ?? enemyImage, bossImage: bossImages[0] ?? bossImage, stageImage: stageImages[0] ?? stageImage });
+      const uniqueAssets = <T extends { id: number }>(assets: T[]) => assets.filter((asset, index, values) => values.findIndex(item => item.id === asset.id) === index);
+      const blueprint = getDescribedGameProject({ brief: input.brief, image: visuals.playerImage ?? image, playerImage: visuals.playerImage, playerImages: uniqueAssets([...playerImages, ...(visuals.playerImage ? [visuals.playerImage] : [])]), enemyImage: visuals.enemyImage, enemyImages: uniqueAssets([...enemyImages, ...(visuals.enemyImage ? [visuals.enemyImage] : [])]), bossImage: visuals.bossImage, bossImages: uniqueAssets([...bossImages, ...(visuals.bossImage ? [visuals.bossImage] : [])]), stageImage: visuals.stageImage, stageImages: uniqueAssets([...stageImages, ...(visuals.stageImage ? [visuals.stageImage] : [])]), backgroundImages, video, audio, narrative });
       const existing = await db.select({ id: projectComponents.id, componentType: projectComponents.componentType, properties: projectComponents.properties }).from(projectComponents).where(eq(projectComponents.projectId, input.projectId));
       const generatedIds = existing.filter(component => (component.properties as Record<string, unknown> | null)?.generatedBy === "game-generator").map(component => component.id);
       if (generatedIds.length) await Promise.all(generatedIds.map(id => db.delete(projectComponents).where(and(eq(projectComponents.id, id), eq(projectComponents.projectId, input.projectId)))));

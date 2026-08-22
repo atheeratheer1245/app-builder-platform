@@ -32,9 +32,14 @@ export type GameGeneratorInput = {
   /** Kept for projects generated before role-specific image selection was introduced. */
   image?: GameGeneratorAsset | null;
   playerImage?: GameGeneratorAsset | null;
+  playerImages?: GameGeneratorAsset[];
   enemyImage?: GameGeneratorAsset | null;
+  enemyImages?: GameGeneratorAsset[];
   bossImage?: GameGeneratorAsset | null;
+  bossImages?: GameGeneratorAsset[];
   stageImage?: GameGeneratorAsset | null;
+  stageImages?: GameGeneratorAsset[];
+  backgroundImages?: GameGeneratorAsset[];
   video?: GameGeneratorAsset | null;
   audio?: GameGeneratorAsset | null;
 };
@@ -77,11 +82,12 @@ function compactBrief(value: string | undefined) {
 
 function multimediaComponents(mode: GeneratedGameMode, input: GameGeneratorInput): GeneratedGameComponent[] {
   const brief = compactBrief(input.brief);
-  const stageImage = input.stageImage ?? input.image ?? input.playerImage ?? null;
+  const stageImage = input.stageImages?.[0] ?? input.stageImage ?? input.image ?? input.playerImages?.[0] ?? input.playerImage ?? null;
+  const backgroundImages = input.backgroundImages?.length ? input.backgroundImages : stageImage ? [stageImage] : [];
   const background = input.video
     ? { mediaType: "video", assetId: input.video.id, assetUrl: input.video.url, sourceFilename: input.video.filename }
-    : stageImage
-      ? { mediaType: "image", assetId: stageImage.id, assetUrl: stageImage.url, sourceFilename: stageImage.filename }
+    : backgroundImages[0]
+      ? { mediaType: "image", assetId: backgroundImages[0].id, assetUrl: backgroundImages[0].url, sourceFilename: backgroundImages[0].filename, backgroundAssetIds: backgroundImages.map(asset => asset.id), backgroundAssetUrls: backgroundImages.map(asset => asset.url) }
       : input.audio
         ? { mediaType: "audio", assetId: input.audio.id, assetUrl: input.audio.url, sourceFilename: input.audio.filename }
         : null;
@@ -317,9 +323,14 @@ function copyComponents(components: GeneratedGameComponent[]) {
 }
 
 function levelComponents(input: GameGeneratorInput, levelNumber: number, levelTitleAr: string, levelTitleEn: string, nextPageKey: string): GeneratedGameComponent[] {
-  const stageImage = input.stageImage ?? input.image ?? input.playerImage ?? null;
-  const playerImage = input.playerImage ?? input.image ?? stageImage;
-  const opponentImage = levelNumber === 1 ? (input.enemyImage ?? input.image ?? playerImage) : (input.bossImage ?? input.enemyImage ?? input.image ?? playerImage);
+  const stageImages = input.stageImages?.length ? input.stageImages : [input.stageImage ?? input.image ?? input.playerImages?.[0] ?? input.playerImage].filter((asset): asset is GameGeneratorAsset => Boolean(asset));
+  const playerImages = input.playerImages?.length ? input.playerImages : [input.playerImage ?? input.image ?? stageImages[0]].filter((asset): asset is GameGeneratorAsset => Boolean(asset));
+  const enemyImages = input.enemyImages?.length ? input.enemyImages : [input.enemyImage ?? input.image ?? playerImages[0]].filter((asset): asset is GameGeneratorAsset => Boolean(asset));
+  const bossImages = input.bossImages?.length ? input.bossImages : [input.bossImage ?? input.enemyImage ?? input.image ?? playerImages[0]].filter((asset): asset is GameGeneratorAsset => Boolean(asset));
+  const stageImage = stageImages[0] ?? null;
+  const playerImage = playerImages[0] ?? stageImage;
+  const opponentImages = levelNumber === 1 ? enemyImages : bossImages;
+  const opponentImage = opponentImages[0] ?? playerImage;
   const components = copyComponents(getGameGeneratorPreset("platformer", { ...input, image: stageImage ?? playerImage }).components);
   const levelTarget = 40 + levelNumber * 20;
   for (const component of components) {
@@ -341,9 +352,9 @@ function levelComponents(input: GameGeneratorInput, levelNumber: number, levelTi
       component.properties = { ...component.properties, role: levelNumber === 1 ? "enemy" : "boss", nameAr: component.labelAr, nameEn: component.labelEn, assetId: opponentImage?.id ?? null, assetUrl: opponentImage?.url ?? "", amount: levelNumber + 1 };
     }
   }
-  if (playerImage) components.push({ componentType: "ImageAnimation", labelAr: "حركة البطل", labelEn: "Hero animation", properties: { generatedBy: "game-generator", generatorVersion: 4, assetId: playerImage.id, assetUrl: playerImage.url, target: "player", motionStyle: "bob", motionPrompt: "حركة بطل متقدمة ومستمرة", frameCount: 1, fps: 10, x: 12, y: 58, width: 16, height: 20, loop: true, layer: 40 } });
-  if (opponentImage) components.push({ componentType: "ImageAnimation", labelAr: levelNumber === 1 ? "حركة الوحش" : "حركة الزعيم", labelEn: levelNumber === 1 ? "Creature animation" : "Boss animation", properties: { generatedBy: "game-generator", generatorVersion: 4, assetId: opponentImage.id, assetUrl: opponentImage.url, target: levelNumber === 1 ? "enemy" : "boss", motionStyle: levelNumber === 1 ? "shake" : "pulse", motionPrompt: levelNumber === 1 ? "حركة وحش متربص" : "حركة زعيم قوية", frameCount: 1, fps: 8, x: 66, y: 52, width: 18, height: 22, loop: true, layer: 45 } });
-  if (stageImage) components.push({ componentType: "ImageAnimation", labelAr: "حركة المرحلة", labelEn: "Stage animation", properties: { generatedBy: "game-generator", generatorVersion: 4, assetId: stageImage.id, assetUrl: stageImage.url, target: "stage", motionStyle: "drift", motionPrompt: "حركة بيئية هادئة للمشهد", frameCount: 1, fps: 6, x: 0, y: 0, width: 100, height: 44, loop: true, layer: 5 } });
+  playerImages.forEach((asset, index) => components.push({ componentType: "ImageAnimation", labelAr: index === 0 ? "حركة البطل" : `حركة شخصية ${index + 1}`, labelEn: index === 0 ? "Hero animation" : `Character animation ${index + 1}`, properties: { generatedBy: "game-generator", generatorVersion: 5, assetId: asset.id, assetUrl: asset.url, target: index === 0 ? "player" : "character", motionStyle: index % 2 ? "drift" : "bob", motionPrompt: "حركة شخصية متقدمة ومستمرة", frameCount: 1, fps: 10, x: 12 + index * 17, y: 58 - (index % 2) * 13, width: 16, height: 20, loop: true, layer: 40 + index } }));
+  opponentImages.forEach((asset, index) => components.push({ componentType: "ImageAnimation", labelAr: levelNumber === 1 ? `حركة وحش ${index + 1}` : `حركة زعيم ${index + 1}`, labelEn: levelNumber === 1 ? `Creature animation ${index + 1}` : `Boss animation ${index + 1}`, properties: { generatedBy: "game-generator", generatorVersion: 5, assetId: asset.id, assetUrl: asset.url, target: levelNumber === 1 ? "enemy" : "boss", motionStyle: levelNumber === 1 ? (index % 2 ? "drift" : "shake") : (index % 2 ? "shake" : "pulse"), motionPrompt: levelNumber === 1 ? "حركة وحش متربص" : "حركة زعيم قوية", frameCount: 1, fps: 8, x: 64 + (index % 2) * 16, y: 52 - Math.floor(index / 2) * 15, width: 18, height: 22, loop: true, layer: 45 + index } }));
+  stageImages.forEach((asset, index) => components.push({ componentType: "ImageAnimation", labelAr: `حركة المرحلة ${index + 1}`, labelEn: `Stage animation ${index + 1}`, properties: { generatedBy: "game-generator", generatorVersion: 5, assetId: asset.id, assetUrl: asset.url, target: "stage", motionStyle: "drift", motionPrompt: "حركة بيئية هادئة للمشهد", frameCount: 1, fps: 6, x: (index % 2) * 48, y: Math.floor(index / 2) * 22, width: 52, height: 28, loop: true, layer: 5 + index } }));
   return components;
 }
 
