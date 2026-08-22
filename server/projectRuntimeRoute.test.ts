@@ -51,6 +51,11 @@ describe("runnable project route", () => {
     expect(editorSource).toContain('if (type === "TouchControls")');
   });
 
+  it("runs generated custom game scenes through the playable platform runtime", () => {
+    expect(runtimeSource).toContain('selectedMode === "platformer" || selectedMode === "custom"');
+    expect(runtimeSource).toContain("<PlatformerRuntime components={components}");
+  });
+
   it("renders selected PDF documents and animates uploaded sprite images inside the runnable app", () => {
     expect(runtimeSource).toContain('component.componentType === "PDFDocument"');
     expect(runtimeSource).toContain("<iframe");

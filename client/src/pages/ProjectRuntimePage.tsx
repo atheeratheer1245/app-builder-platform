@@ -317,7 +317,7 @@ function ProjectScreen({ components, pages, activePageId, onNavigate, isArabic }
   if (components.some(component => component.componentType === "GameScene") && components.some(component => component.componentType === "Player")) {
     const scene = asRecord(components.find(component => component.componentType === "GameScene")?.properties);
     const selectedMode = text(scene, "gameMode", text(scene, "preset", "platformer"));
-    return selectedMode === "platformer" ? <PlatformerRuntime components={components} pages={pages} onNavigate={onNavigate} isArabic={isArabic} /> : <GameModeRuntime components={components} pages={pages} onNavigate={onNavigate} isArabic={isArabic} mode={(selectedMode in gameModeCopy ? selectedMode : "puzzle") as keyof typeof gameModeCopy} />;
+    return selectedMode === "platformer" || selectedMode === "custom" ? <PlatformerRuntime components={components} pages={pages} onNavigate={onNavigate} isArabic={isArabic} /> : <GameModeRuntime components={components} pages={pages} onNavigate={onNavigate} isArabic={isArabic} mode={(selectedMode in gameModeCopy ? selectedMode : "puzzle") as keyof typeof gameModeCopy} />;
   }
 
   if (!components.length) return <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500"><Layers3 className="mx-auto mb-3 h-8 w-8 text-indigo-400" /><strong className="block text-slate-800">{isArabic ? "هذه الصفحة فارغة" : "This page is empty"}</strong><p className="mt-1 text-sm">{isArabic ? "ارجع إلى المحرر وأضف صورًا أو فيديو أو صوتًا أو أزرارًا أو قائمة." : "Return to the editor and add images, video, audio, buttons, or a list."}</p></div>;

@@ -14,6 +14,7 @@ import { templateCategories } from "../../shared/appBuilderCatalog";
 import { getPaidExportPrice } from "../../shared/exportPricing";
 import { builderComponentTypes, gameComponentTypes, gameModes, getAllowedComponentTypes, getDefaultComponentProperties } from "../../shared/componentCatalog";
 import { getDescribedGameProject } from "../../shared/gameGenerator";
+import { planGameNarrative } from "../gameNarrativePlanner";
 import { premiumExampleCatalog } from "../../shared/premiumExamples";
 import { isSupportedProjectAssetMimeType, normalizeProjectAssetMimeType } from "../../shared/projectAssetMime";
 import { getOwnedProject, getProjectWorkspace, getRequiredDb, ensureTemplateCatalog } from "../appBuilderDb";
@@ -391,7 +392,8 @@ export const appBuilderRouter = router({
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.videoAssetId, mimePrefix: "video/", label: "video" }),
         getOwnedGameGeneratorAsset({ ownerId: ctx.user.id, projectId: input.projectId, assetId: input.audioAssetId, mimePrefix: "audio/", label: "audio" }),
       ]);
-      const blueprint = getDescribedGameProject({ brief: input.brief, image, video, audio });
+      const narrative = await planGameNarrative(input.brief);
+      const blueprint = getDescribedGameProject({ brief: input.brief, image, video, audio, narrative });
       const projectPagesRows = await db.select({ id: projectPages.id, sourcePageKey: projectPages.sourcePageKey, sortOrder: projectPages.sortOrder }).from(projectPages).where(eq(projectPages.projectId, input.projectId));
       const pageIds = new Map<string, number>();
       for (let index = 0; index < blueprint.pages.length; index += 1) {

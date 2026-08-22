@@ -33,12 +33,32 @@ describe("description-led game generator", () => {
     expect(animations.map(component => component.properties.target)).toEqual(expect.arrayContaining(["player", "enemy", "stage"]));
   });
 
+  it("applies a narrative plan to the editable game title, levels, hero, enemy, and boss", () => {
+    const project = getDescribedGameProject({
+      brief: "مغامرة جبلية",
+      narrative: {
+        titleAr: "رحلة القمم", titleEn: "Summit quest", storyAr: "يصعد المستكشف عبر القمم.", storyEn: "An explorer climbs through the peaks.",
+        heroAr: "المستكشف", heroEn: "Explorer", enemyAr: "حارس الكهف", enemyEn: "Cave guardian", bossAr: "عملاق القمة", bossEn: "Summit giant",
+        objectiveAr: "اجمع الحبال للوصول إلى القمة", objectiveEn: "Collect ropes to reach the summit", levelOneAr: "ممر الجبل", levelOneEn: "Mountain pass", levelTwoAr: "قمة العاصفة", levelTwoEn: "Storm summit",
+      },
+    });
+    expect(project).toMatchObject({ titleAr: "رحلة القمم", titleEn: "Summit quest" });
+    expect(project.pages.find(page => page.key === "game-level-one")?.titleAr).toBe("ممر الجبل");
+    expect(project.pages.find(page => page.key === "game-level-two")?.titleEn).toBe("Storm summit");
+    const levelOne = project.pages.find(page => page.key === "game-level-one");
+    const levelTwo = project.pages.find(page => page.key === "game-level-two");
+    expect(levelOne?.components.find(component => component.componentType === "Player")?.labelAr).toBe("المستكشف");
+    expect(levelOne?.components.find(component => component.componentType === "Hazard")?.labelAr).toBe("حارس الكهف");
+    expect(levelTwo?.components.find(component => component.componentType === "Hazard")?.labelAr).toBe("عملاق القمة");
+  });
+
   it("keeps generation owner-protected, game-only, and preserves manual project components while refreshing generated content", () => {
     expect(routerSource).toContain("generateGame: protectedProcedure");
     expect(routerSource).toContain('project.category !== "games"');
     expect(routerSource).toContain("generatedBy === \"game-generator\"");
     expect(routerSource).toContain("getOwnedGameGeneratorAsset");
-    expect(routerSource).toContain("getDescribedGameProject({ brief: input.brief, image, video, audio })");
+    expect(routerSource).toContain("planGameNarrative(input.brief)");
+    expect(routerSource).toContain("getDescribedGameProject({ brief: input.brief, image, video, audio, narrative })");
     expect(routerSource).toContain("sourcePageKey === page.key");
     expect(routerSource).toContain("targetPageKey");
     expect(routerSource).toContain("successPageKey");

@@ -1,4 +1,5 @@
 import type { BuilderComponentType, GameMode } from "./componentCatalog";
+import { fallbackGameNarrative, type GameNarrativePlan } from "./gameNarrative";
 
 export const generatedGameModes = [
   "platformer",
@@ -341,18 +342,19 @@ function levelComponents(input: GameGeneratorInput, levelNumber: number, levelTi
 }
 
 /** Builds an editable game journey from a natural-language brief; no visible genre picker is required. */
-export function getDescribedGameProject(input: GameGeneratorInput = {}): DescribedGameProject {
-  const titleAr = descriptionTitle(input.brief ?? "", "ar");
-  const titleEn = descriptionTitle(input.brief ?? "", "en");
+export function getDescribedGameProject(input: GameGeneratorInput & { narrative?: GameNarrativePlan } = {}): DescribedGameProject {
+  const narrative = input.narrative ?? fallbackGameNarrative(input.brief ?? "");
+  const titleAr = narrative.titleAr || descriptionTitle(input.brief ?? "", "ar");
+  const titleEn = narrative.titleEn || descriptionTitle(input.brief ?? "", "en");
   const sharedMedia = multimediaComponents("platformer", input).map(component => ({ ...component, properties: { ...component.properties, generatorVersion: 3, generatorStyle: "description-led" } }));
   const startComponents: GeneratedGameComponent[] = [
     ...sharedMedia,
-    { componentType: "Card", labelAr: "قصة اللعبة", labelEn: "Game story", properties: { generatedBy: "game-generator", generatorVersion: 3, titleAr, titleEn, descriptionAr: compactBrief(input.brief) || "ابدأ مغامرتك، واجتز المراحل، وتغلب على الخصوم.", descriptionEn: compactBrief(input.brief) || "Begin your adventure, clear levels, and defeat opponents.", actionPageKey: "game-tutorial" } },
+    { componentType: "Card", labelAr: "قصة اللعبة", labelEn: "Game story", properties: { generatedBy: "game-generator", generatorVersion: 3, titleAr, titleEn, descriptionAr: narrative.storyAr, descriptionEn: narrative.storyEn, actionPageKey: "game-tutorial" } },
     { componentType: "Button", labelAr: "ابدأ اللعبة", labelEn: "Start game", properties: { generatedBy: "game-generator", generatorVersion: 3, textAr: "ابدأ اللعبة", textEn: "Start game", targetPageKey: "game-tutorial", variant: "primary" } },
   ];
   const tutorialComponents: GeneratedGameComponent[] = [
     ...sharedMedia,
-    { componentType: "Card", labelAr: "كيفية اللعب", labelEn: "How to play", properties: { generatedBy: "game-generator", generatorVersion: 3, titleAr: "كيف تلعب", titleEn: "How to play", descriptionAr: "تحرك واجمع المكافآت وتجنب الوحوش ثم أكمل هدف المرحلة. جميع العناصر والقواعد قابلة للتحرير.", descriptionEn: "Move, collect rewards, avoid creatures, then complete the level goal. Every rule and element is editable." } },
+    { componentType: "Card", labelAr: "كيفية اللعب", labelEn: "How to play", properties: { generatedBy: "game-generator", generatorVersion: 3, titleAr: "كيف تلعب", titleEn: "How to play", descriptionAr: `${narrative.objectiveAr}. جميع العناصر والقواعد قابلة للتحرير.`, descriptionEn: `${narrative.objectiveEn}. Every rule and element is editable.` } },
     { componentType: "Button", labelAr: "دخول المرحلة الأولى", labelEn: "Enter level one", properties: { generatedBy: "game-generator", generatorVersion: 3, textAr: "دخول المرحلة الأولى", textEn: "Enter level one", targetPageKey: "game-level-one", variant: "primary" } },
   ];
   const victoryComponents: GeneratedGameComponent[] = [
@@ -368,8 +370,8 @@ export function getDescribedGameProject(input: GameGeneratorInput = {}): Describ
     pages: [
       { key: "game-start", titleAr: "بدء اللعبة", titleEn: "Start game", route: "/game-start", components: startComponents },
       { key: "game-tutorial", titleAr: "كيفية اللعب", titleEn: "How to play", route: "/how-to-play", components: tutorialComponents },
-      { key: "game-level-one", titleAr: "المرحلة الأولى", titleEn: "Level one", route: "/level-one", components: levelComponents(input, 1, "المرحلة الأولى", "Level one", "game-level-two") },
-      { key: "game-level-two", titleAr: "مواجهة الزعيم", titleEn: "Boss encounter", route: "/boss-encounter", components: levelComponents(input, 2, "مواجهة الزعيم", "Boss encounter", "game-victory") },
+      { key: "game-level-one", titleAr: narrative.levelOneAr, titleEn: narrative.levelOneEn, route: "/level-one", components: levelComponents(input, 1, narrative.levelOneAr, narrative.levelOneEn, "game-level-two").map(component => component.componentType === "Player" ? { ...component, labelAr: narrative.heroAr, labelEn: narrative.heroEn } : component.componentType === "Hazard" ? { ...component, labelAr: narrative.enemyAr, labelEn: narrative.enemyEn, properties: { ...component.properties, nameAr: narrative.enemyAr, nameEn: narrative.enemyEn } } : component) },
+      { key: "game-level-two", titleAr: narrative.levelTwoAr, titleEn: narrative.levelTwoEn, route: "/boss-encounter", components: levelComponents(input, 2, narrative.levelTwoAr, narrative.levelTwoEn, "game-victory").map(component => component.componentType === "Player" ? { ...component, labelAr: narrative.heroAr, labelEn: narrative.heroEn } : component.componentType === "Hazard" ? { ...component, labelAr: narrative.bossAr, labelEn: narrative.bossEn, properties: { ...component.properties, nameAr: narrative.bossAr, nameEn: narrative.bossEn } } : component) },
       { key: "game-victory", titleAr: "نهاية المغامرة", titleEn: "Adventure complete", route: "/adventure-complete", components: victoryComponents },
     ],
   };
