@@ -364,7 +364,7 @@ class MainActivity : ComponentActivity() {
         val content = screen(tr("سعر التصدير المدفوع", "Paid export quote"), tr("راجع السعر قبل فتح فاتورة الدفع.", "Review the price before opening the payment invoice."))
         val price = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(17), dp(16), dp(17), dp(16)); background = rounded(Color.rgb(238, 242, 255), 18) }
         addHeading(price, "${quote.optInt("totalPriceSar")} ${tr("ريال سعودي", "SAR")}", 27)
-        addText(price, tr("${quote.optInt("sizeUnits")} وحدة بحجم 10 ميغابايت · ${format.uppercase()}", "${quote.optInt("sizeUnits")} × 10 MB units · ${format.uppercase()}"))
+        addText(price, tr("${quote.optInt("billableMegabytes")} ميغابايت × ${quote.optInt("pricePerMegabyteSar")} ريال لكل ميغابايت · ${format.uppercase()}", "${quote.optInt("billableMegabytes")} MB × SAR ${quote.optInt("pricePerMegabyteSar")} per MB · ${format.uppercase()}"))
         content.addView(price, full(bottom = 12))
         addText(content, tr("لا تُدخل بيانات البطاقة داخل التطبيق؛ ستنتقل فقط إلى فاتورة ميسر المستضافة في المتصفح الخارجي.", "Card data is never entered in this app; only the hosted Moyasar invoice opens in the external browser."))
         primary(tr("المتابعة إلى فاتورة ميسر", "Continue to Moyasar invoice")) { createPaidInvoice(project, format) }.also(content::addView)

@@ -50,8 +50,8 @@ describe("standalone Android App Builder", () => {
     expect(activity).toContain("View quote & export $format");
     expect(activity).not.toContain("Request free $format export");
     expect(activity).not.toContain("/api/mobile/exports/free");
-    expect(activity).toContain('quote.optInt("sizeUnits")');
-    expect(activity).toContain("10 MB units");
+    expect(activity).toContain('quote.optInt("billableMegabytes")');
+    expect(activity).toContain('quote.optInt("pricePerMegabyteSar")');
     expect(activity).toContain("Continue to Moyasar invoice");
     expect(activity).toContain("Payment awaiting verification");
     expect(activity).toContain("Payment is verified and a real file is ready to download.");

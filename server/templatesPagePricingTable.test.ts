@@ -10,6 +10,6 @@ describe("template library pricing table", () => {
     expect(workspacePages).toContain('Template prices per 10 MB');
     expect(workspacePages).toContain('templateCategories.map(category =>');
     expect(workspacePages).toContain('paidExportPricePerTenMbSar[category]');
-    expect(workspacePages).toContain('file size rounds up to the next 10 MB unit');
+    expect(workspacePages).toContain('invoices are calculated proportionally per MB at one tenth of the displayed rate');
   });
 });
