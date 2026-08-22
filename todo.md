@@ -163,6 +163,7 @@
 - [x] Ensure the Books App appears in the core template library with editable library, book-detail, reading, and PDF attachment flows.
 - [x] Update the dashboard ready-template counter to display all 8 core templates, including Books App.
 - [x] Make all 8 core templates paid-export only, calculate every export per 10 MB from the approved category price table (including Books at SAR 50), and remove the free-export path and copy.
+- [x] Display the eight paid-export template prices per 10 MB directly inside the paid-only export page before invoice creation.
 - [x] Replace the Android WebView shell with a standalone native App Builder experience that mirrors core website flows without embedding the website.
 - [x] Remove WebView and all browser-opening behavior from the Android application; present only native screens and the native Google account chooser when needed.
 - [x] Add the user-provided App Builder icon to the standalone Android app and generate all required Android launcher icon variants.
