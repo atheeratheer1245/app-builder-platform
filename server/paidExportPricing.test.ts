@@ -3,7 +3,7 @@ import { TEN_MB_BYTES, getPaidExportPrice, paidExportPricePerTenMbSar } from "..
 
 describe("paid per-export price catalog", () => {
   it("keeps the approved SAR prices for each 10-MB unit", () => {
-    expect(paidExportPricePerTenMbSar).toEqual({ ecommerce: 50, education: 70, games: 120, music: 100, podcasts: 100, movies: 150, services: 40 });
+    expect(paidExportPricePerTenMbSar).toEqual({ ecommerce: 50, education: 70, games: 120, music: 100, podcasts: 100, movies: 150, services: 40, books: 50 });
   });
 
   it("rounds each paid export up to a whole 10-MB unit", () => {
@@ -12,7 +12,7 @@ describe("paid per-export price catalog", () => {
     expect(getPaidExportPrice("movies", 30 * 1024 * 1024)).toMatchObject({ sizeUnits: 3, unitPriceSar: 150, totalPriceSar: 450, totalPriceHalalas: 45000 });
   });
 
-  it("does not invent a paid-export price for Books before approval", () => {
-    expect(() => getPaidExportPrice("books", TEN_MB_BYTES)).toThrow("Paid export price has not been configured");
+  it("uses the owner-approved Books price for every 10-MB unit", () => {
+    expect(getPaidExportPrice("books", TEN_MB_BYTES + 1)).toMatchObject({ sizeUnits: 2, unitPriceSar: 50, totalPriceSar: 100, totalPriceHalalas: 10000 });
   });
 });

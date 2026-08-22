@@ -305,7 +305,7 @@ class MainActivity : ComponentActivity() {
         val content = screen(tr("مركز التصدير", "Export center"), tr("${project.getString("name")} · اختر الصيغة المناسبة لتطبيقك.", "${project.optString("nameEn", project.getString("name"))} · Choose the format for your app."))
         val info = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(15), dp(16), dp(15)); background = rounded(Color.rgb(255, 251, 235), 17) }
         addHeading(info, "APK  /  AAB  /  IPA", 19)
-        addText(info, tr("المسار المجاني لا يطلب دفعة. للمسار المدفوع يظهر السعر أولًا، ثم تُفتح فاتورة ميسر في المتصفح الخارجي فقط. لا يظهر زر التنزيل إلا بعد توفر ملف حقيقي.", "The free path never asks for payment. The paid path shows the quote first, then opens a Moyasar invoice only in the external browser. Download appears only for a real artifact."))
+        addText(info, tr("يظهر السعر لكل 10 ميغابايت أولًا، ثم تُفتح فاتورة ميسر في المتصفح الخارجي فقط. لا يظهر زر التنزيل إلا بعد تأكيد الدفع وتوفر ملف حقيقي.", "The per-10-MB price appears first, then a Moyasar invoice opens only in the external browser. Download appears only after payment confirmation and a real artifact is ready."))
         content.addView(info, full(bottom = 10))
         val pending = pendingForProject(project)
         if (pending != null) {
@@ -315,10 +315,7 @@ class MainActivity : ComponentActivity() {
             content.addView(status, full(bottom = 8))
             secondary(tr("تحقق من الدفع الآن", "Check payment now")) { verifyPaidInvoice(pending) }.also(content::addView)
         }
-        listOf("APK", "AAB", "IPA").forEach { format ->
-            primary(tr("طلب تصدير مجاني $format", "Request free $format export")) { requestFreeExport(project, format) }.also(content::addView)
-            secondary(tr("عرض سعر وتصدير مدفوع $format", "View quote & paid $format export")) { loadPaidQuote(project, format) }.also(content::addView)
-        }
+        listOf("APK", "AAB", "IPA").forEach { format -> primary(tr("عرض سعر وتصدير $format", "View quote & export $format")) { loadPaidQuote(project, format) }.also(content::addView) }
         secondary(tr("العودة إلى المشروع", "Back to project")) { showProject(project) }.also(content::addView)
     }
 
@@ -347,21 +344,6 @@ class MainActivity : ComponentActivity() {
             .put("category", template.id)
             .put("format", format.lowercase())
             .put("estimatedSizeBytes", project.optLong("estimatedSizeBytes", 0L))
-    }
-
-    private fun requestFreeExport(project: JSONObject, format: String) {
-        if (!requireNativeSession()) return
-        val payload = exportPayload(project, format) ?: return
-        notice(tr("جارٍ إرسال طلب التصدير المجاني…", "Submitting free export request…"))
-        lifecycleScope.launch {
-            try {
-                val result = withContext(Dispatchers.IO) { postJson("$apiUrl/api/mobile/exports/free", payload, authenticated = true) }
-                notice(tr("تم وضع طلب $format المجاني في قائمة البناء.", "Free $format export is queued for build."))
-                showQueuedExport(project, format, result.getInt("exportJobId"), status = result.optString("status", "queued"))
-            } catch (_: Exception) {
-                notice(tr("تعذر إرسال طلب التصدير المجاني الآن.", "The free export request could not be submitted now."))
-            }
-        }
     }
 
     private fun loadPaidQuote(project: JSONObject, format: String) {
@@ -446,7 +428,7 @@ class MainActivity : ComponentActivity() {
                 if (result.optString("status") == "ready" && artifactUrl.isNotBlank()) {
                     showReadyDownload(project, pending.format, pending.exportJobId, artifactUrl)
                 } else {
-                    showQueuedExport(project, pending.format, pending.exportJobId, paid = true)
+                    showQueuedExport(project, pending.format, pending.exportJobId)
                 }
             } catch (_: Exception) {
                 if (returnedFromCheckout) notice(tr("تعذر التحقق الآن؛ يمكنك المحاولة من مركز التصدير.", "Verification is unavailable now; try again from Export Center."))
@@ -464,18 +446,18 @@ class MainActivity : ComponentActivity() {
         else -> tr("في قائمة البناء", "Queued for build")
     }
 
-    private fun showQueuedExport(project: JSONObject, format: String, exportJobId: Int, paid: Boolean = false, status: String = "queued") {
+    private fun showQueuedExport(project: JSONObject, format: String, exportJobId: Int, status: String = "queued") {
         val content = screen(tr("طلب التصدير قيد البناء", "Export request queued"), tr("تتم متابعة حالة $format من الخادم.", "$format status is tracked by the server."))
         val card = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(15), dp(16), dp(15)); background = rounded(Color.rgb(238, 242, 255), 17) }
-        addHeading(card, if (paid) tr("تم تأكيد الدفع", "Payment verified") else tr("طلب مجاني مُرسل", "Free request submitted"), 20)
+        addHeading(card, tr("تم تأكيد الدفع", "Payment verified"), 20)
         addText(card, tr("رقم الطلب: $exportJobId. سيظهر زر التنزيل هنا فقط عند اكتمال ملف حقيقي.", "Request #$exportJobId. Download appears here only when a real file is ready."))
         addText(card, "${tr("الحالة الحالية", "Current status")}: ${exportStatusLabel(status)}")
         content.addView(card, full(bottom = 10))
-        primary(tr("تحديث حالة البناء", "Refresh build status")) { refreshExportStatus(project, format, exportJobId, paid) }.also(content::addView)
+        primary(tr("تحديث حالة البناء", "Refresh build status")) { refreshExportStatus(project, format, exportJobId) }.also(content::addView)
         secondary(tr("العودة إلى مركز التصدير", "Back to export center")) { showExports(project) }.also(content::addView)
     }
 
-    private fun refreshExportStatus(project: JSONObject, format: String, exportJobId: Int, paid: Boolean) {
+    private fun refreshExportStatus(project: JSONObject, format: String, exportJobId: Int) {
         if (!requireNativeSession()) return
         notice(tr("جارٍ تحديث حالة البناء…", "Refreshing build status…"))
         lifecycleScope.launch {
@@ -485,7 +467,7 @@ class MainActivity : ComponentActivity() {
                 if (result.optBoolean("available", false) && artifactUrl.isNotBlank()) {
                     showReadyDownload(project, format, exportJobId, artifactUrl)
                 } else {
-                    showQueuedExport(project, format, exportJobId, paid, result.optString("status", "queued"))
+                    showQueuedExport(project, format, exportJobId, result.optString("status", "queued"))
                 }
             } catch (_: Exception) {
                 notice(tr("تعذر تحديث حالة التصدير الآن.", "Export status could not be refreshed now."))

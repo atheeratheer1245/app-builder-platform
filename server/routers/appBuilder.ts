@@ -594,26 +594,6 @@ export const appBuilderRouter = router({
       const jobs = await db.select().from(exportJobs).where(eq(exportJobs.ownerId, ctx.user.id)).orderBy(desc(exportJobs.createdAt));
       return Promise.all(jobs.map(job => serializeExportJobForOwner(job)));
     }),
-    create: protectedProcedure.input(exportInput).mutation(async ({ ctx, input }) => {
-      const project = await getOwnedProject(ctx.user.id, input.projectId);
-      if (!project) unauthenticatedProject();
-      if (project.category === "custom") throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a supported template category before export" });
-      const db = await getRequiredDb();
-      const result = await db.insert(exportJobs).values({
-        projectId: project.id,
-        ownerId: ctx.user.id,
-        format: input.format,
-        status: "queued",
-        estimatedSizeBytes: project.estimatedSizeBytes,
-        sizeUnits: 1,
-        unitPriceHalalas: 0,
-        totalPriceHalalas: 0,
-      });
-      const exportJobId = Number(result[0]?.insertId ?? 0);
-      if (!exportJobId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Unable to create export request" });
-      const job = await queueCloudBuildForExportJob(ctx.user.id, exportJobId);
-      return { exportJobId, status: job?.status ?? "queued" };
-    }),
     quotePaid: protectedProcedure.input(paidExportInput).query(async ({ ctx, input }) => {
       const project = await getOwnedProject(ctx.user.id, input.projectId);
       if (!project) unauthenticatedProject();

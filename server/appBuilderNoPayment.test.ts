@@ -1,22 +1,22 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-describe("fully free export surface", () => {
-  it("queues exports directly and exposes no active checkout, billing, or provider callback surface", () => {
+describe("paid-only export surface", () => {
+  it("requires an invoice-backed export path and removes the free export surface", () => {
     const appBuilderRouter = readFileSync(new URL("./routers/appBuilder.ts", import.meta.url), "utf8");
     const trpcRouter = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
     const serverEntry = readFileSync(new URL("./_core/index.ts", import.meta.url), "utf8");
     const exportPage = readFileSync(new URL("../client/src/pages/WorkspacePages.tsx", import.meta.url), "utf8");
     const schema = readFileSync(new URL("../drizzle/schema.ts", import.meta.url), "utf8");
 
-    expect(appBuilderRouter).toMatch(/exports:\s*router\([\s\S]*?create:\s*protectedProcedure/);
+    expect(appBuilderRouter).toContain("createPaidInvoice: protectedProcedure");
+    expect(appBuilderRouter).not.toMatch(/exports:\s*router\([\s\S]*?create:\s*protectedProcedure/);
+    expect(exportPage).toContain("trpc.appBuilder.exports.createPaidInvoice.useMutation");
+    expect(exportPage).toContain("كل القوالب تتطلب فاتورة مدفوعة");
+    expect(exportPage).not.toContain("مجاني بالكامل");
+    expect(exportPage).not.toContain("التصدير المجاني");
     expect(trpcRouter).not.toContain("payments: paymentsRouter");
     expect(serverEntry).not.toContain("registerMoyasarCallback(app)");
-    expect(exportPage).toContain("trpc.appBuilder.exports.create.useMutation");
-    expect(exportPage).toContain("مجاني بالكامل");
-    expect(exportPage).not.toContain("trpc.payments.createCheckout.useMutation");
-    expect(exportPage).not.toContain("Moyasar");
-    expect(exportPage).not.toContain("getExportPrice");
     expect(schema).toContain('"moyasar"');
     expect(schema).toContain('mysqlTable(\n  "moyasarWebhookEvents"');
   });

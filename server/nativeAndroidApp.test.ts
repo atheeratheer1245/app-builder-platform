@@ -45,10 +45,11 @@ describe("standalone Android App Builder", () => {
     expect(activity).toContain("artifactUrl.isNotBlank()");
   });
 
-  it("offers all Android and Apple export formats with a free path, a server quote, hosted payment, and a ready-only download", () => {
+  it("offers all Android and Apple export formats through a server quote and hosted payment only", () => {
     expect(activity).toContain('listOf("APK", "AAB", "IPA")');
-    expect(activity).toContain("Request free $format export");
-    expect(activity).toContain("View quote & paid $format export");
+    expect(activity).toContain("View quote & export $format");
+    expect(activity).not.toContain("Request free $format export");
+    expect(activity).not.toContain("/api/mobile/exports/free");
     expect(activity).toContain('quote.optInt("sizeUnits")');
     expect(activity).toContain("10 MB units");
     expect(activity).toContain("Continue to Moyasar invoice");

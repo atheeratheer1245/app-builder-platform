@@ -72,25 +72,6 @@ function parseMobileExport(body: unknown, res: Response) {
   return parsed.data;
 }
 
-async function createFreeExport(userId: number, input: MobileExportRequest) {
-  const db = await getRequiredDb();
-  const project = await getOrCreateNativeProject(userId, input);
-  const created = await db.insert(exportJobs).values({
-    projectId: project.id,
-    ownerId: userId,
-    format: input.format,
-    status: "queued",
-    estimatedSizeBytes: input.estimatedSizeBytes,
-    sizeUnits: 1,
-    unitPriceHalalas: 0,
-    totalPriceHalalas: 0,
-  });
-  const exportJobId = Number(created[0]?.insertId ?? 0);
-  if (!exportJobId) throw new Error("Unable to create free export request");
-  const job = await queueCloudBuildForExportJob(userId, exportJobId);
-  return { exportJobId, status: job?.status ?? "queued" };
-}
-
 async function createPaidExportInvoice(userId: number, input: MobileExportRequest, origin: string) {
   const db = await getRequiredDb();
   const project = await getOrCreateNativeProject(userId, input);
@@ -169,18 +150,6 @@ export function registerMobilePaidExportRoutes(app: Express) {
     const quote = getPaidExportPrice(input.category, input.estimatedSizeBytes);
     res.set("Cache-Control", "no-store");
     res.status(200).json({ ...quote, category: input.category, format: input.format, estimatedSizeBytes: input.estimatedSizeBytes });
-  });
-
-  app.post("/api/mobile/exports/free", async (req, res) => {
-    const user = await requireNativeUser(req, res);
-    const input = parseMobileExport(req.body, res);
-    if (!user || !input) return;
-    try {
-      res.set("Cache-Control", "no-store");
-      res.status(201).json(await createFreeExport(user.id, input));
-    } catch {
-      res.status(502).json({ error: "free_export_unavailable" });
-    }
   });
 
   app.post("/api/mobile/exports/paid-invoice", async (req, res) => {

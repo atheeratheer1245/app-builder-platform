@@ -1,7 +1,7 @@
 import type { TemplateCategory } from "./appBuilderCatalog";
 
 export const TEN_MB_BYTES = 10 * 1024 * 1024;
-export type PaidExportCategory = Exclude<TemplateCategory, "books">;
+export type PaidExportCategory = TemplateCategory;
 
 export const paidExportPricePerTenMbSar: Record<PaidExportCategory, number> = {
   ecommerce: 50,
@@ -11,10 +11,11 @@ export const paidExportPricePerTenMbSar: Record<PaidExportCategory, number> = {
   podcasts: 100,
   movies: 150,
   services: 40,
+  books: 50,
 };
 
 export function hasPaidExportPrice(category: TemplateCategory): category is PaidExportCategory {
-  return category !== "books";
+  return category in paidExportPricePerTenMbSar;
 }
 
 export function getPaidExportPrice(category: TemplateCategory, estimatedSizeBytes: number) {
